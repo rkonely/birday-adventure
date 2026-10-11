@@ -207,44 +207,18 @@ export class UIManager {
   }
 
   startLaunchTransition(name) {
+    // Плавно скрываем окно регистрации
     this.screenForm.classList.remove('active');
     setTimeout(() => {
       this.screenForm.classList.add('hidden');
-      this.screenTransition.classList.remove('hidden');
-      this.screenTransition.classList.add('active');
 
-      // Переключаем фон на Видео 3 (Старт полета)
-      this.videoManager.playVideo('START');
+      // Переключаем фон на Видео 3 (Старт полета) без лишних оверлеев и загрузок
+      this.videoManager.playVideo('START', () => {
+        // По окончании видео старта переходим к следующему этапу
+        events.emit('stage:ready', 'STAGE_1');
+      });
       gameState.setStage('TRANSITION');
-
-      const titleEl = document.getElementById('transition-title');
-      const descEl = document.getElementById('transition-desc');
-      const progressBar = document.getElementById('transition-progress');
-
-      titleEl.textContent = `ДОПУСК РАЗРЕШЕН, ${name.toUpperCase()}! 🚀`;
-      descEl.textContent = "Координаты подтверждены. Калькулятор зафиксировал 15 Октября. Открываем люк самолета...";
-
-      // Анимация полосы прогресса загрузки этапа I
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 4;
-        progressBar.style.width = `${Math.min(100, progress)}%`;
-
-        if (progress === 40) {
-          descEl.textContent = "Кукушка экипирована! Запас яиц готов к подбросу в чужие гнезда...";
-        } else if (progress === 80) {
-          descEl.textContent = "Ветер попутный! Готовимся к первому этапу полёта...";
-        }
-
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            this.showToast('Готовность к Этапу I: Полёт Кукушки!');
-            events.emit('stage:ready', 'STAGE_1');
-          }, 600);
-        }
-      }, 100);
-    }, 400);
+    }, 300);
   }
 
   showToast(message) {
