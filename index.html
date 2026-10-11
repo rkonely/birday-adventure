@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BirDay Adventure — Птичье Приключение</title>
+  <meta name="description" content="Персональная браузерная игра-приключение ко дню рождения.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <!-- Главный игровой контейнер: 16:9 соотношение -->
+  <div id="game-container">
+
+    <!-- Фоновое зацикленное видео -->
+    <div id="video-wrapper">
+      <video id="bg-video" src="assets/videos/MainMenu%20-%20Waiting.mp4" autoplay loop muted playsinline
+        preload="auto"></video>
+      <div class="crt-overlay"></div>
+    </div>
+
+    <!-- Игровой Canvas для геймплейных этапов (платформер, настолка, босс) -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Слой -->
+    <div id="ui-layer">
+
+      <!-- Верхняя панель (Звук, Полноэкранный режим) -->
+      <header id="top-bar">
+        <div class="controls-group">
+          <button id="btn-sound" class="icon-btn" title="Вкл/Выкл звук" aria-label="Звук">
+            <span class="icon">🔊</span>
+          </button>
+          <button id="btn-fullscreen" class="icon-btn" title="Во весь экран" aria-label="Во весь экран">
+            <span class="icon">⛶</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Экран 1: Главное меню (Зацикленное видео ожидания) -->
+      <section id="screen-title" class="screen active">
+        <!-- Кнопка Старта в точной позиции как на скриншоте -->
+        <button id="btn-start" class="btn-start-adventure" aria-label="Начать приключение">
+          <div class="btn-text-wrapper">
+            <span class="btn-line">НАЧАТЬ</span>
+            <div class="btn-line-with-arrow">
+              <span class="btn-line">ПРИКЛЮЧЕНИЕ</span>
+              <span class="btn-arrow">▶</span>
+            </div>
+          </div>
+        </button>
+      </section>
+
+      <!-- Экран 2: Форма регистрации (размещена справа, на фоне видео MainMenu - Typing.mp4) -->
+      <section id="screen-form" class="screen hidden">
+        <div id="registration-window" class="registration-window">
+
+          <!-- Верхняя каменная плашка "Регистрация" -->
+          <div class="registration-title-stone">
+            <span class="registration-title-text">Регистрация</span>
+          </div>
+
+          <form id="auth-form" class="registration-form" onsubmit="return false;">
+
+            <!-- Поле: Имя Игрока -->
+            <div class="reg-form-group">
+              <label for="player-name" class="reg-label">Имя Игрока</label>
+              <div class="reg-field-box">
+                <input type="text" id="player-name" maxlength="18" placeholder="Пилот" value="" autocomplete="off"
+                  required>
+              </div>
+            </div>
+
+            <!-- Поле: Дата Рождения -->
+            <div class="reg-form-group">
+              <label class="reg-label">Дата Рождения</label>
+              <div class="reg-date-row">
+
+                <!-- Выбор дня -->
+                <div class="reg-date-box" id="box-select-day">
+                  <span id="display-day" class="date-display-num">00</span>
+                  <div class="date-arrow-icon"></div>
+                  <select id="select-day" class="date-native-select" aria-label="День"></select>
+                </div>
+
+                <!-- Выбор месяца -->
+                <div class="reg-date-box" id="box-select-month">
+                  <span id="display-month" class="date-display-num">00</span>
+                  <div class="date-arrow-icon"></div>
+                  <select id="select-month" class="date-native-select" aria-label="Месяц">
+                    <option value="0" selected>00</option>
+                    <option value="1">01</option>
+                    <option value="2">02</option>
+                    <option value="3">03</option>
+                    <option value="4">04</option>
+                    <option value="5">05</option>
+                    <option value="6">06</option>
+                    <option value="7">07</option>
+                    <option value="8">08</option>
+                    <option value="9">09</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Строка HARDCORE и Чекбокс -->
+            <div class="reg-hardcore-row">
+              <span class="hardcore-label">HARDCORE</span>
+              <label class="hardcore-checkbox-wrapper" for="check-hardcore">
+                <input type="checkbox" id="check-hardcore" class="sr-only">
+                <div class="custom-checkbox-frame">
+                  <div class="checkbox-indicator"></div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Кнопка ГОТОВО (Green Button.png) -->
+            <button type="submit" id="btn-submit-data" class="btn-green-submit" aria-label="Готово">
+              <span class="btn-green-text">ГОТОВО</span>
+            </button>
+
+          </form>
+        </div>
+      </section>
+
+      <!-- Модальное окно для шуточного отказа (если дата не 15 октября) -->
+      <div id="modal-rejection" class="modal-overlay hidden">
+        <div class="modal-window shake-animation">
+          <div class="modal-icon">🚫</div>
+          <h3 class="modal-title">ДОСТУП ЗАБЛОКИРОВАН!</h3>
+          <p id="modal-reject-text" class="modal-text"></p>
+          <div class="modal-actions">
+            <button id="btn-modal-retry" class="btn-asset-red">ИСПРАВИТЬ ДАТУ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 3: Переход к Этапу I -->
+      <section id="screen-transition" class="screen hidden">
+        <div class="transition-container pixel-frame">
+          <div class="loading-spinner"></div>
+          <h2 id="transition-title" class="transition-heading">ПРОВЕРКА ПРОЙДЕНА!</h2>
+          <p id="transition-desc" class="transition-desc">Инструктор вбивает координаты в бортовой калькулятор...</p>
+          <div class="progress-bar-container">
+            <div id="transition-progress" class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Уведомления -->
+      <div id="toast-container"></div>
+    </div>
+  </div>
+
+  <!-- Главный скрипт модулей ES6 -->
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
