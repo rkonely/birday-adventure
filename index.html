@@ -126,19 +126,13 @@
 
           </form>
         </div>
-      </section>
 
-      <!-- Модальное окно для шуточного отказа (если дата не 15 октября) -->
-      <div id="modal-rejection" class="modal-overlay hidden">
-        <div class="modal-window shake-animation">
-          <div class="modal-icon">🚫</div>
-          <h3 class="modal-title">ДОСТУП ЗАБЛОКИРОВАН!</h3>
-          <p id="modal-reject-text" class="modal-text"></p>
-          <div class="modal-actions">
-            <button id="btn-modal-retry" class="btn-asset-red">ИСПРАВИТЬ ДАТУ</button>
-          </div>
+        <!-- Облачко реплики пилота (Menu - Dialog.png) рядом с клювом птицы -->
+        <div id="pilot-dialog-bubble" class="pilot-dialog-bubble hidden" aria-live="polite">
+          <p id="pilot-dialog-text" class="pilot-dialog-text">Эй, у самолета рейс только для именинника!</p>
         </div>
-      </div>
+
+      </section>
 
       <!-- Экран 3: Переход к Этапу I -->
       <section id="screen-transition" class="screen hidden">

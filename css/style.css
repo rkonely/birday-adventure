@@ -622,6 +622,53 @@ html, body {
 }
 
 /* ==========================================================================
+   Облачко реплики пилота (Menu - Dialog.png) рядом с клювом
+   ========================================================================== */
+.pilot-dialog-bubble {
+  position: absolute;
+  left: 24.5%;
+  top: 31%;
+  width: 25%;
+  aspect-ratio: 411 / 154;
+  background-image: url('../assets/UI/Menu - Dialog.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4% 6% 8% 6%;
+  box-sizing: border-box;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 25;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+  animation: dialogPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pilot-dialog-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(10px, 1.15vw, 15px);
+  font-weight: bold;
+  color: #111111; /* Чёрный текст */
+  text-shadow: none;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0;
+  user-select: none;
+}
+
+@keyframes dialogPop {
+  0% {
+    transform: scale(0.6) translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
    Модальное окно шуточного отказа
    ========================================================================== */
 .modal-overlay {

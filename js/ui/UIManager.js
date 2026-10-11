@@ -13,7 +13,8 @@ export class UIManager {
     this.screenTitle = document.getElementById('screen-title');
     this.screenForm = document.getElementById('screen-form');
     this.screenTransition = document.getElementById('screen-transition');
-    this.modalRejection = document.getElementById('modal-rejection');
+    this.pilotDialogBubble = document.getElementById('pilot-dialog-bubble');
+    this.pilotDialogText = document.getElementById('pilot-dialog-text');
 
     // Элементы формы
     this.nameInput = document.getElementById('player-name');
@@ -23,13 +24,13 @@ export class UIManager {
     this.displayMonth = document.getElementById('display-month');
     this.checkHardcore = document.getElementById('check-hardcore');
     this.btnSubmit = document.getElementById('btn-submit-data');
-    this.modalRejectText = document.getElementById('modal-reject-text');
 
     // Кнопки
     this.btnStart = document.getElementById('btn-start');
-    this.btnModalRetry = document.getElementById('btn-modal-retry');
     this.btnSound = document.getElementById('btn-sound');
     this.btnFullscreen = document.getElementById('btn-fullscreen');
+
+    this.dialogTimeout = null;
 
     this.initDaysDropdown();
     this.restoreSavedData();
@@ -118,12 +119,12 @@ export class UIManager {
       this.handleFormSubmit();
     });
 
-    // 5. Закрытие модального окна ошибки
-    this.btnModalRetry.addEventListener('click', () => {
-      audio.playClick();
-      this.modalRejection.classList.add('hidden');
-      this.nameInput.focus();
-    });
+    // 5. Клик по облачку диалога скрывает его досрочно
+    if (this.pilotDialogBubble) {
+      this.pilotDialogBubble.addEventListener('click', () => {
+        this.hidePilotDialog();
+      });
+    }
 
     // 6. Управление звуком
     this.btnSound.addEventListener('click', () => {
@@ -181,29 +182,42 @@ export class UIManager {
     if (!isBirthday) {
       // ОШИБКА: Дата не 15 октября!
       audio.playError();
-      this.showRejectionModal(name, day, month);
+      this.showPilotDialog("Эй, у самолета рейс только для именинника!");
     } else {
       // УСПЕХ: 15 Октября подтверждено!
+      this.hidePilotDialog();
       audio.playSuccess();
       this.startLaunchTransition(name);
     }
   }
 
-  showRejectionModal(name, day, month) {
-    const monthsRu = [
-      '', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-    ];
+  showPilotDialog(text) {
+    if (!this.pilotDialogBubble) return;
 
-    const jokes = [
-      `Калькулятор пилота задымился и выдал отказ! 🚨\nПилот ${name}, борт зарезервирован ИСКЛЮЧИТЕЛЬНО для именинника 15 Октября. А у тебя выбрано ${day} ${monthsRu[month]}! Вспомни свой настоящий день!`,
-      `Отказ бортовой системы! 🦜\n«Эй, ${name}! Сегодня мы летаем, поздравляем и дарим Steam-подарки только тем, кто родился 15 октября! Проверь календарь и исправь дату!»`,
-      `Спецконтроль пернатых заблокировал люк! ⚠️\nПозывной «${name}» принят, но дата ${day} ${monthsRu[month]} не дает допуска к первому этапу. Допуск открывается ровно 15 Октября!`
-    ];
+    if (this.pilotDialogText) {
+      this.pilotDialogText.textContent = text;
+    }
 
-    const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
-    this.modalRejectText.textContent = randomJoke;
-    this.modalRejection.classList.remove('hidden');
+    this.pilotDialogBubble.classList.remove('hidden');
+
+    // Сбрасываем предыдущий таймер автоскрытия
+    if (this.dialogTimeout) {
+      clearTimeout(this.dialogTimeout);
+    }
+
+    // Автоматически скрываем реплику через 4.5 секунды
+    this.dialogTimeout = setTimeout(() => {
+      this.hidePilotDialog();
+    }, 4500);
+  }
+
+  hidePilotDialog() {
+    if (!this.pilotDialogBubble) return;
+    this.pilotDialogBubble.classList.add('hidden');
+    if (this.dialogTimeout) {
+      clearTimeout(this.dialogTimeout);
+      this.dialogTimeout = null;
+    }
   }
 
   startLaunchTransition(name) {
