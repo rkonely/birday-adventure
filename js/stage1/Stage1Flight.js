@@ -359,14 +359,22 @@ export class Stage1Flight {
         </div>
 
         <div class="flight-btn-row">
-          <button id="btn-reset-pos" class="hud-btn">Центрировать [R]</button>
-          <button id="btn-exit-stage" class="hud-btn hud-btn-danger">Главное меню</button>
+          <button id="btn-goto-level1" class="hud-btn" style="border-color: #22c55e; color: #4ade80;">🌲 В УРОВЕНЬ 1</button>
+          <button id="btn-reset-pos" class="hud-btn">Центр [R]</button>
+          <button id="btn-exit-stage" class="hud-btn hud-btn-danger">В Меню</button>
         </div>
       </div>
     `;
 
     document.getElementById('game-container').appendChild(ui);
     this.uiContainer = ui;
+
+    const btnGotoLevel1 = ui.querySelector('#btn-goto-level1');
+    if (btnGotoLevel1) {
+      btnGotoLevel1.addEventListener('click', () => {
+        events.emit('stage:switch_to_level1');
+      });
+    }
 
     // Слушатели ползунков
     const slideEggForce = ui.querySelector('#slide-egg-force');

@@ -359,6 +359,191 @@ export class AudioManager {
       });
     } catch (e) {}
   }
+
+  // Клевание зерен в кормушке (хруст / поклев)
+  playPeckSeed() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      [0, 0.07, 0.14].forEach((tOff) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = this.ctx.currentTime + tOff;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800 + Math.random() * 300, t);
+        osc.frequency.exponentialRampToValueAtTime(250, t + 0.04);
+
+        gain.gain.setValueAtTime(0.14, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.04);
+      });
+    } catch (e) {}
+  }
+
+  // Успешная кладка яйца в гнездо (праздничный аккорд)
+  playNestScored() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = this.ctx.currentTime + idx * 0.06;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.18, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.35);
+      });
+    } catch (e) {}
+  }
+
+  // Жужжание злой пчелы
+  playBeeBuzz() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(290, this.ctx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.15);
+    } catch (e) {}
+  }
+
+  // Крик вороны (caw)
+  playCrowScreech() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(320, this.ctx.currentTime + 0.2);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.22);
+    } catch (e) {}
+  }
+
+  // Попадание яйцом во врага
+  playEnemyHit() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, this.ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
+    } catch (e) {}
+  }
+
+  // Урон птицы (ай!)
+  playHurt() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(420, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.16);
+
+      gain.gain.setValueAtTime(0.24, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.16);
+    } catch (e) {}
+  }
+
+  // Бросок желудя белкой
+  playAcornThrow() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(540, this.ctx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.08);
+    } catch (e) {}
+  }
+
+  // Победный триумф прохождения этапа
+  playLevelComplete() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const chords = [
+        [523.25, 659.25, 783.99],       // C
+        [587.33, 739.99, 880.00],       // D
+        [659.25, 830.61, 987.77],       // E
+        [1046.50, 1318.51, 1567.98]     // High C Major!
+      ];
+      chords.forEach((chord, step) => {
+        chord.forEach(freq => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const t = this.ctx.currentTime + step * 0.18;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, t);
+
+          const dur = step === 3 ? 0.8 : 0.22;
+          gain.gain.setValueAtTime(0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + dur);
+        });
+      });
+    } catch (e) {}
+  }
 }
 
 export const audio = new AudioManager();
