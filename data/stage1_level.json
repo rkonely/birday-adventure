@@ -1,0 +1,647 @@
+{
+  "worldWidth": 7600,
+  "worldHeight": 720,
+  "groundY": 595,
+  "checkpoint": {
+    "x": 260,
+    "y": 320,
+    "name": "Старт"
+  },
+  "scenery": [
+    {
+      "type": "tree",
+      "key": "tree_apple",
+      "x": 280,
+      "y": 340,
+      "scale": 0.55,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_birch",
+      "x": 620,
+      "y": 300,
+      "scale": 0.65,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_oak",
+      "x": 1050,
+      "y": 260,
+      "scale": 0.75,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_chestnut",
+      "x": 1540,
+      "y": 310,
+      "scale": 0.6,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_oak_2",
+      "x": 1980,
+      "y": 280,
+      "scale": 0.7,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_fir",
+      "x": 2500,
+      "y": 260,
+      "scale": 0.8,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_oak_dark",
+      "x": 3100,
+      "y": 270,
+      "scale": 0.72,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_dead",
+      "x": 3600,
+      "y": 330,
+      "scale": 0.6,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_birch_2",
+      "x": 4100,
+      "y": 290,
+      "scale": 0.68,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_fir_2",
+      "x": 4700,
+      "y": 260,
+      "scale": 0.8,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_rowan",
+      "x": 5300,
+      "y": 320,
+      "scale": 0.65,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_oak",
+      "x": 5900,
+      "y": 270,
+      "scale": 0.74,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_apple",
+      "x": 6500,
+      "y": 320,
+      "scale": 0.6,
+      "layer": 3
+    },
+    {
+      "type": "tree",
+      "key": "tree_oak_2",
+      "x": 7200,
+      "y": 240,
+      "scale": 0.95,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stone_1",
+      "x": 420,
+      "y": 565,
+      "scale": 0.35,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "bush_1",
+      "x": 520,
+      "y": 550,
+      "scale": 0.45,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stump_mushroom",
+      "x": 880,
+      "y": 540,
+      "scale": 0.42,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "hazard",
+      "key": "thorns_1",
+      "x": 1400,
+      "y": 540,
+      "scale": 0.48,
+      "isHazard": true,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "bush_yellow",
+      "x": 1750,
+      "y": 555,
+      "scale": 0.4,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stone_7",
+      "x": 2150,
+      "y": 560,
+      "scale": 0.4,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "hazard",
+      "key": "thorns_2",
+      "x": 2700,
+      "y": 540,
+      "scale": 0.5,
+      "isHazard": true,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stump_white",
+      "x": 3350,
+      "y": 545,
+      "scale": 0.42,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "water_lilly",
+      "x": 3750,
+      "y": 575,
+      "scale": 0.45,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "hazard",
+      "key": "thorns_1",
+      "x": 4300,
+      "y": 540,
+      "scale": 0.48,
+      "isHazard": true,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "leaves_pile",
+      "x": 4900,
+      "y": 555,
+      "scale": 0.5,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stone_10",
+      "x": 5150,
+      "y": 560,
+      "scale": 0.4,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "hazard",
+      "key": "thorns_2",
+      "x": 5750,
+      "y": 540,
+      "scale": 0.5,
+      "isHazard": true,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "stump_wood",
+      "x": 6250,
+      "y": 550,
+      "scale": 0.45,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "prop",
+      "key": "bush_2",
+      "x": 6850,
+      "y": 550,
+      "scale": 0.45,
+      "isHazard": false,
+      "layer": 3
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 300,
+      "y": 40,
+      "scale": 0.45,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 850,
+      "y": 40,
+      "scale": 0.53,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 1400,
+      "y": 40,
+      "scale": 0.61,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 1950,
+      "y": 40,
+      "scale": 0.45,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 2500,
+      "y": 40,
+      "scale": 0.53,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 3050,
+      "y": 40,
+      "scale": 0.61,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 3600,
+      "y": 40,
+      "scale": 0.45,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 4150,
+      "y": 40,
+      "scale": 0.53,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 4700,
+      "y": 40,
+      "scale": 0.61,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 5250,
+      "y": 40,
+      "scale": 0.45,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 5800,
+      "y": 40,
+      "scale": 0.53,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_2",
+      "x": 6350,
+      "y": 40,
+      "scale": 0.61,
+      "layer": 4
+    },
+    {
+      "type": "vine",
+      "key": "vines_upper_1",
+      "x": 6900,
+      "y": 40,
+      "scale": 0.45,
+      "layer": 4
+    }
+  ],
+  "animals": [
+    {
+      "key": "animal_deer_eat",
+      "name": "Оленёнок",
+      "x": 480,
+      "y": 530,
+      "scale": 0.38,
+      "greeting": "🦌 *хрумкает клевер*"
+    },
+    {
+      "key": "animal_woodpecker",
+      "name": "Дятел",
+      "x": 670,
+      "y": 330,
+      "scale": 0.32,
+      "greeting": "🪵 *тук-тук-тук!*"
+    },
+    {
+      "key": "animal_hedgehog",
+      "name": "Ёжик",
+      "x": 920,
+      "y": 570,
+      "scale": 0.28,
+      "greeting": "🦔 *фыр-фыр*"
+    },
+    {
+      "key": "animal_fox",
+      "name": "Лисица",
+      "x": 1820,
+      "y": 535,
+      "scale": 0.36,
+      "greeting": "🦊 *любопытно щурится*"
+    },
+    {
+      "key": "animal_raccoon",
+      "name": "Енот-полоскун",
+      "x": 2200,
+      "y": 540,
+      "scale": 0.32,
+      "greeting": "🦝 *моет лапки*"
+    },
+    {
+      "key": "animal_eagle",
+      "name": "Гордый Орёл",
+      "x": 3120,
+      "y": 190,
+      "scale": 0.4,
+      "greeting": "🦅 *кивает кукушке*"
+    },
+    {
+      "key": "animal_bat",
+      "name": "Летучая Мышь",
+      "x": 3580,
+      "y": 160,
+      "scale": 0.3,
+      "greeting": "🦇 *спит вниз головой*"
+    },
+    {
+      "key": "animal_deer_stand",
+      "name": "Благородный Олень",
+      "x": 3800,
+      "y": 515,
+      "scale": 0.42,
+      "greeting": "🦌 *смотрит ввысь*"
+    },
+    {
+      "key": "animal_skunk",
+      "name": "Скунс",
+      "x": 4400,
+      "y": 545,
+      "scale": 0.3,
+      "greeting": "🐾 *машет хвостиком*"
+    },
+    {
+      "key": "animal_hedgehog_2",
+      "name": "Ежиха",
+      "x": 5020,
+      "y": 570,
+      "scale": 0.28,
+      "greeting": "🦔 *собирает листики*"
+    },
+    {
+      "key": "animal_squirrel",
+      "name": "Белка",
+      "x": 6540,
+      "y": 340,
+      "scale": 0.32,
+      "greeting": "🐿️ *грызёт семечко*"
+    },
+    {
+      "key": "animal_deer_eat",
+      "x": 641,
+      "y": 234,
+      "scale": 0.38,
+      "name": "Оленёнок",
+      "greeting": "🦌 *хрумкает клевер*"
+    }
+  ],
+  "enemies": [
+    {
+      "type": "beehive",
+      "key": "enemy_beehive",
+      "x": 1560,
+      "y": 240,
+      "scale": 0.38
+    },
+    {
+      "type": "bee",
+      "key": "enemy_bee",
+      "x": 1680,
+      "y": 280,
+      "scale": 0.34,
+      "ampY": 45,
+      "speed": 2.2
+    },
+    {
+      "type": "bee",
+      "key": "enemy_bee",
+      "x": 1880,
+      "y": 230,
+      "scale": 0.34,
+      "ampY": 60,
+      "speed": 2.6
+    },
+    {
+      "type": "crow",
+      "key": "enemy_crow",
+      "x": 2880,
+      "y": 240,
+      "scale": 0.36
+    },
+    {
+      "type": "trap_squirrel",
+      "key": "enemy_squirrel_1",
+      "x": 3420,
+      "y": 320,
+      "scale": 0.38,
+      "throwCooldown": 2.8
+    },
+    {
+      "type": "beehive",
+      "key": "enemy_beehive",
+      "x": 4260,
+      "y": 220,
+      "scale": 0.38
+    },
+    {
+      "type": "bee",
+      "key": "enemy_bee",
+      "x": 4360,
+      "y": 250,
+      "scale": 0.34,
+      "ampY": 55,
+      "speed": 3
+    },
+    {
+      "type": "bee",
+      "key": "enemy_bee",
+      "x": 4520,
+      "y": 290,
+      "scale": 0.34,
+      "ampY": 70,
+      "speed": 2.8
+    },
+    {
+      "type": "crow",
+      "key": "enemy_crow",
+      "x": 5180,
+      "y": 220,
+      "scale": 0.36
+    },
+    {
+      "type": "trap_squirrel",
+      "key": "enemy_squirrel_2",
+      "x": 5860,
+      "y": 310,
+      "scale": 0.38,
+      "throwCooldown": 2.5
+    },
+    {
+      "type": "trap_squirrel",
+      "key": "enemy_squirrel_3",
+      "x": 6220,
+      "y": 330,
+      "scale": 0.38,
+      "throwCooldown": 2.4
+    }
+  ],
+  "feeders": [
+    {
+      "id": 1,
+      "key": "feeder_1",
+      "name": "Берёзовая кормушка",
+      "x": 800,
+      "y": 320,
+      "scale": 0.42
+    },
+    {
+      "id": 2,
+      "key": "feeder_2",
+      "name": "Лесной домик зерна",
+      "x": 2350,
+      "y": 310,
+      "scale": 0.44
+    },
+    {
+      "id": 3,
+      "key": "feeder_3",
+      "name": "Кормушка на дубовой ветви",
+      "x": 3950,
+      "y": 290,
+      "scale": 0.45
+    },
+    {
+      "id": 4,
+      "key": "feeder_4",
+      "name": "Подвесная кормушка на канате",
+      "x": 5550,
+      "y": 300,
+      "scale": 0.43
+    }
+  ],
+  "nests": [
+    {
+      "id": 1,
+      "title": "Дупло синицы",
+      "x": 1350,
+      "y": 350,
+      "scale": 0.45,
+      "emptyKey": "nest_hollow",
+      "filledKey": "nest_egg_1",
+      "cupX": 1350,
+      "cupY": 345,
+      "radius": 46
+    },
+    {
+      "id": 2,
+      "title": "Мшистое гнездо дрозда",
+      "x": 2900,
+      "y": 420,
+      "scale": 0.45,
+      "emptyKey": "nest_stone",
+      "filledKey": "nest_egg_2",
+      "cupX": 2900,
+      "cupY": 415,
+      "radius": 48
+    },
+    {
+      "id": 3,
+      "title": "Гнездо сойки на ветке",
+      "x": 4450,
+      "y": 290,
+      "scale": 0.46,
+      "emptyKey": "nest_empty_1",
+      "filledKey": "nest_egg_1",
+      "cupX": 4450,
+      "cupY": 285,
+      "radius": 46
+    },
+    {
+      "id": 4,
+      "title": "Высокое гнездо иволги",
+      "x": 6050,
+      "y": 210,
+      "scale": 0.45,
+      "emptyKey": "nest_up",
+      "filledKey": "nest_egg_2",
+      "cupX": 6050,
+      "cupY": 205,
+      "radius": 48
+    },
+    {
+      "id": 5,
+      "title": "Уютное берёзовое гнездо",
+      "x": 6720,
+      "y": 330,
+      "scale": 0.46,
+      "emptyKey": "nest_empty_2",
+      "filledKey": "nest_egg_1",
+      "cupX": 6720,
+      "cupY": 325,
+      "radius": 48
+    }
+  ]
+}

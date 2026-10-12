@@ -297,6 +297,51 @@ export class Stage1Level {
 
     // 7. Летающие листья в атмосфере
     this.buildAmbientLeaves();
+
+    // 8. Загрузка пользовательских данных уровня (если есть сохранённые)
+    this.loadCustomLevelData();
+  }
+
+  async loadCustomLevelData() {
+    // 1. Проверяем API /api/load-level (серверное сохранение в data/stage1_level.json)
+    try {
+      const resp = await fetch('/api/load-level');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.scenery && data.scenery.length > 0) {
+          this.applyLevelData(data);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Проверяем localStorage браузера
+    const saved = localStorage.getItem('birday_stage1_custom_level');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data && data.scenery && data.scenery.length > 0) {
+          this.applyLevelData(data);
+          return;
+        }
+      } catch (e) {}
+    }
+  }
+
+  applyLevelData(data) {
+    if (data.worldWidth) this.worldWidth = data.worldWidth;
+    if (data.worldHeight) this.worldHeight = data.worldHeight;
+    if (data.groundY) this.groundY = data.groundY;
+    if (data.checkpoint) this.checkpoint = { ...data.checkpoint };
+
+    if (data.scenery) this.scenery = JSON.parse(JSON.stringify(data.scenery));
+    if (data.animals) this.animals = JSON.parse(JSON.stringify(data.animals));
+    if (data.enemies) this.enemies = JSON.parse(JSON.stringify(data.enemies));
+    if (data.feeders) this.feeders = JSON.parse(JSON.stringify(data.feeders));
+    if (data.nests) {
+      this.nests = JSON.parse(JSON.stringify(data.nests));
+      this.totalNests = this.nests.length;
+    }
   }
 
   buildScenery() {
@@ -802,6 +847,9 @@ export class Stage1Level {
           </div>
 
           <div class="hud-actions-group">
+            <button id="btn-hud-to-editor" class="btn-hud-action" style="border-color: #facc15; color: #facc15;" title="Конструктор / Редактор уровня">
+              <span>🛠️</span> РЕДАКТОР
+            </button>
             <button id="btn-hud-to-test" class="btn-hud-action" title="Перейти в калибровочную комнату">
               <span>🪶</span> ТЕСТ
             </button>
@@ -856,6 +904,14 @@ export class Stage1Level {
     this.uiOverlay = overlay;
 
     // Обработчики кнопок UI
+    const btnToEditor = document.getElementById('btn-hud-to-editor');
+    if (btnToEditor) {
+      btnToEditor.addEventListener('click', () => {
+        audio.playClick();
+        events.emit('stage:switch_to_editor');
+      });
+    }
+
     const btnToTest = document.getElementById('btn-hud-to-test');
     if (btnToTest) {
       btnToTest.addEventListener('click', () => {

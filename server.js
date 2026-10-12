@@ -35,6 +35,38 @@ const server = http.createServer((req, res) => {
 
   const filePath = path.join(__dirname, reqPath);
 
+  // API сохранения уровня
+  if (req.method === 'POST' && reqPath === '/api/save-level') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const dataPath = path.join(__dirname, 'data', 'stage1_level.json');
+        fs.writeFileSync(dataPath, body, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ success: true, message: 'Уровень сохранён в data/stage1_level.json' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API загрузки сохраненного уровня
+  if (req.method === 'GET' && reqPath === '/api/load-level') {
+    const dataPath = path.join(__dirname, 'data', 'stage1_level.json');
+    if (fs.existsSync(dataPath)) {
+      const content = fs.readFileSync(dataPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(content);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify({ success: false, notFound: true }));
+    }
+    return;
+  }
+
   // Предотвращение выхода за пределы директории
   if (!filePath.startsWith(__dirname)) {
     res.writeHead(403);
