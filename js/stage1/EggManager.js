@@ -12,8 +12,8 @@ export class Egg {
     this.typeKey = typeKey;
     this.sprite = sprite;
 
-    this.width = 24;
-    this.height = 30;
+    this.width = 18;
+    this.height = 24;
     this.angle = 0;
     this.rotationSpeed = (vx >= 0 ? 1 : -1) * (5 + Math.random() * 4); // Вращение в полете
 

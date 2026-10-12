@@ -354,8 +354,8 @@ export class Stage1Flight {
         </div>
 
         <div class="slider-row">
-          <label>Масштаб птицы: <span id="val-scale">0.32</span></label>
-          <input type="range" id="slide-scale" min="0.18" max="0.55" value="0.32" step="0.02">
+          <label>Скорость анимации: <span id="val-anim">75</span> к/с</label>
+          <input type="range" id="slide-anim" min="30" max="130" value="75" step="5">
         </div>
 
         <div class="flight-btn-row">
@@ -401,12 +401,16 @@ export class Stage1Flight {
       if (this.bird) this.bird.glideGravity = v;
     });
 
-    const slideScale = ui.querySelector('#slide-scale');
-    const valScale = ui.querySelector('#val-scale');
-    slideScale.addEventListener('input', (e) => {
+    const slideAnim = ui.querySelector('#slide-anim');
+    const valAnim = ui.querySelector('#val-anim');
+    if (this.bird) {
+      slideAnim.value = this.bird.animSpeed;
+      valAnim.textContent = this.bird.animSpeed;
+    }
+    slideAnim.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
-      valScale.textContent = v.toFixed(2);
-      if (this.bird) this.bird.scale = v;
+      valAnim.textContent = v;
+      if (this.bird) this.bird.animSpeed = v;
     });
 
     ui.querySelector('#btn-reset-pos').addEventListener('click', () => {

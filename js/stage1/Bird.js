@@ -28,7 +28,7 @@ export class Bird {
     this.maxFallSpeed = 560;      // Терминальная скорость падения
     this.maxRiseSpeed = -480;     // Максимальная скорость подъема
     this.horizontalSpeed = 280;   // Скорость смещения A/D или стрелками
-    this.scale = 0.32;            // Масштаб отображения птицы на экране
+    this.scale = 0.10;            // Стандартный компактный масштаб птицы 0.10
 
     // Параметры планирования (Shift)
     this.isGliding = false;       // Активно ли планирование прямо сейчас
@@ -401,12 +401,12 @@ export class Bird {
     const shadowDist = this.groundY - this.y;
     if (shadowDist >= 0 && shadowDist < 420) {
       const shadowRatio = 1 - shadowDist / 420;
-      const shadowW = (80 + 40 * shadowRatio) * (this.scale / 0.32);
-      const shadowH = (this.isStunned ? 18 : 14) * shadowRatio * (this.scale / 0.32);
+      const shadowW = (26 + 14 * shadowRatio) * (this.scale / 0.10);
+      const shadowH = (this.isStunned ? 7 : 5) * shadowRatio * (this.scale / 0.10);
       ctx.save();
       ctx.fillStyle = `rgba(0, 0, 0, ${0.14 + 0.28 * shadowRatio})`;
       ctx.beginPath();
-      ctx.ellipse(this.x + 8, this.groundY + 22, shadowW, shadowH, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.x + 2, this.groundY + 12, shadowW, shadowH, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -449,7 +449,7 @@ export class Bird {
       } else {
         ctx.fillStyle = '#f39c12';
         ctx.beginPath();
-        ctx.arc(0, 0, 24, 0, Math.PI * 2);
+        ctx.arc(0, 0, 10, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -467,10 +467,10 @@ export class Bird {
    */
   renderDizzyStars(ctx) {
     const starCount = 3;
-    const centerX = this.x + 12;
-    const centerY = this.y - 48; // Точно над головой птицы
-    const radiusX = 36;
-    const radiusY = 13;
+    const centerX = this.x + 3 * (this.scale / 0.10);
+    const centerY = this.y - 18 * (this.scale / 0.10); // Точно над головой птицы
+    const radiusX = 14 * (this.scale / 0.10);
+    const radiusY = 5 * (this.scale / 0.10);
 
     ctx.save();
     for (let i = 0; i < starCount; i++) {
@@ -481,7 +481,7 @@ export class Bird {
       // Размер звёздочки с легкой пульсацией
       const starScale = 1 + 0.2 * Math.sin(angle * 2);
 
-      this.drawPixelStar(ctx, sx, sy, 7 * starScale);
+      this.drawPixelStar(ctx, sx, sy, 3.5 * starScale * (this.scale / 0.10));
     }
     ctx.restore();
   }
