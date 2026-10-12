@@ -237,6 +237,41 @@ export class AudioManager {
       this.glideGain = null;
     }
   }
+
+  // Звук удара о землю / оглушения
+  playBonk() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.2);
+
+      gain.gain.setValueAtTime(0.32, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.2);
+
+      const dOsc = this.ctx.createOscillator();
+      const dGain = this.ctx.createGain();
+      dOsc.type = 'sine';
+      dOsc.frequency.setValueAtTime(920, this.ctx.currentTime);
+      dOsc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.35);
+
+      dGain.gain.setValueAtTime(0.09, this.ctx.currentTime);
+      dGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+
+      dOsc.connect(dGain);
+      dGain.connect(this.ctx.destination);
+      dOsc.start();
+      dOsc.stop(this.ctx.currentTime + 0.35);
+    } catch (e) {}
+  }
 }
 
 export const audio = new AudioManager();

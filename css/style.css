@@ -947,6 +947,25 @@ body {
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
 }
 
+.mode-stun {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  animation: pulseCrash 0.4s infinite alternate;
+}
+
+@keyframes pulseCrash {
+  from {
+    opacity: 0.8;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
 .hud-sub {
   font-size: 10px;
   color: #94a3b8;
