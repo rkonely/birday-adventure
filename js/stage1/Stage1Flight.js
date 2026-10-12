@@ -1,4 +1,5 @@
 import { Bird } from './Bird.js';
+import { EggManager } from './EggManager.js';
 import { gameState } from '../core/GameState.js';
 import { events } from '../core/EventManager.js';
 
@@ -8,6 +9,7 @@ import { events } from '../core/EventManager.js';
  * - 66 кадров машущего полета (BIRD-FLY)
  * - 30 кадров аэродинамического парения (Bird-PLANE) по клавише SHIFT
  * - 1 спрайт оглушения (BIRD-STUN) при касании опасной земли
+ * - Механика броска 6 видов яиц (Egg) на Пробел со Slo-Mo (1 сек) и стрелочкой прицеливания
  */
 export class Stage1Flight {
   constructor() {
@@ -28,8 +30,13 @@ export class Stage1Flight {
     this.loadedCount = 0;
     this.isLoaded = false;
 
-    // Птица
+    // Птица и Менеджер Яиц
     this.bird = null;
+    this.eggManager = new EggManager();
+
+    // Координаты мыши на виртуальном холсте
+    this.mouseX = 640;
+    this.mouseY = 360;
 
     // Тряска экрана при ударе о землю
     this.screenShake = 0;
@@ -91,7 +98,7 @@ export class Stage1Flight {
       }
     };
 
-    // 1. Загрузка 66 кадров взмаха (BIRD-FLY)
+    // 1. 66 кадров взмаха (BIRD-FLY)
     for (let i = 1; i <= this.totalFlap; i++) {
       const numStr = String(i).padStart(5, '0');
       const img = new Image();
@@ -101,7 +108,7 @@ export class Stage1Flight {
       this.flapSprites.push(img);
     }
 
-    // 2. Загрузка 30 кадров парения (Bird-PLANE)
+    // 2. 30 кадров парения (Bird-PLANE)
     for (let i = 1; i <= this.totalGlide; i++) {
       let fileName = '';
       if (i === 25) {
@@ -117,7 +124,7 @@ export class Stage1Flight {
       this.glideSprites.push(img);
     }
 
-    // 3. Загрузка спрайта оглушения (BIRD-STUN)
+    // 3. Спрайт оглушения (BIRD-STUN)
     this.stunSprite = new Image();
     this.stunSprite.src = 'assets/Character/BIRD-STUN/STUN.png';
     this.stunSprite.onload = onSingleLoad;
@@ -127,16 +134,41 @@ export class Stage1Flight {
   initBird() {
     this.bird = new Bird(this.flapSprites, this.glideSprites, this.stunSprite);
     this.bird.onCrashCallback = () => {
-      this.screenShake = 0.55; // Запуск тряски экрана при падении
+      this.screenShake = 0.55;
+      if (this.eggManager.isAiming) {
+        this.eggManager.cancelAiming();
+      }
     };
   }
 
   bindEvents() {
+    // Движение мыши для точного прицеливания
+    window.addEventListener('pointermove', (e) => {
+      if (!this.canvas || !this.isActive) return;
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.width / rect.width;
+      const scaleY = this.height / rect.height;
+      this.mouseX = (e.clientX - rect.left) * scaleX;
+      this.mouseY = (e.clientY - rect.top) * scaleY;
+    });
+
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
-      // Взмах крылом или пробуждение от стана
-      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      // ПРОБЕЛ: Активирует замедление времени (Slo-Mo) и режим прицеливания яйцом!
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (this.bird) {
+          if (this.bird.isStunned) {
+            this.bird.recoverFromStun();
+          } else if (!e.repeat) {
+            this.eggManager.startAiming(this.bird.x, this.bird.y, this.mouseX, this.mouseY);
+          }
+        }
+      }
+
+      // W / Стрелка вверх: Взмах крыльями вверх
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
         this.input.up = true;
         if (this.bird && !e.repeat) {
@@ -152,7 +184,7 @@ export class Stage1Flight {
         this.input.up = false;
       }
 
-      // Навигация
+      // Навигация влево/вправо
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
         this.input.left = true;
       }
@@ -166,6 +198,7 @@ export class Stage1Flight {
       // Горячие клавиши
       if (e.code === 'KeyR' && this.bird) {
         this.bird.reset();
+        this.eggManager.eggs = [];
         this.trail = [];
       }
       if (e.code === 'KeyH') {
@@ -176,7 +209,14 @@ export class Stage1Flight {
     window.addEventListener('keyup', (e) => {
       if (!this.isActive) return;
 
-      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      // Отпускание Пробела -> Бросок яйца по направлению стрелки!
+      if (e.code === 'Space') {
+        if (this.eggManager.isAiming && this.bird) {
+          this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
+        }
+      }
+
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') {
         this.input.up = false;
       }
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
@@ -193,17 +233,23 @@ export class Stage1Flight {
       }
     });
 
-    // Мышь и тач
+    // Мышь на холсте
     if (this.canvas) {
       this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
       this.canvas.addEventListener('pointerdown', (e) => {
         if (!this.isActive) return;
         if (e.button === 2) {
+          // ПКМ -> Планирование
           this.input.shift = true;
           this.input.up = false;
         } else {
-          if (this.bird) {
+          // ЛКМ:
+          if (this.eggManager.isAiming && this.bird) {
+            // Если игрок целился Пробелом и кликнул — сразу бросаем!
+            this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
+          } else if (this.bird) {
+            // Обычный клик в полете -> Взмах крыльями
             if (!this.input.shift || this.bird.isStunned) {
               this.bird.flap();
             }
@@ -232,7 +278,7 @@ export class Stage1Flight {
 
     this.createTuningUI();
     gameState.setStage('STAGE_1');
-    console.log('🚀 [Stage1Flight] Калибровка полёта, парения и стана активна.');
+    console.log('🚀 [Stage1Flight] Режим калибровки полёта и броска яиц запущен.');
   }
 
   stop() {
@@ -264,28 +310,34 @@ export class Stage1Flight {
     ui.innerHTML = `
       <div class="flight-hud-header">
         <div class="hud-top-row">
-          <span class="hud-badge">ЭТАП I • ПОЛЁТ И КРАШ</span>
+          <span class="hud-badge">ЭТАП I • ПОЛЁТ И БРОСКИ ЯИЦ</span>
           <span id="tel-mode" class="mode-pill">ВЗМАХ</span>
         </div>
-        <span class="hud-sub">Кукушка (Взмах + Парение + Стан)</span>
+        <span class="hud-sub">Кукушка (6 видов яиц + Slo-Mo)</span>
       </div>
 
       <div class="flight-telemetry" id="flight-telemetry">
         <span>FPS: <b id="tel-fps">60</b></span>
         <span>Y: <b id="tel-y">360</b></span>
         <span>Vy: <b id="tel-vy">0</b></span>
-        <span>Угол: <b id="tel-angle">0°</b></span>
-        <span>Кадр: <b id="tel-frame">1/66</b></span>
+        <span>Яиц: <b id="tel-eggs">0</b></span>
+        <span>Золотых: <b id="tel-gold-eggs" style="color: #facc15;">0</b></span>
         <span>Крашей: <b id="tel-crashes" style="color: #ef4444;">0</b></span>
       </div>
 
       <div class="flight-controls-hint">
-        <div>• <b>[ПРОБЕЛ / ЛКМ]</b> — Взмах / Взлёт после краша</div>
-        <div>• <b>[SHIFT / ПКМ]</b> — Планирование (парение)</div>
-        <div>• <b>Земля</b> — <u>Опасность! Краш и оглушение</u></div>
+        <div>• <b>[ПРОБЕЛ]</b> — <u>Зажать для прицела и Slo-Mo (1 сек)</u></div>
+        <div>• <b>[МЫШЬ]</b> — Направление стрелочки броска</div>
+        <div>• <b>[W / ЛКМ]</b> — Взмах крыльями вверх</div>
+        <div>• <b>[SHIFT / ПКМ]</b> — Планирование</div>
       </div>
 
       <div class="flight-sliders-box">
+        <div class="slider-row">
+          <label>Сила броска яйца: <span id="val-egg-force">700</span></label>
+          <input type="range" id="slide-egg-force" min="400" max="1100" value="700" step="25">
+        </div>
+
         <div class="slider-row">
           <label>Сила взмаха: <span id="val-flap">380</span></label>
           <input type="range" id="slide-flap" min="150" max="650" value="380" step="10">
@@ -302,19 +354,8 @@ export class Stage1Flight {
         </div>
 
         <div class="slider-row">
-          <label>Снижение при SHIFT (макс): <span id="val-glide-sink">95</span></label>
-          <input type="range" id="slide-glide-sink" min="30" max="250" value="95" step="5">
-        </div>
-
-        <div class="slider-row">
           <label>Масштаб птицы: <span id="val-scale">0.32</span></label>
           <input type="range" id="slide-scale" min="0.18" max="0.55" value="0.32" step="0.02">
-        </div>
-
-        <div class="slider-row checkbox-row">
-          <label>
-            <input type="checkbox" id="check-continuous"> Непрерывный взмах при зажатии W
-          </label>
         </div>
 
         <div class="flight-btn-row">
@@ -328,6 +369,14 @@ export class Stage1Flight {
     this.uiContainer = ui;
 
     // Слушатели ползунков
+    const slideEggForce = ui.querySelector('#slide-egg-force');
+    const valEggForce = ui.querySelector('#val-egg-force');
+    slideEggForce.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      valEggForce.textContent = v;
+      this.eggManager.throwForce = v;
+    });
+
     const slideFlap = ui.querySelector('#slide-flap');
     const valFlap = ui.querySelector('#val-flap');
     slideFlap.addEventListener('input', (e) => {
@@ -352,14 +401,6 @@ export class Stage1Flight {
       if (this.bird) this.bird.glideGravity = v;
     });
 
-    const slideGlideSink = ui.querySelector('#slide-glide-sink');
-    const valGlideSink = ui.querySelector('#val-glide-sink');
-    slideGlideSink.addEventListener('input', (e) => {
-      const v = parseFloat(e.target.value);
-      valGlideSink.textContent = v;
-      if (this.bird) this.bird.glideMaxSinkRate = v;
-    });
-
     const slideScale = ui.querySelector('#slide-scale');
     const valScale = ui.querySelector('#val-scale');
     slideScale.addEventListener('input', (e) => {
@@ -368,14 +409,10 @@ export class Stage1Flight {
       if (this.bird) this.bird.scale = v;
     });
 
-    const checkCont = ui.querySelector('#check-continuous');
-    checkCont.addEventListener('change', (e) => {
-      if (this.bird) this.bird.continuousFlap = e.target.checked;
-    });
-
     ui.querySelector('#btn-reset-pos').addEventListener('click', () => {
       if (this.bird) {
         this.bird.reset();
+        this.eggManager.eggs = [];
         this.trail = [];
       }
     });
@@ -403,9 +440,23 @@ export class Stage1Flight {
     }
 
     if (this.bird) {
-      this.bird.update(dt, this.input);
+      // Эффективный дельта-тайм: замедляется при прицеливании (Slo-Mo)
+      const effectiveDt = dt * this.eggManager.timeScale;
 
-      if (!this.bird.isStunned) {
+      this.bird.update(effectiveDt, this.input);
+
+      // Обновление менеджера яиц
+      this.eggManager.update(
+        dt,
+        this.bird.x,
+        this.bird.y,
+        this.mouseX,
+        this.mouseY,
+        this.bird.vx,
+        this.bird.vy
+      );
+
+      if (!this.bird.isStunned && !this.eggManager.isAiming) {
         this.trail.unshift({
           x: this.bird.x,
           y: this.bird.y,
@@ -425,31 +476,34 @@ export class Stage1Flight {
     const telFps = document.getElementById('tel-fps');
     const telY = document.getElementById('tel-y');
     const telVy = document.getElementById('tel-vy');
-    const telAngle = document.getElementById('tel-angle');
-    const telFrame = document.getElementById('tel-frame');
+    const telEggs = document.getElementById('tel-eggs');
+    const telGoldEggs = document.getElementById('tel-gold-eggs');
     const telCrashes = document.getElementById('tel-crashes');
     const telMode = document.getElementById('tel-mode');
 
     if (telFps) telFps.textContent = this.fps;
     if (telY) telY.textContent = Math.round(this.bird.y);
     if (telVy) telVy.textContent = Math.round(this.bird.vy);
-    if (telAngle) telAngle.textContent = `${(this.bird.angle * (180 / Math.PI)).toFixed(1)}°`;
+    if (telEggs) telEggs.textContent = this.eggManager.eggsThrown;
+    if (telGoldEggs) telGoldEggs.textContent = this.eggManager.goldEggsThrown;
     if (telCrashes) telCrashes.textContent = this.bird.crashCount;
 
     if (this.bird.isStunned) {
-      if (telFrame) telFrame.textContent = `СТАН (1/1)`;
       if (telMode) {
         telMode.textContent = 'ОГЛУШЕНИЕ';
         telMode.className = 'mode-pill mode-stun';
       }
+    } else if (this.eggManager.isAiming) {
+      if (telMode) {
+        telMode.textContent = 'ПРИЦЕЛ (SLO-MO)';
+        telMode.className = 'mode-pill mode-aim';
+      }
     } else if (this.bird.isGliding) {
-      if (telFrame) telFrame.textContent = `${Math.floor(this.bird.glideFrameIndex) + 1} / ${this.totalGlide}`;
       if (telMode) {
         telMode.textContent = 'ПАРЕНИЕ';
         telMode.className = 'mode-pill mode-glide';
       }
     } else {
-      if (telFrame) telFrame.textContent = `${Math.floor(this.bird.frameIndex) + 1} / ${this.totalFlap}`;
       if (telMode) {
         telMode.textContent = 'ВЗМАХ';
         telMode.className = 'mode-pill mode-flap';
@@ -461,7 +515,7 @@ export class Stage1Flight {
     if (!this.isActive || !this.ctx) return;
     const ctx = this.ctx;
 
-    // 1. Применяем экранную тряску при краше
+    // 1. Применяем экранную тряску при ударе
     ctx.save();
     if (this.screenShake > 0) {
       const shakeMag = this.screenShake * 18;
@@ -470,7 +524,7 @@ export class Stage1Flight {
       ctx.translate(sx, sy);
     }
 
-    // 2. Серый технический фон
+    // 2. Серый фон
     ctx.fillStyle = '#26282f';
     ctx.fillRect(0, 0, this.width, this.height);
 
@@ -478,39 +532,58 @@ export class Stage1Flight {
     this.drawCalibrationGrid(ctx);
     this.drawGuidelines(ctx);
 
-    // 4. Опасная зона земли (Hazard Zone)
+    // 4. Опасная земля
     this.drawDangerGround(ctx);
 
     // 5. Траектория полёта
     this.drawFlightTrail(ctx);
 
-    // 6. Отрисовка кукушки
+    // 6. Отрисовка всех яиц на поле (летящие и разбитые)
+    this.eggManager.render(ctx);
+
+    // 7. Отрисовка кукушки
     if (this.bird) {
       this.bird.render(ctx);
     } else {
       this.drawLoadingProgress(ctx);
     }
 
-    ctx.restore(); // Сброс трансформации тряски экрана
+    ctx.restore();
 
-    // 7. Эффекты оверлея при краше (Красная виньетка и предупреждающий баннер)
+    // 8. Виньетка Slo-Mo кинематографичного замедления
+    if (this.eggManager.isAiming) {
+      this.renderSloMoVignette(ctx);
+    }
+
+    // 9. Оверлей краша
     if (this.bird && this.bird.isStunned) {
       this.renderCrashOverlay(ctx);
     }
+  }
+
+  renderSloMoVignette(ctx) {
+    ctx.save();
+    const vig = ctx.createRadialGradient(
+      this.width / 2, this.height / 2, 240,
+      this.width / 2, this.height / 2, 700
+    );
+    vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vig.addColorStop(1, 'rgba(14, 165, 233, 0.28)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, this.width, this.height);
+    ctx.restore();
   }
 
   drawDangerGround(ctx) {
     ctx.save();
     const gy = this.bird ? this.bird.groundY : 595;
 
-    // Фоновая зона опасности
     const groundGrad = ctx.createLinearGradient(0, gy, 0, this.height);
     groundGrad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
     groundGrad.addColorStop(1, 'rgba(153, 27, 27, 0.6)');
     ctx.fillStyle = groundGrad;
     ctx.fillRect(0, gy, this.width, this.height - gy);
 
-    // Предупреждающая линия (Шипы / Hazard Stripes)
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -518,7 +591,6 @@ export class Stage1Flight {
     ctx.lineTo(this.width, gy);
     ctx.stroke();
 
-    // Диагональные предупреждающие штрихи ⚠️
     ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
     ctx.lineWidth = 2;
     for (let x = -40; x < this.width + 40; x += 30) {
@@ -528,7 +600,6 @@ export class Stage1Flight {
       ctx.stroke();
     }
 
-    // Текст предупреждения
     ctx.font = 'bold 12px monospace';
     ctx.fillStyle = 'rgba(252, 165, 165, 0.85)';
     ctx.textAlign = 'center';
@@ -540,7 +611,6 @@ export class Stage1Flight {
   renderCrashOverlay(ctx) {
     ctx.save();
 
-    // Красная пульсирующая виньетка по краям экрана
     const pulse = Math.sin(Date.now() * 0.008) * 0.15 + 0.35;
     const vignette = ctx.createRadialGradient(
       this.width / 2, this.height / 2, 280,
@@ -551,13 +621,11 @@ export class Stage1Flight {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Аркадный баннер оглушения
     const bannerW = 440;
     const bannerH = 92;
     const bx = (this.width - bannerW) / 2;
     const by = 210;
 
-    // Подложка баннера
     ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
     ctx.fillRect(bx, by, bannerW, bannerH);
 
@@ -565,20 +633,17 @@ export class Stage1Flight {
     ctx.lineWidth = 3;
     ctx.strokeRect(bx, by, bannerW, bannerH);
 
-    // Декоративные уголки
     ctx.fillStyle = '#facc15';
     ctx.fillRect(bx - 3, by - 3, 6, 6);
     ctx.fillRect(bx + bannerW - 3, by - 3, 6, 6);
     ctx.fillRect(bx - 3, by + bannerH - 3, 6, 6);
     ctx.fillRect(bx + bannerW - 3, by + bannerH - 3, 6, 6);
 
-    // Заголовок баннера
     ctx.font = 'bold 18px monospace';
     ctx.fillStyle = '#ef4444';
     ctx.textAlign = 'center';
     ctx.fillText('💥 КРАШ! ПТИЦА ОГЛУШЕНА!', this.width / 2, by + 34);
 
-    // Подсказка взлёта
     ctx.font = '13px monospace';
     ctx.fillStyle = '#f8fafc';
     ctx.fillText('Нажмите [ПРОБЕЛ] или [КЛИК], чтобы взлететь!', this.width / 2, by + 64);

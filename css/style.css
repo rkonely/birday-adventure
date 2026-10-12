@@ -966,6 +966,25 @@ body {
   }
 }
 
+.mode-aim {
+  background: rgba(234, 179, 8, 0.3);
+  color: #facc15;
+  border: 1px solid #facc15;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
+  animation: pulseAim 0.3s infinite alternate;
+}
+
+@keyframes pulseAim {
+  from {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
 .hud-sub {
   font-size: 10px;
   color: #94a3b8;

@@ -272,6 +272,93 @@ export class AudioManager {
       dOsc.stop(this.ctx.currentTime + 0.35);
     } catch (e) {}
   }
+
+  // Звук входа в слоумо / замедление времени
+  playSloMoEnter() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.25);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.25);
+    } catch (e) {}
+  }
+
+  // Звук броска яйца (выстрел/щелчок)
+  playEggThrow() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(380, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(750, this.ctx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.1);
+    } catch (e) {}
+  }
+
+  // Звук разбития яйца (шлепок)
+  playEggSplat() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
+    } catch (e) {}
+  }
+
+  // Звук золотого яйца (магический звон)
+  playGoldJingle() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const freqs = [784, 987, 1318, 1568]; // G5, B5, E6, G6
+      freqs.forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = this.ctx.currentTime + idx * 0.05;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, t);
+
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.2);
+      });
+    } catch (e) {}
+  }
 }
 
 export const audio = new AudioManager();
