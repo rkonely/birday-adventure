@@ -848,3 +848,213 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   Кнопка быстрого доступа: Тест Полёта в верхнем меню
+   ========================================================================== */
+.dev-flight-btn {
+  background: rgba(30, 41, 59, 0.85);
+  border: 2px solid #38bdf8;
+  color: #38bdf8;
+  padding: 4px 10px;
+  width: auto;
+  min-width: 80px;
+  gap: 6px;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  transition: all 0.15s ease;
+}
+
+.dev-flight-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #7dd3fc;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+.dev-flight-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   Оверлей калибровки полета Кукушки (Этап I)
+   ========================================================================== */
+#stage1-tuning-overlay {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 320px;
+  background: rgba(18, 20, 27, 0.94);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 60;
+  user-select: none;
+  font-family: monospace, sans-serif;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.flight-hud-header {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 6px;
+}
+
+.hud-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hud-badge {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
+}
+
+.mode-pill {
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+}
+
+.mode-flap {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.mode-glide {
+  background: rgba(14, 165, 233, 0.25);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.6);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.hud-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.flight-telemetry {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 4px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.flight-telemetry span b {
+  color: #facc15;
+}
+
+.flight-controls-hint {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #a5b4fc;
+  background: rgba(49, 46, 129, 0.25);
+  border-left: 3px solid #6366f1;
+  padding: 5px 8px;
+  border-radius: 3px;
+}
+
+.flight-sliders-box {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slider-row label {
+  font-size: 11px;
+  color: #cbd5e1;
+  display: flex;
+  justify-content: space-between;
+}
+
+.slider-row label span {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+.slider-row input[type="range"] {
+  width: 100%;
+  height: 5px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.checkbox-row label {
+  font-size: 11px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.flight-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.hud-btn {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #f8fafc;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.hud-btn:hover {
+  background: #334155;
+  border-color: #94a3b8;
+}
+
+.hud-btn-danger {
+  border-color: #b91c1c;
+  color: #fca5a5;
+}
+
+.hud-btn-danger:hover {
+  background: #7f1d1d;
+  color: #ffffff;
+}

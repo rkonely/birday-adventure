@@ -163,6 +163,80 @@ export class AudioManager {
       osc.stop(startTime + 0.25);
     });
   }
+
+  // Звук взмаха крыла птицы (мягкий шелест/свист воздуха)
+  playFlap() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.14);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(600, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.14);
+
+      gain.gain.setValueAtTime(0.16, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.14);
+    } catch (e) {}
+  }
+
+  // Звук парения / планирования в потоке воздуха
+  startGlide() {
+    if (!this.ctx || !gameState.data.soundEnabled || this.glideOsc) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(130, this.ctx.currentTime);
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(420, this.ctx.currentTime);
+      filter.Q.setValueAtTime(1.4, this.ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.035, this.ctx.currentTime + 0.08);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      this.glideOsc = osc;
+      this.glideGain = gain;
+    } catch (e) {}
+  }
+
+  stopGlide() {
+    if (!this.glideOsc || !this.glideGain || !this.ctx) return;
+    try {
+      this.glideGain.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 0.1);
+      const osc = this.glideOsc;
+      setTimeout(() => {
+        try { osc.stop(); } catch (e) {}
+      }, 120);
+      this.glideOsc = null;
+      this.glideGain = null;
+    } catch (e) {
+      this.glideOsc = null;
+      this.glideGain = null;
+    }
+  }
 }
 
 export const audio = new AudioManager();
