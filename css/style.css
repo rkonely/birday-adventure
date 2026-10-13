@@ -2146,9 +2146,14 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.88) 100%);
-  backdrop-filter: blur(2px);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.65) 100%);
+  backdrop-filter: blur(1.5px);
   z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.level2-backdrop.hidden {
+  display: none !important;
 }
 
 .level2-board-card {
@@ -2161,6 +2166,30 @@ body {
   align-items: center;
   justify-content: center;
   animation: level2-pop 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.level2-board-card.hidden {
+  display: none !important;
+}
+
+#btn-level2-continue {
+  z-index: 10;
+  animation: continue-pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+#btn-level2-continue.hidden {
+  display: none !important;
+}
+
+@keyframes continue-pop {
+  0% {
+    transform: translateX(-50%) scale(0.7) translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes level2-pop {
@@ -2410,6 +2439,639 @@ body {
 
 .btn-l2-stone:active {
   box-shadow: 0 2px 0 #1e293b, 0 3px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================================================
+   Кнопки быстрого доступа верхнего бара
+   ========================================================================== */
+.icon-btn:has(.dev-flight-text) {
+  width: auto;
+  min-width: 38px;
+  padding: 0 10px;
+  gap: 6px;
+}
+
+.icon-btn .dev-flight-text {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.icon-btn.active {
+  background: rgba(255, 183, 3, 0.25) !important;
+  border-color: #ffb703 !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
+}
+
+.stage2-board-btn {
+  border-color: rgba(46, 196, 182, 0.6) !important;
+}
+.stage2-board-btn:hover {
+  border-color: #2ec4b6 !important;
+  box-shadow: 0 0 8px rgba(46, 196, 182, 0.5);
+}
+.stage2-board-btn.active {
+  background: rgba(46, 196, 182, 0.25) !important;
+  border-color: #2ec4b6 !important;
+}
+
+.stage2-editor-btn {
+  border-color: rgba(251, 133, 0, 0.6) !important;
+}
+.stage2-editor-btn:hover {
+  border-color: #fb8500 !important;
+  box-shadow: 0 0 8px rgba(251, 133, 0, 0.5);
+}
+.stage2-editor-btn.active {
+  background: rgba(251, 133, 0, 0.25) !important;
+  border-color: #fb8500 !important;
+}
+
+/* ==========================================================================
+   Этап 2: Настольная игра (Stage 2 Board UI)
+   ========================================================================== */
+.stage2-board-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Верхняя карточка статуса игрока (Status Frame) */
+.s2-status-card {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  width: 280px;
+  height: 90px;
+  background: url('../assets/UI/Status Frame.png') no-repeat center / 100% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+  animation: s2SlideDown 0.4s ease-out;
+}
+
+@keyframes s2SlideDown {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.s2-status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 82%;
+}
+
+.s2-player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.s2-pilot-badge {
+  font-size: 11px;
+  color: #ffb703;
+  font-weight: bold;
+}
+
+.s2-pilot-name {
+  font-size: 14px;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s2-cell-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.s2-cell-label {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.s2-cell-val {
+  font-size: 13px;
+  color: #2ec4b6;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Нижняя контрольная панель с кубиком */
+.s2-control-panel {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.s2-dice-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 12, 10, 0.85);
+  border: 2px solid #8b5a2b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(0, 0, 0, 0.6);
+  padding: 8px 16px;
+  border-radius: 12px;
+}
+
+.s2-dice {
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  border: 3px solid #1e293b;
+  border-radius: 10px;
+  box-shadow: 0 4px 0 #94a3b8, 0 6px 12px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: bold;
+  color: #0f172a;
+  transition: transform 0.1s;
+  user-select: none;
+}
+
+.btn-s2-wood {
+  background: #8b5a2b;
+  border: 2px solid #5a3818;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #3e240c, 0 6px 12px rgba(0, 0, 0, 0.6);
+  text-shadow: 1px 1px 0 #000;
+  transition: transform 0.1s, filter 0.2s, box-shadow 0.1s;
+}
+
+.btn-s2-wood:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+  box-shadow: 0 6px 0 #3e240c, 0 8px 16px rgba(0, 0, 0, 0.7);
+}
+
+.btn-s2-wood:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #3e240c, 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.btn-s2-wood:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.btn-s2-roll {
+  background: #2ec4b6 !important;
+  border-color: #1b7a70 !important;
+  box-shadow: 0 4px 0 #12554e, 0 6px 12px rgba(0, 0, 0, 0.6) !important;
+}
+
+.btn-s2-roll:hover:not(:disabled) {
+  box-shadow: 0 6px 0 #12554e, 0 8px 16px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Модальное окно события клетки */
+.s2-event-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+  animation: s2FadeIn 0.2s ease-out;
+}
+
+@keyframes s2FadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.s2-modal-frame {
+  width: 440px;
+  min-height: 280px;
+  box-sizing: border-box;
+  padding: 38px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.9));
+  animation: s2Pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes s2Pop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Использование Good Frame и Bad Frame из ассетов */
+.s2-modal-frame.frame-good {
+  background: url('../assets/UI/Good Frame.png') no-repeat center / 100% 100%;
+}
+
+.s2-modal-frame.frame-bad {
+  background: url('../assets/UI/Bad Frame.png') no-repeat center / 100% 100%;
+}
+
+.s2-modal-frame.frame-boss {
+  background: url('../assets/UI/Bad Frame.png') no-repeat center / 100% 100%;
+  filter: drop-shadow(0 0 20px rgba(230, 57, 70, 0.6)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.9));
+}
+
+.s2-modal-frame.frame-normal {
+  background: url('../assets/UI/Good Frame.png') no-repeat center / 100% 100%;
+}
+
+.s2-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.s2-modal-icon {
+  font-size: 30px;
+}
+
+.s2-modal-title {
+  font-size: 18px;
+  color: #ffb703;
+  text-shadow: 2px 2px 0 #000;
+  margin: 0;
+}
+
+.s2-modal-close {
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.s2-modal-close:hover {
+  background: #e63946;
+  border-color: #fff;
+}
+
+.s2-modal-body {
+  margin: 14px 0;
+}
+
+.s2-modal-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #f1f5f9;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.s2-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-s2-action {
+  min-width: 180px;
+}
+
+/* ==========================================================================
+   Этап 2: Редактор Карты (Stage 2 Editor UI)
+   ========================================================================== */
+.stage2-editor-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
+}
+
+/* Верхняя полоса инструментов */
+.s2-ed-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  right: 14px;
+  height: 48px;
+  background: rgba(10, 12, 18, 0.92);
+  border: 1px solid rgba(255, 183, 3, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+}
+
+.s2-ed-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.s2-ed-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffb703;
+  margin-right: 6px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.s2-ed-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8f9fa;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.s2-ed-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #ffb703;
+  transform: translateY(-1px);
+}
+
+.s2-ed-btn:active {
+  transform: translateY(1px);
+}
+
+.s2-ed-btn.active {
+  background: rgba(46, 196, 182, 0.35) !important;
+  border-color: #2ec4b6 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(46, 196, 182, 0.5);
+}
+
+.s2-ed-btn-save {
+  background: rgba(46, 196, 182, 0.25) !important;
+  border-color: #2ec4b6 !important;
+}
+
+.s2-ed-btn-save:hover {
+  background: #2ec4b6 !important;
+  color: #000 !important;
+}
+
+.s2-ed-btn-play {
+  background: rgba(255, 183, 3, 0.25) !important;
+  border-color: #ffb703 !important;
+}
+
+.s2-ed-btn-play:hover {
+  background: #ffb703 !important;
+  color: #000 !important;
+}
+
+.s2-ed-btn-exit {
+  background: rgba(230, 57, 70, 0.2) !important;
+  border-color: #e63946 !important;
+}
+
+.s2-ed-btn-exit:hover {
+  background: #e63946 !important;
+}
+
+.s2-ed-btn-file {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Плавающий Инспектор свойств клетки */
+.s2-ed-inspector {
+  position: absolute;
+  top: 68px;
+  right: 14px;
+  width: 320px;
+  background: rgba(15, 18, 26, 0.95);
+  border: 1px solid #8b5a2b;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  padding: 14px;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  animation: s2SlideLeft 0.2s ease-out;
+}
+
+@keyframes s2SlideLeft {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.s2-insp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 183, 3, 0.3);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.s2-insp-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffb703;
+}
+
+.s2-insp-close {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.s2-insp-close:hover {
+  color: #e63946;
+}
+
+.s2-insp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.s2-insp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s2-insp-row label {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.s2-insp-row input,
+.s2-insp-row select,
+.s2-insp-row textarea {
+  background: #090c12;
+  border: 1px solid #334155;
+  color: #f8f9fa;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.s2-insp-row input:focus,
+.s2-insp-row select:focus,
+.s2-insp-row textarea:focus {
+  outline: none;
+  border-color: #2ec4b6;
+  box-shadow: 0 0 6px rgba(46, 196, 182, 0.4);
+}
+
+.s2-insp-grid-coords {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.coord-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.coord-item label {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.coord-item input {
+  background: #090c12;
+  border: 1px solid #334155;
+  color: #f8f9fa;
+  padding: 4px;
+  font-size: 11px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.s2-insp-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.s2-insp-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-duplicate {
+  background: #334155;
+  color: #fff;
+  border-color: #475569;
+}
+.btn-duplicate:hover {
+  background: #475569;
+}
+
+.btn-delete {
+  background: rgba(230, 57, 70, 0.2);
+  color: #ff6b6b;
+  border-color: #e63946;
+}
+.btn-delete:hover {
+  background: #e63946;
+  color: #fff;
+}
+
+/* Кнопки быстрого выравнивания ромба и наклон */
+.s2-iso-btn-row {
+  display: flex;
+  gap: 6px;
+}
+
+.s2-insp-btn-sm {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  font-size: 10px;
+  padding: 5px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: bold;
+  transition: all 0.15s;
+}
+
+.s2-insp-btn-sm:hover {
+  background: #334155;
+  border-color: #2ec4b6;
+  color: #fff;
+}
+
+.s2-insp-vertex-header label {
+  font-size: 10px;
+  color: #cbd5e1;
+  font-weight: bold;
+}
+
+/* Нижняя панель подсказок */
+.s2-ed-hint-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 10px;
+  color: #cbd5e1;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 

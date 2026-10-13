@@ -67,6 +67,38 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API сохранения карты настольной игры (Этап 2)
+  if (req.method === 'POST' && reqPath === '/api/save-board') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const dataPath = path.join(__dirname, 'data', 'board_level.json');
+        fs.writeFileSync(dataPath, body, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ success: true, message: 'Карта настолки сохранена в data/board_level.json' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API загрузки карты настольной игры (Этап 2)
+  if (req.method === 'GET' && reqPath === '/api/load-board') {
+    const dataPath = path.join(__dirname, 'data', 'board_level.json');
+    if (fs.existsSync(dataPath)) {
+      const content = fs.readFileSync(dataPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(content);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify({ success: false, notFound: true }));
+    }
+    return;
+  }
+
   // Предотвращение выхода за пределы директории
   if (!filePath.startsWith(__dirname)) {
     res.writeHead(403);

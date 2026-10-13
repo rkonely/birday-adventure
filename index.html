@@ -28,16 +28,23 @@
 
       <!-- Верхняя панель (Звук, Полноэкранный режим) -->
       <header id="top-bar">
-        <div class="controls-group">
-          <button id="btn-stage1-editor" class="icon-btn stage1-editor-btn" title="Конструктор уровня: расстановка объектов (F3)" aria-label="Конструктор">
-            <span class="icon">🛠️</span>
-            <span class="dev-flight-text">РЕДАКТОР</span>
+          <button id="btn-stage2-board" class="icon-btn stage2-board-btn" title="Этап 2: Настольная игра (F4)" aria-label="Настолка">
+            <span class="icon">🎲</span>
+            <span class="dev-flight-text">НАСТОЛКА</span>
           </button>
-          <button id="btn-stage1-forest" class="icon-btn stage1-level-btn" title="Этап 1: Лесной Полёт (Основной уровень)" aria-label="Уровень 1">
+          <button id="btn-stage2-editor" class="icon-btn stage2-editor-btn" title="Конструктор клеток настольной игры (F5)" aria-label="Редактор 2">
+            <span class="icon">🗺️</span>
+            <span class="dev-flight-text">РЕДАКТОР 2</span>
+          </button>
+          <button id="btn-stage1-editor" class="icon-btn stage1-editor-btn" title="Конструктор уровня 1: расстановка объектов (F3)" aria-label="Конструктор 1">
+            <span class="icon">🛠️</span>
+            <span class="dev-flight-text">РЕДАКТОР 1</span>
+          </button>
+          <button id="btn-stage1-forest" class="icon-btn stage1-level-btn" title="Этап 1: Лесной Полёт (Основной уровень) (F1)" aria-label="Уровень 1">
             <span class="icon">🌲</span>
             <span class="dev-flight-text">УРОВЕНЬ 1</span>
           </button>
-          <button id="btn-dev-flight" class="icon-btn dev-flight-btn" title="Тест Полёта Кукушки (Калибровка)" aria-label="Тест Полёта">
+          <button id="btn-dev-flight" class="icon-btn dev-flight-btn" title="Тест Полёта Кукушки (Калибровка) (F2)" aria-label="Тест Полёта">
             <span class="icon">🪶</span>
             <span class="dev-flight-text">ПОЛЁТ</span>
           </button>
@@ -166,8 +173,8 @@
 
       <!-- Экран 4: Завершение Уровня 1 / Старт Уровня 2 (LEVEL 2 START) -->
       <section id="screen-level2-start" class="screen hidden">
-        <div class="level2-backdrop"></div>
-        <div class="level2-board-card">
+        <div class="level2-backdrop" id="level2-backdrop"></div>
+        <div class="level2-board-card" id="level2-board-card">
           <!-- Картинка доски / свитка LEVEL 2 START.png -->
           <img src="assets/UI/LEVEL 2 START.png" alt="Первый Рубеж ПРОЙДЕН!" class="level2-board-img" id="level2-board-img" />
 
@@ -255,6 +262,17 @@
 
           </div>
         </div>
+
+        <!-- Кнопка Старта 2 уровня в центре снизу (расположение как на начальном экране) -->
+        <button id="btn-level2-continue" class="btn-start-adventure hidden" aria-label="Продолжить приключение">
+          <div class="btn-text-wrapper">
+            <span class="btn-line">ПРОДОЛЖИТЬ</span>
+            <div class="btn-line-with-arrow">
+              <span class="btn-line">ПРИКЛЮЧЕНИЕ!</span>
+              <span class="btn-arrow">▶</span>
+            </div>
+          </div>
+        </button>
       </section>
 
       <!-- Уведомления -->

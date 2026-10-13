@@ -20,7 +20,8 @@ export class VideoManager {
       TYPING: 'assets/videos/MainMenu - Typing.mp4',
       START: 'assets/videos/MainMenu - Start .mp4',
       END_FIRST_LEVEL: 'assets/videos/End First Level .mp4',
-      SECOND_LEVEL_IDE: 'assets/videos/Sesond Level IDE.mp4'
+      SECOND_LEVEL_IDE: 'assets/videos/Sesond Level IDE.mp4',
+      BOARD_BEAVER: 'assets/videos/BoardGame - Center-beaver.mp4'
     };
 
     this.currentState = 'WAITING';
@@ -74,10 +75,10 @@ export class VideoManager {
       this.videoEl.src = encodeURI(src);
     }
 
-    this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING');
+    this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'BOARD_BEAVER');
 
     // Управление звуком: катсцены озвучиваются, если звук включен
-    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE') {
+    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'BOARD_BEAVER') {
       this.videoEl.muted = !gameState.data.soundEnabled;
       this.videoEl.volume = 1.0;
     } else {
