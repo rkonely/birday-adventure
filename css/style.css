@@ -1230,24 +1230,21 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(15, 23, 42, 0.82);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 2px solid #8b5a2b;
-  border-radius: 10px;
-  padding: 5px 14px 5px 10px;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
   user-select: none;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
 }
 
 .hud-egg-img {
-  width: 26px;
-  height: 34px;
+  width: 28px;
+  height: 36px;
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.75));
 }
 
 .hud-egg-cross {
@@ -1255,16 +1252,16 @@ body {
   font-size: 16px;
   font-weight: bold;
   color: #ffb703;
-  text-shadow: 2px 2px 0 #000;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
   margin: 0 1px;
 }
 
 .hud-egg-num {
   font-family: var(--font-pixel), '8bitoperator', monospace;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
   color: #ffffff;
-  text-shadow: 2px 2px 0 #000, 0 0 8px rgba(250, 204, 21, 0.4);
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 10px rgba(0, 0, 0, 0.9);
   min-width: 18px;
   text-align: center;
 }

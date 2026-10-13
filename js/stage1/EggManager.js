@@ -390,48 +390,87 @@ export class EggManager {
     const angle = Math.atan2(dy, dx);
     const dist = Math.hypot(dx, dy);
 
-    // 1. Прогнозируемая траектория полета (пунктирная дуга с гравитацией)
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-
-    const steps = 14;
-    const stepDt = 0.045;
+    // 1. Прогнозируемая траектория полета (высококонтрастная дуга #4ad3b7 вместо желтой)
+    const steps = 18;
+    const stepDt = 0.042;
     const speed = this.throwForce;
     const vx = Math.cos(angle) * speed;
     let vy = Math.sin(angle) * speed;
     let px = startX;
     let py = startY;
 
+    const trajectoryPoints = [{ x: px, y: py }];
     for (let i = 0; i < steps; i++) {
       px += vx * stepDt;
       vy += 720 * stepDt;
       py += vy * stepDt;
-      if (py > (this.groundY || 660)) break;
-      ctx.lineTo(px, py);
+      if (py > (this.groundY || 660)) {
+        trajectoryPoints.push({ x: px, y: this.groundY || 660 });
+        break;
+      }
+      trajectoryPoints.push({ x: px, y: py });
+    }
+
+    // Тень под траекторией для идеальной видимости на желто-оранжевом фоне леса
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.lineWidth = 4.5;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    ctx.moveTo(trajectoryPoints[0].x, trajectoryPoints[0].y);
+    for (let i = 1; i < trajectoryPoints.length; i++) {
+      ctx.lineTo(trajectoryPoints[i].x, trajectoryPoints[i].y);
     }
     ctx.stroke();
-    ctx.setLineDash([]);
 
-    // 2. Стрелка прицела от птицы к направлению курсора
-    const arrowLen = Math.min(110, Math.max(50, dist * 0.45));
+    // Основная яркая линия траектории в цвете энергии #4ad3b7
+    ctx.strokeStyle = '#4ad3b7';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#4ad3b7';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.restore();
+
+    // Светящиеся маркеры вдоль траектории
+    for (let i = 2; i < trajectoryPoints.length; i += 2) {
+      const pt = trajectoryPoints[i];
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#4ad3b7';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 2. Стрелка направления броска (#4ad3b7)
+    const arrowLen = Math.min(120, Math.max(50, dist * 0.45));
     const arrowEndX = startX + Math.cos(angle) * arrowLen;
     const arrowEndY = startY + Math.sin(angle) * arrowLen;
 
-    // Свечение стрелки
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 4;
+    // Тень стрелки
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.lineWidth = 5.5;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(startX, startY);
     ctx.lineTo(arrowEndX, arrowEndY);
     ctx.stroke();
 
+    // Свечение стрелки в стиле энергии
+    ctx.strokeStyle = '#4ad3b7';
+    ctx.lineWidth = 3.5;
+    ctx.shadowColor = '#4ad3b7';
+    ctx.shadowBlur = 9;
+    ctx.stroke();
+
     // Наконечник стрелки
-    const headLen = 14;
-    ctx.fillStyle = '#facc15';
+    const headLen = 15;
+    ctx.fillStyle = '#4ad3b7';
+    ctx.shadowColor = '#4ad3b7';
+    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.moveTo(arrowEndX, arrowEndY);
     ctx.lineTo(
@@ -444,29 +483,46 @@ export class EggManager {
     );
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
 
-    // 3. Круговой индикатор таймера Slo-Mo (1 секунда)
+    // 3. Увеличенный круг таймера Slo-Mo вокруг птицы (радиус 48px, цвет #4ad3b7)
     const timerRatio = Math.max(0, this.aimTimer / this.aimDuration);
-    const ringRadius = 24;
+    const ringRadius = 48; // Увеличенный размер круга
 
-    // Фоновое кольцо
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 3.5;
+    ctx.save();
+    // Контрастный черный ободок
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
+    ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.arc(startX, startY, ringRadius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Заполненная дуга таймера
-    ctx.strokeStyle = timerRatio > 0.3 ? '#facc15' : '#ef4444';
+    // Полупрозрачная фоновая шкала кольца
+    ctx.strokeStyle = 'rgba(74, 211, 183, 0.25)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(startX, startY, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Активная дуга таймера с ярким свечением #4ad3b7
+    ctx.strokeStyle = timerRatio > 0.25 ? '#4ad3b7' : '#ef4444';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = timerRatio > 0.25 ? '#4ad3b7' : '#ef4444';
+    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.arc(startX, startY, ringRadius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * timerRatio);
     ctx.stroke();
 
-    // Текстовая метка
-    ctx.font = 'bold 11px monospace';
-    ctx.fillStyle = '#f8fafc';
+    // Текстовая метка таймера с четкой обводкой
+    ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`${(this.aimTimer).toFixed(1)}s`, startX, startY - ringRadius - 6);
+    ctx.fillStyle = '#000000';
+    ctx.fillText(`${(this.aimTimer).toFixed(1)}s`, startX + 1, startY - ringRadius - 7);
+    ctx.fillStyle = timerRatio > 0.25 ? '#4ad3b7' : '#f87171';
+    ctx.fillText(`${(this.aimTimer).toFixed(1)}s`, startX, startY - ringRadius - 8);
+
+    ctx.restore();
 
     ctx.restore();
   }

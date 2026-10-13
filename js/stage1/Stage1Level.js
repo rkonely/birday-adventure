@@ -577,6 +577,13 @@ export class Stage1Level {
         this.cycleEggType(1);
       }
 
+      // Escape: Выход в меню
+      if (e.code === 'Escape') {
+        audio.playClick();
+        events.emit('stage:exit_to_title');
+        return;
+      }
+
       // R: Быстрый респавн на чекпоинте
       if (e.code === 'KeyR') {
         this.respawnAtCheckpoint();
@@ -727,6 +734,13 @@ export class Stage1Level {
     // Сброс врагов
     this.enemies.forEach(en => { en.alive = true; });
 
+    // Скрываем общую шапку сайта и очищаем тосты для максимального минимализма
+    const topBar = document.getElementById('top-bar');
+    if (topBar) topBar.style.display = 'none';
+
+    const toastCont = document.getElementById('toast-container');
+    if (toastCont) toastCont.innerHTML = '';
+
     this.createUIOverlay();
     this.showTutorialModal();
     gameState.setStage('STAGE_1_LEVEL');
@@ -738,6 +752,8 @@ export class Stage1Level {
     if (this.canvas) {
       this.canvas.style.display = 'none';
     }
+    const topBar = document.getElementById('top-bar');
+    if (topBar) topBar.style.display = '';
     this.removeUIOverlay();
   }
 
@@ -772,13 +788,6 @@ export class Stage1Level {
             <img src="assets/First-Level/Item/Egg/Default-Egg.png" class="hud-egg-img" alt="Яйцо" />
             <span class="hud-egg-cross">X</span>
             <span class="hud-egg-num" id="hud-egg-num">0</span>
-          </div>
-
-          <!-- Компактные быстрые кнопки (Обучение, Редактор, Меню) -->
-          <div class="hud-minimal-buttons">
-            <button id="btn-hud-to-tutorial" class="btn-hud-min" title="Обучение"><span>📖</span></button>
-            <button id="btn-hud-to-editor" class="btn-hud-min" title="Редактор"><span>🛠️</span></button>
-            <button id="btn-hud-to-menu" class="btn-hud-min" title="Меню"><span>🏠</span></button>
           </div>
         </div>
 
@@ -833,38 +842,6 @@ export class Stage1Level {
       btnTutorialReady.addEventListener('click', (e) => {
         e.stopPropagation();
         this.closeTutorialModal();
-      });
-    }
-
-    const btnToTutorial = document.getElementById('btn-hud-to-tutorial');
-    if (btnToTutorial) {
-      btnToTutorial.addEventListener('click', () => {
-        audio.playClick();
-        this.showTutorialModal();
-      });
-    }
-
-    const btnToEditor = document.getElementById('btn-hud-to-editor');
-    if (btnToEditor) {
-      btnToEditor.addEventListener('click', () => {
-        audio.playClick();
-        events.emit('stage:switch_to_editor');
-      });
-    }
-
-    const btnToTest = document.getElementById('btn-hud-to-test');
-    if (btnToTest) {
-      btnToTest.addEventListener('click', () => {
-        audio.playClick();
-        events.emit('stage:switch_to_calibration');
-      });
-    }
-
-    const btnToMenu = document.getElementById('btn-hud-to-menu');
-    if (btnToMenu) {
-      btnToMenu.addEventListener('click', () => {
-        audio.playClick();
-        events.emit('stage:exit_to_title');
       });
     }
 
@@ -940,17 +917,7 @@ export class Stage1Level {
   }
 
   showToast(text) {
-    const toastCont = document.getElementById('toast-container');
-    if (!toastCont) return;
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = text;
-    toastCont.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s';
-      setTimeout(() => toast.remove(), 300);
-    }, 2000);
+    // В минималистичном игровом дизайне всплывающие уведомления по центру отключены
   }
 
   /* ==========================================================================
@@ -1171,9 +1138,26 @@ export class Stage1Level {
           this.stamina = Math.min(this.maxStamina, this.stamina + 25);
           this.score += 250;
 
-          // Спавн лечебных частиц и конфетти
-          this.spawnCelebrationParticles(feeder.x, feeder.y, '#22c55e');
-          this.showToast(`🏡 ${feeder.name || 'Кормушка'}! +25% ⚡ Энергии (Чекпоинт сохранён)`);
+          // Спавн частиц энергии цвета #4ad3b7
+          this.spawnCelebrationParticles(feeder.x, feeder.y, '#4ad3b7');
+          this.spawnCelebrationParticles(this.bird.x, this.bird.y, '#4ad3b7');
+
+          // Волновой импульс бирюзовых искр #4ad3b7 вокруг кормушки
+          for (let i = 0; i < 18; i++) {
+            const ang = (Math.PI * 2 * i) / 18;
+            const spd = 70 + Math.random() * 90;
+            this.particles.push({
+              x: feeder.x,
+              y: feeder.y,
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd,
+              size: 4 + Math.random() * 3,
+              color: '#4ad3b7',
+              alpha: 1,
+              life: 0.85
+            });
+          }
+
           this.updateHUD();
         }
       }
