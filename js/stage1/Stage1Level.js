@@ -3,6 +3,7 @@ import { EggManager } from './EggManager.js';
 import { gameState } from '../core/GameState.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
+import { STAGE1_ASSETS_MANIFEST, ASSET_KEY_ALIASES } from './Stage1Assets.js';
 
 /**
  * Stage1Level — Полноценный игровой Этап I: "Лесной полёт Кукушки".
@@ -28,9 +29,9 @@ export class Stage1Level {
     // Виртуальное разрешение экрана 16:9
     this.viewWidth = 1280;
     this.viewHeight = 720;
-    this.worldWidth = 7600;
+    this.worldWidth = 14999;
     this.worldHeight = 720;
-    this.groundY = 595;
+    this.groundY = 660;
 
     // Камера
     this.cameraX = 0;
@@ -114,118 +115,26 @@ export class Stage1Level {
      Загрузка ассетов
      ========================================================================== */
   preloadAllAssets() {
-    const assetList = [
-      // 1. Фоны параллакса
-      { key: 'bg_far_1', src: 'assets/First-Level/Background/Parallax effect Background.jpg' },
-      { key: 'bg_far_2', src: 'assets/First-Level/Background/Parallax effect Background 2.jpg' },
-      { key: 'bg_mid', src: 'assets/First-Level/Background/Background mid.jpg' },
-      { key: 'bg_close_1', src: 'assets/First-Level/Background/Background Close forest.jpg' },
-      { key: 'bg_close_2', src: 'assets/First-Level/Background/background close forest 2.jpg' },
-      { key: 'bg_close_3', src: 'assets/First-Level/Background/Background Close forest3.jpg' },
-
-      // 2. Враги
-      { key: 'enemy_bee', src: 'assets/First-Level/Enemy/Angry_BEE.png' },
-      { key: 'enemy_beehive', src: 'assets/First-Level/Enemy/beehive.png' },
-      { key: 'enemy_crow', src: 'assets/First-Level/Enemy/crow.png' },
-      { key: 'enemy_squirrel_1', src: 'assets/First-Level/Enemy/TRAP-squirrel.png' },
-      { key: 'enemy_squirrel_2', src: 'assets/First-Level/Enemy/TRAP-squirrel2.png' },
-      { key: 'enemy_squirrel_3', src: 'assets/First-Level/Enemy/TRAP-squirrel3.png' },
-
-      // 3. Мирные животные
-      { key: 'animal_deer_eat', src: 'assets/First-Level/Animal/deer eat.png' },
-      { key: 'animal_deer_stand', src: 'assets/First-Level/Animal/deer stand.png' },
-      { key: 'animal_eagle', src: 'assets/First-Level/Animal/Eagle sit on branch.png' },
-      { key: 'animal_fox', src: 'assets/First-Level/Animal/fox watching.png' },
-      { key: 'animal_hedgehog', src: 'assets/First-Level/Animal/hedgehog.png' },
-      { key: 'animal_hedgehog_2', src: 'assets/First-Level/Animal/hedgehog-2.png' },
-      { key: 'animal_raccoon', src: 'assets/First-Level/Animal/raccon.png' },
-      { key: 'animal_skunk', src: 'assets/First-Level/Animal/shunk.png' },
-      { key: 'animal_squirrel', src: 'assets/First-Level/Animal/squirrel.png' },
-      { key: 'animal_woodpecker', src: 'assets/First-Level/Animal/woodpecker.png' },
-      { key: 'animal_bat', src: 'assets/First-Level/Animal/bat.png' },
-
-      // 4. Кормушки
-      { key: 'feeder_1', src: 'assets/First-Level/Feeder/feeder-birdhouse.png' },
-      { key: 'feeder_2', src: 'assets/First-Level/Feeder/feeder-house.png' },
-      { key: 'feeder_3', src: 'assets/First-Level/Feeder/feeder-on-branch.png' },
-      { key: 'feeder_4', src: 'assets/First-Level/Feeder/feeder-rope.png' },
-      { key: 'feeder_5', src: 'assets/First-Level/Feeder/feeder.png' },
-
-      // 5. Гнёзда
-      { key: 'nest_empty_1', src: 'assets/First-Level/Nest/nest.png' },
-      { key: 'nest_empty_2', src: 'assets/First-Level/Nest/nest2.png' },
-      { key: 'nest_stone', src: 'assets/First-Level/Nest/nest-stone.png' },
-      { key: 'nest_hollow', src: 'assets/First-Level/Nest/Nest-hollow.png' },
-      { key: 'nest_up', src: 'assets/First-Level/Nest/Nest-Up.png' },
-      { key: 'nest_egg_1', src: 'assets/First-Level/Nest/Nest-egy.png' },
-      { key: 'nest_egg_2', src: 'assets/First-Level/Nest/Nest-egy2.png' },
-
-      // 6. Окружение: Деревья, Пни, Камни, Кусты, Лианы, Опасности
-      { key: 'tree_oak', src: 'assets/First-Level/Environment/Tree/Tree-oak.png' },
-      { key: 'tree_oak_2', src: 'assets/First-Level/Environment/Tree/tree-oak2.png' },
-      { key: 'tree_oak_dark', src: 'assets/First-Level/Environment/Tree/Tree-oak-dark.png' },
-      { key: 'tree_birch', src: 'assets/First-Level/Environment/Tree/tree-birch.png' },
-      { key: 'tree_birch_2', src: 'assets/First-Level/Environment/Tree/Tree-birch2.png' },
-      { key: 'tree_fir', src: 'assets/First-Level/Environment/Tree/Tree-Fir.png' },
-      { key: 'tree_fir_2', src: 'assets/First-Level/Environment/Tree/Tree-Fir2.png' },
-      { key: 'tree_apple', src: 'assets/First-Level/Environment/Tree/Tree-apple.png' },
-      { key: 'tree_rowan', src: 'assets/First-Level/Environment/Tree/Tree-rowan.png' },
-      { key: 'tree_chestnut', src: 'assets/First-Level/Environment/Tree/tree-chestnut.png' },
-      { key: 'tree_dead', src: 'assets/First-Level/Environment/Tree/tree-dead.png' },
-      
-      { key: 'trunk_mushroom', src: 'assets/First-Level/Environment/Trunk/Tree-Trunk-mushroom.png' },
-      { key: 'trunk_hollow', src: 'assets/First-Level/Environment/Trunk/tree-hallow.png' },
-      { key: 'trunk_white', src: 'assets/First-Level/Environment/Trunk/Tree-Trunk-white.png' },
-      { key: 'trunk_1', src: 'assets/First-Level/Environment/Trunk/Tree-Trunk.png' },
-      { key: 'trunk_2', src: 'assets/First-Level/Environment/Trunk/Tree-Trunk2.png' },
-
-      { key: 'stump_mushroom', src: 'assets/First-Level/Environment/Stunp/stump-mushroom.png' },
-      { key: 'stump_white', src: 'assets/First-Level/Environment/Stunp/stump-white1.png' },
-      { key: 'stump_wood', src: 'assets/First-Level/Environment/Stunp/wood peace.png' },
-      { key: 'stump_wood_2', src: 'assets/First-Level/Environment/Stunp/wood peace2.png' },
-
-      { key: 'branch_cones', src: 'assets/First-Level/Environment/Branch/branch with cones.png' },
-      { key: 'branch_white', src: 'assets/First-Level/Environment/Branch/tree-branch-white.png' },
-      { key: 'branch_wood', src: 'assets/First-Level/Environment/Branch/wood-branch.png' },
-
-      { key: 'bush_1', src: 'assets/First-Level/Environment/Brush-Stone/bush.png' },
-      { key: 'bush_2', src: 'assets/First-Level/Environment/Brush-Stone/bush2.png' },
-      { key: 'bush_yellow', src: 'assets/First-Level/Environment/Brush-Stone/bush-yellow.png' },
-      { key: 'leaves_pile', src: 'assets/First-Level/Environment/Brush-Stone/pile-leaves.png' },
-      { key: 'stone_1', src: 'assets/First-Level/Environment/Brush-Stone/Stone1.png' },
-      { key: 'stone_4', src: 'assets/First-Level/Environment/Brush-Stone/Stone4.png' },
-      { key: 'stone_7', src: 'assets/First-Level/Environment/Brush-Stone/Stone7.png' },
-      { key: 'stone_10', src: 'assets/First-Level/Environment/Brush-Stone/Stone10.png' },
-      { key: 'thorns_1', src: 'assets/First-Level/Environment/Brush-Stone/thorny bushes.png' },
-      { key: 'thorns_2', src: 'assets/First-Level/Environment/Brush-Stone/thorny bushes2.png' },
-
-      { key: 'vines_upper_1', src: 'assets/First-Level/Environment/Vines/vines upper.png' },
-      { key: 'vines_upper_2', src: 'assets/First-Level/Environment/Vines/vines upper2.png' },
-      { key: 'vines_rope', src: 'assets/First-Level/Environment/Vines/rope-up.png' },
-      { key: 'vines_3', src: 'assets/First-Level/Environment/Vines/vines3.png' },
-
-      { key: 'leaf_red', src: 'assets/First-Level/Environment/Leaf/leaf-red.png' },
-      { key: 'leaf_yellow', src: 'assets/First-Level/Environment/Leaf/leaf-yellow.png' },
-      { key: 'cone_item', src: 'assets/First-Level/Environment/cone.png' },
-      { key: 'acorn_vine', src: 'assets/First-Level/Environment/acorn hangs on a vine.png' },
-      { key: 'water_lilly', src: 'assets/First-Level/Environment/water-lilly.png' }
-    ];
-
-    // Плюс 97 спрайтов птицы (66 flap + 30 glide + 1 stun)
     const birdSpriteCount = 66 + 30 + 1;
-    this.totalAssetsCount = assetList.length + birdSpriteCount;
+    this.totalAssetsCount = STAGE1_ASSETS_MANIFEST.length + birdSpriteCount;
 
     const onItemLoaded = () => {
       this.loadedAssetsCount++;
       if (this.loadedAssetsCount >= this.totalAssetsCount) {
+        // Создаем алиасы для совместимости с существующими ключами
+        for (const [alias, realKey] of Object.entries(ASSET_KEY_ALIASES)) {
+          if (this.images[realKey]) {
+            this.images[alias] = this.images[realKey];
+          }
+        }
         this.isLoaded = true;
         this.initWorldEntities();
-        console.log(`🌲 [Stage1Level] Все ${this.totalAssetsCount} ассетов 1 этапа загружены!`);
+        console.log(`🌲 [Stage1Level] Все ${STAGE1_ASSETS_MANIFEST.length} файлов Первого Уровня загружены!`);
       }
     };
 
-    // 1. Загрузка картинок окружения
-    assetList.forEach((item) => {
+    // 1. Загрузка ВСЕХ 146 ассетов Первого Уровня
+    STAGE1_ASSETS_MANIFEST.forEach((item) => {
       const img = new Image();
       img.src = item.src;
       img.onload = onItemLoaded;
@@ -308,7 +217,7 @@ export class Stage1Level {
       const resp = await fetch('/api/load-level');
       if (resp.ok) {
         const data = await resp.json();
-        if (data && data.scenery && data.scenery.length > 0) {
+        if (data && (data.worldWidth || data.nests || data.feeders || data.scenery)) {
           this.applyLevelData(data);
           return;
         }
@@ -320,7 +229,7 @@ export class Stage1Level {
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        if (data && data.scenery && data.scenery.length > 0) {
+        if (data && (data.worldWidth || data.nests || data.feeders || data.scenery)) {
           this.applyLevelData(data);
           return;
         }
@@ -333,14 +242,22 @@ export class Stage1Level {
     if (data.worldHeight) this.worldHeight = data.worldHeight;
     if (data.groundY) this.groundY = data.groundY;
     if (data.checkpoint) this.checkpoint = { ...data.checkpoint };
+    if (data.finishZone) this.finishZone = { ...data.finishZone };
 
-    if (data.scenery) this.scenery = JSON.parse(JSON.stringify(data.scenery));
-    if (data.animals) this.animals = JSON.parse(JSON.stringify(data.animals));
-    if (data.enemies) this.enemies = JSON.parse(JSON.stringify(data.enemies));
-    if (data.feeders) this.feeders = JSON.parse(JSON.stringify(data.feeders));
-    if (data.nests) {
+    if (data.scenery !== undefined) this.scenery = JSON.parse(JSON.stringify(data.scenery));
+    if (data.animals !== undefined) this.animals = JSON.parse(JSON.stringify(data.animals));
+    if (data.enemies !== undefined) this.enemies = JSON.parse(JSON.stringify(data.enemies));
+    if (data.feeders !== undefined) this.feeders = JSON.parse(JSON.stringify(data.feeders));
+    if (data.nests !== undefined) {
       this.nests = JSON.parse(JSON.stringify(data.nests));
       this.totalNests = this.nests.length;
+    }
+
+    if (this.bird && this.checkpoint) {
+      this.bird.x = this.checkpoint.x;
+      this.bird.y = this.checkpoint.y;
+      this.bird.maxX = this.worldWidth - 120;
+      this.bird.groundY = this.groundY;
     }
   }
 
@@ -584,9 +501,37 @@ export class Stage1Level {
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
+      // W / Стрелка вверх: Взмах крыльями вверх
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+        e.preventDefault();
         this.input.up = true;
+        if (this.bird && !e.repeat) {
+          if (!this.input.shift || this.bird.isStunned) {
+            this.bird.flap();
+          }
+        }
       }
+
+      // Shift: Режим планирования
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        this.input.shift = true;
+        this.input.up = false;
+      }
+
+      // ПРОБЕЛ: Активирует замедление времени (застывание на 1 сек) и режим прицеливания яйцом!
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (this.bird) {
+          if (this.bird.isStunned) {
+            this.bird.recoverFromStun();
+          } else if (!e.repeat) {
+            const worldMouseX = this.mouseX + this.cameraX;
+            const worldMouseY = this.mouseY;
+            this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
+          }
+        }
+      }
+
       if (e.code === 'KeyS' || e.code === 'ArrowDown') {
         this.input.down = true;
       }
@@ -596,25 +541,8 @@ export class Stage1Level {
       if (e.code === 'KeyD' || e.code === 'ArrowRight') {
         this.input.right = true;
       }
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        this.input.shift = true;
-      }
 
-      // ПРОБЕЛ: короткое нажатие — взмах, удержание — прицел яйца
-      if (e.code === 'Space') {
-        if (!e.repeat) {
-          this.input.space = true;
-          this.aimHoldTimer = 0;
-          this.isHoldingAim = false;
-
-          // Обычный взмах, если птица оглушена или взлетает
-          if (this.bird && (this.bird.isStunned || !this.eggManager.isAiming)) {
-            this.bird.flap();
-          }
-        }
-      }
-
-      // F или ПКМ: Быстрый запуск режима прицела / броска
+      // F: Быстрый прицел/бросок
       if (e.code === 'KeyF' && !e.repeat) {
         this.quickThrowEgg();
       }
@@ -644,24 +572,21 @@ export class Stage1Level {
     window.addEventListener('keyup', (e) => {
       if (!this.isActive) return;
 
+      // Отпускание Пробела -> Бросок яйца по направлению стрелки!
+      if (e.code === 'Space') {
+        if (this.eggManager.isAiming && this.bird) {
+          this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
+        }
+      }
+
       if (e.code === 'KeyW' || e.code === 'ArrowUp') this.input.up = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.input.shift = false;
       if (e.code === 'KeyS' || e.code === 'ArrowDown') this.input.down = false;
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.input.left = false;
       if (e.code === 'KeyD' || e.code === 'ArrowRight') this.input.right = false;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.input.shift = false;
-
-      if (e.code === 'Space') {
-        this.input.space = false;
-        // Если удерживали Space и были в режиме прицеливания — совершаем бросок!
-        if (this.eggManager.isAiming) {
-          this.releaseEggThrow();
-        }
-        this.aimHoldTimer = 0;
-        this.isHoldingAim = false;
-      }
     });
 
-    // Мышь
+    // Мышь: позиция курсора
     window.addEventListener('pointermove', (e) => {
       if (!this.canvas || !this.isActive) return;
       const rect = this.canvas.getBoundingClientRect();
@@ -671,19 +596,34 @@ export class Stage1Level {
       this.mouseY = (e.clientY - rect.top) * scaleY;
     });
 
-    // Левый клик: взмах, если не прицеливаемся
+    // Мышь: ЛКМ — взмах (или бросок если целились), ПКМ — планирование
     window.addEventListener('pointerdown', (e) => {
       if (!this.isActive) return;
-      if (e.button === 0) {
-        if (this.eggManager.isAiming) {
-          this.releaseEggThrow();
-        } else if (this.bird) {
-          this.bird.flap();
-        }
-      } else if (e.button === 2) {
-        // ПКМ — мгновенный прицел
+
+      if (e.button === 2) {
+        // ПКМ -> Режим планирования
         e.preventDefault();
-        this.startAiming();
+        this.input.shift = true;
+        this.input.up = false;
+      } else if (e.button === 0) {
+        // ЛКМ:
+        if (this.eggManager.isAiming && this.bird) {
+          // Если целились пробелом и кликнули — мгновенно бросаем!
+          this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
+        } else if (this.bird) {
+          // Обычный ЛКМ в полёте -> Взмах крыльями!
+          if (!this.input.shift || this.bird.isStunned) {
+            this.bird.flap();
+          }
+        }
+      }
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!this.isActive) return;
+      if (e.button === 2) {
+        // Отпускание ПКМ -> Выход из режима планирования
+        this.input.shift = false;
       }
     });
 
@@ -694,34 +634,22 @@ export class Stage1Level {
 
   startAiming() {
     if (!this.bird || this.bird.isStunned || this.eggManager.isAiming) return;
-    this.eggManager.startAiming(this.bird.x - this.cameraX, this.bird.y);
+    const worldMouseX = this.mouseX + this.cameraX;
+    const worldMouseY = this.mouseY;
+    this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
   }
 
   releaseEggThrow() {
-    if (!this.eggManager.isAiming) return;
-    const worldMouseX = this.mouseX + this.cameraX;
-    const worldMouseY = this.mouseY;
-
-    // Расчет вектора броска от мировой позиции птицы
-    const dx = worldMouseX - this.bird.x;
-    const dy = worldMouseY - this.bird.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const speed = 560;
-
-    const vx = (dx / len) * speed;
-    const vy = (dy / len) * speed;
-
-    this.eggManager.throwEgg(this.bird.x, this.bird.y + 12, vx, vy);
-    audio.playEggThrow();
+    if (!this.eggManager.isAiming || !this.bird) return;
+    this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
   }
 
   quickThrowEgg() {
     if (!this.bird || this.bird.isStunned) return;
-    // Бросок по направлению вперед-вниз
-    const vx = 320;
-    const vy = 180;
-    this.eggManager.throwEgg(this.bird.x + 20, this.bird.y + 15, vx, vy);
-    audio.playEggThrow();
+    const worldMouseX = this.mouseX + this.cameraX;
+    const worldMouseY = this.mouseY;
+    this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
+    this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
   }
 
   cycleEggType(dir) {
@@ -863,11 +791,10 @@ export class Stage1Level {
 
       <!-- Всплывающая подсказка управления внизу экрана -->
       <div class="hud-bottom-tip">
-        <span class="tip-key">[W/ПРОБЕЛ]</span> Взмах &nbsp;•&nbsp; 
-        <span class="tip-key">[SHIFT]</span> Парение &nbsp;•&nbsp; 
-        <span class="tip-key">[УДЕРЖ. ПРОБЕЛ / ПКМ]</span> Прицел яйца &nbsp;•&nbsp; 
-        <span class="tip-key">[F]</span> Быстрый бросок &nbsp;•&nbsp; 
-        <span class="tip-key">[1-6]</span> Выбор яйца
+        <span class="tip-key">[W / ЛКМ]</span> Взмах &nbsp;•&nbsp; 
+        <span class="tip-key">[SHIFT / ПКМ]</span> Планирование &nbsp;•&nbsp; 
+        <span class="tip-key">[ПРОБЕЛ]</span> Прицел (застыть 1 сек) & бросок &nbsp;•&nbsp; 
+        <span class="tip-key">[1-6]</span> Яйцо
       </div>
 
       <!-- Модальное окно победы (скрыто по умолчанию) -->
@@ -1029,13 +956,8 @@ export class Stage1Level {
       this.invulnerableTimer -= dt;
     }
 
-    // Обработка удержания Space для активации прицеливания
-    if (this.input.space && !this.eggManager.isAiming && !this.bird.isStunned) {
-      this.aimHoldTimer += dt;
-      if (this.aimHoldTimer > 0.18) {
-        this.startAiming();
-      }
-    }
+    // Эффективный dt с замедлением времени (Slo-Mo при прицеливании яйцом)
+    const effectiveDt = dt * this.eggManager.timeScale;
 
     // 1. Обновление птицы
     if (this.bird) {
@@ -1048,7 +970,7 @@ export class Stage1Level {
         this.stamina = Math.min(this.maxStamina, this.stamina + 8 * dt);
       }
 
-      this.bird.update(dt, this.input);
+      this.bird.update(effectiveDt, this.input);
 
       // Плавное следование камеры за птицей
       this.targetCameraX = this.bird.x - this.viewWidth * 0.35;
@@ -1056,15 +978,25 @@ export class Stage1Level {
       this.cameraX += (this.targetCameraX - this.cameraX) * Math.min(1, 6 * dt);
     }
 
-    // 2. Обновление летящих яиц
-    this.eggManager.update(dt);
+    // 2. Обновление летящих яиц и прицеливания (Slo-Mo тикает в реальном dt)
+    const worldMouseX = this.mouseX + this.cameraX;
+    const worldMouseY = this.mouseY;
+    this.eggManager.update(
+      dt,
+      this.bird ? this.bird.x : 0,
+      this.bird ? this.bird.y : 0,
+      worldMouseX,
+      worldMouseY,
+      this.bird ? this.bird.vx : 0,
+      this.bird ? this.bird.vy : 0
+    );
     this.checkEggCollisions();
 
-    // 3. Обновление врагов
-    this.updateEnemies(dt);
+    // 3. Обновление врагов (замедляются при прицеливании)
+    this.updateEnemies(effectiveDt);
 
-    // 4. Обновление снарядов врагов
-    this.updateProjectiles(dt);
+    // 4. Обновление снарядов врагов (замедляются при прицеливании)
+    this.updateProjectiles(effectiveDt);
 
     // 5. Проверка столкновений птицы с препятствиями, кормушками, финишем
     this.checkBirdCollisions();
@@ -1217,8 +1149,9 @@ export class Stage1Level {
 
     // 3. Проверка кормушек (Feeder Checkpoints)
     this.feeders.forEach(feeder => {
+      const radius = feeder.radius || 52;
       const dist = Math.hypot(this.bird.x - feeder.x, this.bird.y - feeder.y);
-      if (dist < 52) {
+      if (dist < radius) {
         if (!feeder.visited) {
           feeder.visited = true;
           this.checkpoint = { x: feeder.x, y: feeder.y - 30, name: feeder.name };
@@ -1234,13 +1167,18 @@ export class Stage1Level {
 
           // Спавн лечебных сердечек и конфетти
           this.spawnCelebrationParticles(feeder.x, feeder.y, '#22c55e');
-          this.showToast(`🏡 ${feeder.name}! +1 ❤️ +СТАМИНА (Чекпоинт сохранён)`);
+          this.showToast(`🏡 ${feeder.name || 'Кормушка'}! +1 ❤️ +СТАМИНА (Чекпоинт сохранён)`);
         }
       }
     });
 
-    // 4. Проверка финиша (Великое Гнездо при X >= 7100)
-    if (this.bird.x >= 7150 && !this.isVictory) {
+    // 4. Проверка финиша (Великое Гнездо)
+    if (this.finishZone) {
+      const distToFinish = Math.hypot(this.bird.x - this.finishZone.x, this.bird.y - this.finishZone.y);
+      if (distToFinish <= (this.finishZone.radius || 110) && !this.isVictory) {
+        this.triggerVictory();
+      }
+    } else if (this.bird.x >= (this.worldWidth - 300) && !this.isVictory) {
       this.triggerVictory();
     }
   }
@@ -1255,8 +1193,11 @@ export class Stage1Level {
       // 1. Проверка попадания в Гнёзда
       for (const nest of this.nests) {
         if (nest.filled) continue;
-        const distToCup = Math.hypot(egg.x - nest.cupX, egg.y - nest.cupY);
-        if (distToCup < nest.radius) {
+        const cupX = nest.cupX !== undefined ? nest.cupX : nest.x;
+        const cupY = nest.cupY !== undefined ? nest.cupY : nest.y;
+        const radius = nest.radius || 46;
+        const distToCup = Math.hypot(egg.x - cupX, egg.y - cupY);
+        if (distToCup < radius) {
           // УСПЕШНОЕ ПОПАДАНИЕ В ГНЕЗДО!
           nest.filled = true;
           this.nestsCompleted++;
@@ -1267,8 +1208,8 @@ export class Stage1Level {
           this.score += bonus;
 
           audio.playNestScored();
-          this.spawnCelebrationParticles(nest.cupX, nest.cupY, '#facc15');
-          this.showToast(`✨ Попадание в ${nest.title}! (+${bonus} Очков)`);
+          this.spawnCelebrationParticles(cupX, cupY, '#facc15');
+          this.showToast(`✨ Попадание в ${nest.title || nest.name || 'Гнездо'}! (+${bonus} Очков)`);
           break;
         }
       }
@@ -1460,6 +1401,9 @@ export class Stage1Level {
     // 4. Кормушки
     this.renderFeeders(ctx);
 
+    // 4.1. Зона Финиша (Великое Гнездо)
+    this.renderFinishZone(ctx);
+
     // 5. Мирные лесные животные
     this.renderAnimals(ctx);
 
@@ -1496,14 +1440,10 @@ export class Stage1Level {
     // 13. Атмосферные листья переднего плана (в экранных координатах)
     this.renderAmbientLeaves(ctx);
 
-    // 14. Дуга прицеливания (если активно)
-    if (this.eggManager.isAiming && this.bird) {
-      this.renderAimTrajectory(ctx);
-    }
   }
 
   renderParallaxBackground(ctx) {
-    // Слой 0: Дальнее небо и горы (параллакс ~0.12)
+    // 1. Слой 0: Дальнее небо и горы (параллакс ~0.12)
     const bgFar1 = this.images['bg_far_1'];
     const bgFar2 = this.images['bg_far_2'];
     if (bgFar1 && bgFar2) {
@@ -1513,7 +1453,7 @@ export class Stage1Level {
       ctx.drawImage(bgFar2, tileW - scrollX, 0, tileW, this.viewHeight);
     }
 
-    // Слой 1: Средний лес (параллакс ~0.35)
+    // 2. Слой 1: Средний лес (параллакс ~0.35)
     const bgMid = this.images['bg_mid'];
     if (bgMid) {
       const tileW = bgMid.width || 1920;
@@ -1522,20 +1462,36 @@ export class Stage1Level {
       ctx.drawImage(bgMid, tileW - scrollX, 0, tileW, this.viewHeight);
     }
 
-    // Слой 2: Близкая стена леса (параллакс ~0.65)
-    const bgClose1 = this.images['bg_close_1'];
-    const bgClose2 = this.images['bg_close_2'];
-    if (bgClose1 && bgClose2) {
-      const tileW = bgClose1.width || 1920;
-      const scrollX = (this.cameraX * 0.65) % (tileW * 2);
-      ctx.drawImage(bgClose1, -scrollX, 0, tileW, this.viewHeight);
-      ctx.drawImage(bgClose2, tileW - scrollX, 0, tileW, this.viewHeight);
-      ctx.drawImage(bgClose1, tileW * 2 - scrollX, 0, tileW, this.viewHeight);
+    // 3. Основная панорама уровня: Forest.png (14999 x 656)
+    const forestImg = this.images['forest_map'] || this.images['level_forest_map'];
+    if (forestImg && (forestImg.naturalWidth || forestImg.width)) {
+      const imgW = forestImg.naturalWidth || forestImg.width || 14999;
+      const imgH = forestImg.naturalHeight || forestImg.height || 656;
+      const sx = Math.max(0, Math.min(imgW - this.viewWidth, this.cameraX));
+      const sw = Math.min(this.viewWidth, imgW - sx);
+      ctx.drawImage(forestImg, sx, 0, sw, imgH, 0, 0, sw, this.viewHeight);
+    } else {
+      // Фолбек: Слой 2 близкой стены леса
+      const bgClose1 = this.images['bg_close_1'];
+      const bgClose2 = this.images['bg_close_2'];
+      if (bgClose1 && bgClose2) {
+        const tileW = bgClose1.width || 1920;
+        const scrollX = (this.cameraX * 0.65) % (tileW * 2);
+        ctx.drawImage(bgClose1, -scrollX, 0, tileW, this.viewHeight);
+        ctx.drawImage(bgClose2, tileW - scrollX, 0, tileW, this.viewHeight);
+        ctx.drawImage(bgClose1, tileW * 2 - scrollX, 0, tileW, this.viewHeight);
+      }
     }
   }
 
   renderGround(ctx) {
-    // Земля и травяная полоса
+    const forestImg = this.images['forest_map'] || this.images['level_forest_map'];
+    if (forestImg && (forestImg.naturalWidth || forestImg.width)) {
+      // В карте Forest.png земля, трава и колючки уже нарисованы
+      return;
+    }
+
+    // Земля и травяная полоса (фолбек)
     const gy = this.groundY;
     const grad = ctx.createLinearGradient(0, gy, 0, this.worldHeight);
     grad.addColorStop(0, '#2d1b0d');
@@ -1568,7 +1524,12 @@ export class Stage1Level {
       const w = img.width * item.scale;
       const h = img.height * item.scale;
 
+      ctx.save();
+      if (item.opacity !== undefined) {
+        ctx.globalAlpha = item.opacity;
+      }
       ctx.drawImage(img, item.x - w / 2, item.y - h / 2, w, h);
+      ctx.restore();
     });
   }
 
@@ -1583,6 +1544,9 @@ export class Stage1Level {
       const h = img.height * animal.scale;
 
       ctx.save();
+      if (animal.opacity !== undefined) {
+        ctx.globalAlpha = animal.opacity;
+      }
       ctx.drawImage(img, animal.x - w / 2, animal.y - h / 2, w, h);
 
       // Имя и бейдж животного
@@ -1606,6 +1570,9 @@ export class Stage1Level {
       const h = img.height * enemy.scale;
 
       ctx.save();
+      if (enemy.opacity !== undefined) {
+        ctx.globalAlpha = enemy.opacity;
+      }
       // Легкое покачивание для пчелы/вороны
       if (enemy.type === 'bee') {
         ctx.translate(enemy.x, enemy.y);
@@ -1637,58 +1604,139 @@ export class Stage1Level {
   }
 
   renderFeeders(ctx) {
-    this.feeders.forEach(feeder => {
+    this.feeders.forEach((feeder, idx) => {
       if (feeder.x < this.cameraX - 250 || feeder.x > this.cameraX + this.viewWidth + 250) return;
 
-      const img = this.images[feeder.key];
-      if (!img) return;
-
-      const w = img.width * feeder.scale;
-      const h = img.height * feeder.scale;
-
+      const radius = feeder.radius || 52;
       ctx.save();
-      ctx.drawImage(img, feeder.x - w / 2, feeder.y - h / 2, w, h);
 
-      // Иконка кормушки и семян
-      ctx.font = 'bold 11px monospace';
-      ctx.fillStyle = feeder.visited ? '#4ade80' : '#facc15';
-      ctx.textAlign = 'center';
-      ctx.fillText(feeder.visited ? '✓ КОРМУШКА' : '🏡 КОРМУШКА', feeder.x, feeder.y - h / 2 - 12);
+      // Отрисовка спрайта (если это отдельный объект, а не чисто зона на карте)
+      if (feeder.key && feeder.key !== 'zone_feeder') {
+        const img = this.images[feeder.key];
+        if (img) {
+          const w = img.width * (feeder.scale || 0.5);
+          const h = img.height * (feeder.scale || 0.5);
+          if (feeder.opacity !== undefined) ctx.globalAlpha = feeder.opacity;
+          ctx.drawImage(img, feeder.x - w / 2, feeder.y - h / 2, w, h);
+        }
+      }
+
+      // Интерактивная зона кормушки
+      if (feeder.visited) {
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#4ade80';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓ КОРМУШКА (ЭНЕРГИЯ)', feeder.x, feeder.y - radius - 10);
+      } else {
+        // Пульсирующая зеленая зона энергии вокруг кормушки
+        const pulse = Math.sin(this.levelTime * 3 + idx) * 3 + radius;
+        ctx.strokeStyle = 'rgba(74, 222, 128, 0.65)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(feeder.x, feeder.y, pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#4ade80';
+        ctx.textAlign = 'center';
+        ctx.fillText(`🏡 ${feeder.name || 'КОРМУШКА'}`, feeder.x, feeder.y - pulse - 8);
+      }
+
       ctx.restore();
     });
   }
 
   renderNests(ctx) {
-    this.nests.forEach(nest => {
-      if (nest.x < this.cameraX - 250 || nest.x > this.cameraX + this.viewWidth + 250) return;
+    this.nests.forEach((nest, idx) => {
+      const cupX = nest.cupX !== undefined ? nest.cupX : nest.x;
+      const cupY = nest.cupY !== undefined ? nest.cupY : nest.y;
+      const radius = nest.radius || 46;
 
-      const key = nest.filled ? nest.filledKey : nest.emptyKey;
-      const img = this.images[key];
-      if (!img) return;
-
-      const w = img.width * nest.scale;
-      const h = img.height * nest.scale;
+      if (cupX < this.cameraX - 250 || cupX > this.cameraX + this.viewWidth + 250) return;
 
       ctx.save();
-      ctx.drawImage(img, nest.x - w / 2, nest.y - h / 2, w, h);
 
-      // Маркер гнезда
-      ctx.font = 'bold 11px monospace';
-      ctx.fillStyle = nest.filled ? '#facc15' : '#38bdf8';
-      ctx.textAlign = 'center';
-      ctx.fillText(nest.filled ? '🪺 ЯЙЦО ПОДКИНУТО!' : `🎯 ${nest.title}`, nest.x, nest.y - h / 2 - 14);
-
-      // Пульсирующий круг-мишень для незаполненного гнезда
-      if (!nest.filled) {
-        const pulse = Math.sin(this.levelTime * 5) * 3 + nest.radius;
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.arc(nest.cupX, nest.cupY, pulse, 0, Math.PI * 2);
-        ctx.stroke();
+      // Отрисовка спрайта (если это отдельный ассет, а не чисто зона на карте)
+      if (nest.key && nest.key !== 'zone_nest') {
+        const key = nest.filled ? (nest.filledKey || nest.key) : (nest.emptyKey || nest.key);
+        const img = this.images[key];
+        if (img) {
+          const w = img.width * (nest.scale || 0.5);
+          const h = img.height * (nest.scale || 0.5);
+          if (nest.opacity !== undefined) ctx.globalAlpha = nest.opacity;
+          ctx.drawImage(img, nest.x - w / 2, nest.y - h / 2, w, h);
+        }
       }
+
+      // Интерактивная зона гнезда (куда кидать яйцо)
+      if (nest.filled) {
+        // Золотое яйцо внутри заполненного гнезда
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.ellipse(cupX, cupY - 2, 11, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#facc15';
+        ctx.textAlign = 'center';
+        ctx.fillText('🪺 ЯЙЦО ПОДКИНУТО!', cupX, cupY - radius - 10);
+      } else {
+        // Пульсирующий круг-мишень для незаполненного гнезда
+        const pulse = Math.sin(this.levelTime * 4 + idx) * 3 + radius;
+        ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(cupX, cupY, pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Центр мишени
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.35)';
+        ctx.beginPath();
+        ctx.arc(cupX, cupY, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = 'bold 10px monospace';
+        ctx.fillStyle = '#facc15';
+        ctx.textAlign = 'center';
+        ctx.fillText(`🎯 ${nest.title || nest.name || 'Гнездо'}`, cupX, cupY - pulse - 6);
+      }
+
       ctx.restore();
     });
+  }
+
+  renderFinishZone(ctx) {
+    if (!this.finishZone) return;
+    const fz = this.finishZone;
+    if (fz.x < this.cameraX - 250 || fz.x > this.cameraX + this.viewWidth + 250) return;
+
+    const r = fz.radius || 110;
+    const pulse = Math.sin(this.levelTime * 3) * 6 + r;
+
+    ctx.save();
+    // Золотое свечение финишной зоны
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.85)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.arc(fz.x, fz.y, pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.12)';
+    ctx.beginPath();
+    ctx.arc(fz.x, fz.y, pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillStyle = '#facc15';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏁 ' + (fz.name || 'Великое Гнездо (ФИНИШ)'), fz.x, fz.y - pulse - 12);
+    ctx.restore();
   }
 
   renderParticles(ctx) {
@@ -1724,7 +1772,7 @@ export class Stage1Level {
     const dx = this.mouseX - screenBirdX;
     const dy = this.mouseY - screenBirdY;
     const len = Math.hypot(dx, dy) || 1;
-    const speed = 560;
+    const speed = this.eggManager ? this.eggManager.throwForce : 425;
 
     let simX = screenBirdX;
     let simY = screenBirdY;

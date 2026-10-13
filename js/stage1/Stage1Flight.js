@@ -326,36 +326,36 @@ export class Stage1Flight {
       </div>
 
       <div class="flight-controls-hint">
-        <div>• <b>[ПРОБЕЛ]</b> — <u>Зажать для прицела и Slo-Mo (1 сек)</u></div>
-        <div>• <b>[МЫШЬ]</b> — Направление стрелочки броска</div>
         <div>• <b>[W / ЛКМ]</b> — Взмах крыльями вверх</div>
-        <div>• <b>[SHIFT / ПКМ]</b> — Планирование</div>
+        <div>• <b>[SHIFT / ПКМ]</b> — Режим планирования</div>
+        <div>• <b>[ПРОБЕЛ]</b> — Застыть на 1 сек (Slo-Mo) и бросить яйцо</div>
+        <div>• <b>[МЫШЬ]</b> — Направление броска</div>
       </div>
 
       <div class="flight-sliders-box">
         <div class="slider-row">
-          <label>Сила броска яйца: <span id="val-egg-force">700</span></label>
-          <input type="range" id="slide-egg-force" min="400" max="1100" value="700" step="25">
+          <label>Сила броска яйца: <span id="val-egg-force">425</span></label>
+          <input type="range" id="slide-egg-force" min="200" max="900" value="425" step="25">
         </div>
 
         <div class="slider-row">
-          <label>Сила взмаха: <span id="val-flap">380</span></label>
-          <input type="range" id="slide-flap" min="150" max="650" value="380" step="10">
+          <label>Сила взмаха: <span id="val-flap">300</span></label>
+          <input type="range" id="slide-flap" min="100" max="600" value="300" step="10">
         </div>
 
         <div class="slider-row">
-          <label>Гравитация полета: <span id="val-grav">820</span></label>
-          <input type="range" id="slide-grav" min="300" max="1500" value="820" step="20">
+          <label>Гравитация полета: <span id="val-grav">300</span></label>
+          <input type="range" id="slide-grav" min="100" max="1000" value="300" step="20">
         </div>
 
         <div class="slider-row">
-          <label>Гравитация при SHIFT: <span id="val-glide-grav">150</span></label>
-          <input type="range" id="slide-glide-grav" min="40" max="450" value="150" step="10">
+          <label>Гравитация при SHIFT: <span id="val-glide-grav">60</span></label>
+          <input type="range" id="slide-glide-grav" min="20" max="300" value="60" step="5">
         </div>
 
         <div class="slider-row">
-          <label>Скорость анимации: <span id="val-anim">75</span> к/с</label>
-          <input type="range" id="slide-anim" min="30" max="130" value="75" step="5">
+          <label>Скорость анимации: <span id="val-anim">130</span> к/с</label>
+          <input type="range" id="slide-anim" min="30" max="160" value="130" step="5">
         </div>
 
         <div class="flight-btn-row">
@@ -379,6 +379,10 @@ export class Stage1Flight {
     // Слушатели ползунков
     const slideEggForce = ui.querySelector('#slide-egg-force');
     const valEggForce = ui.querySelector('#val-egg-force');
+    if (this.eggManager) {
+      slideEggForce.value = this.eggManager.throwForce;
+      valEggForce.textContent = this.eggManager.throwForce;
+    }
     slideEggForce.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       valEggForce.textContent = v;
@@ -387,6 +391,10 @@ export class Stage1Flight {
 
     const slideFlap = ui.querySelector('#slide-flap');
     const valFlap = ui.querySelector('#val-flap');
+    if (this.bird) {
+      slideFlap.value = this.bird.flapForce;
+      valFlap.textContent = this.bird.flapForce;
+    }
     slideFlap.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       valFlap.textContent = v;
@@ -395,6 +403,10 @@ export class Stage1Flight {
 
     const slideGrav = ui.querySelector('#slide-grav');
     const valGrav = ui.querySelector('#val-grav');
+    if (this.bird) {
+      slideGrav.value = this.bird.gravity;
+      valGrav.textContent = this.bird.gravity;
+    }
     slideGrav.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       valGrav.textContent = v;
@@ -403,6 +415,10 @@ export class Stage1Flight {
 
     const slideGlideGrav = ui.querySelector('#slide-glide-grav');
     const valGlideGrav = ui.querySelector('#val-glide-grav');
+    if (this.bird) {
+      slideGlideGrav.value = this.bird.glideGravity;
+      valGlideGrav.textContent = this.bird.glideGravity;
+    }
     slideGlideGrav.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       valGlideGrav.textContent = v;

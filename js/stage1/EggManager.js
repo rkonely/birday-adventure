@@ -4,7 +4,7 @@ import { audio } from '../core/AudioManager.js';
  * Класс отдельного летящего яйца
  */
 export class Egg {
-  constructor(x, y, vx, vy, typeKey, sprite) {
+  constructor(x, y, vx, vy, typeKey, sprite, groundY = 660) {
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -18,7 +18,7 @@ export class Egg {
     this.rotationSpeed = (vx >= 0 ? 1 : -1) * (5 + Math.random() * 4); // Вращение в полете
 
     this.gravity = 720;
-    this.groundY = 595;
+    this.groundY = groundY;
     this.isBroken = false;
     this.life = 6.0; // Общее время жизни
     this.splatLife = 4.0; // Время отображения разбитого пятна
@@ -224,7 +224,7 @@ export class EggManager {
     this.aimStartY = 0;
     this.targetX = 0;
     this.targetY = 0;
-    this.throwForce = 700; // Базовая скорость полета яйца (пикс/сек)
+    this.throwForce = 425; // Базовая скорость полета яйца (425 пикс/сек по умолчанию)
 
     // Текущий фактор времени (1.0 = нормальная скорость, 0.12 = слоумо)
     this.timeScale = 1.0;
@@ -261,8 +261,9 @@ export class EggManager {
     if (this.isAiming) return;
 
     this.isAiming = true;
+    this.aimDuration = 1.0; // 1 секунда застывания и прицеливания
     this.aimTimer = this.aimDuration;
-    this.timeScale = 0.12; // Замедление времени до 12% скорости!
+    this.timeScale = 0.05; // Застывание птицы и мира в воздухе при прицеливании (Slo-Mo)
     this.aimStartX = birdX;
     this.aimStartY = birdY + 10;
     this.targetX = mouseX;
@@ -316,7 +317,7 @@ export class EggManager {
     const eggVy = dirY * this.throwForce + birdVy * 0.15;
 
     const sprite = this.sprites[chosenType];
-    const egg = new Egg(this.aimStartX, this.aimStartY, eggVx, eggVy, chosenType, sprite);
+    const egg = new Egg(this.aimStartX, this.aimStartY, eggVx, eggVy, chosenType, sprite, this.groundY || 660);
     this.eggs.push(egg);
     this.eggsThrown++;
 
@@ -404,7 +405,7 @@ export class EggManager {
       px += vx * stepDt;
       vy += 720 * stepDt;
       py += vy * stepDt;
-      if (py > 595) break;
+      if (py > (this.groundY || 660)) break;
       ctx.lineTo(px, py);
     }
     ctx.stroke();

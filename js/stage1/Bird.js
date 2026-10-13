@@ -23,8 +23,8 @@ export class Bird {
     this.vy = 0;
 
     // Базовые физические параметры
-    this.gravity = 820;           // Сила гравитации (пикс/сек^2)
-    this.flapForce = 380;         // Импульс взмаха вверх (пикс/сек)
+    this.gravity = 300;           // Сила гравитации (пикс/сек^2) (по умолчанию 300)
+    this.flapForce = 300;         // Импульс взмаха вверх (пикс/сек) (по умолчанию 300)
     this.maxFallSpeed = 560;      // Терминальная скорость падения
     this.maxRiseSpeed = -480;     // Максимальная скорость подъема
     this.horizontalSpeed = 280;   // Скорость смещения A/D или стрелками
@@ -32,7 +32,7 @@ export class Bird {
 
     // Параметры планирования (Shift)
     this.isGliding = false;       // Активно ли планирование прямо сейчас
-    this.glideGravity = 150;      // Уменьшенная гравитация при планировании
+    this.glideGravity = 60;       // Уменьшенная гравитация при планировании (Shift: 60)
     this.glideMaxSinkRate = 95;   // Мягкое плавное снижение (пикс/сек)
     this.glideForwardBoost = 1.35;// Множитель горизонтальной скорости при планировании
     this.glideAnimSpeed = 36;     // Скорость микро-колебаний крыльев в потоке (30 кадров)
@@ -51,7 +51,7 @@ export class Bird {
 
     // Анимация взмаха крыльев
     this.frameIndex = 0;
-    this.animSpeed = 75;          // Скорость проигрывания взмаха (кадров/сек)
+    this.animSpeed = 130;         // Скорость проигрывания взмаха (130 кадров/сек по умолчанию)
     this.isFlapping = false;      // Активен ли цикл взмаха
     this.flapTimer = 0;
     this.continuousFlap = false;
