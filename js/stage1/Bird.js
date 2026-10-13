@@ -28,6 +28,9 @@ export class Bird {
     this.maxFallSpeed = 560;      // Терминальная скорость падения
     this.maxRiseSpeed = -480;     // Максимальная скорость подъема
     this.horizontalSpeed = 280;   // Скорость смещения A/D или стрелками
+    this.baseForwardSpeed = 190;  // Базовая скорость непрерывного полёта вперёд (пикс/сек)
+    this.forwardBoost = 1.55;     // Множитель ускорения при зажатии D / Вправо
+    this.onlyForward = true;      // Режим "только вперёд" (полёт назад запрещён)
     this.scale = 0.10;            // Стандартный компактный масштаб птицы 0.10
 
     // Параметры планирования (Shift)
@@ -257,15 +260,25 @@ export class Bird {
     }
 
     // 2. Горизонтальное управление
-    let moveX = 0;
-    if (input.left) moveX -= 1;
-    if (input.right) moveX += 1;
+    // 2. Горизонтальное движение (Только вперёд, летать назад нельзя!)
+    if (this.onlyForward) {
+      let forwardMultiplier = 1.0;
+      if (input.right) {
+        forwardMultiplier = this.forwardBoost;
+      }
+      if (this.isGliding) {
+        forwardMultiplier *= this.glideForwardBoost;
+      }
+      this.vx = this.baseForwardSpeed * forwardMultiplier;
+    } else {
+      let moveX = 0;
+      if (input.right) moveX += 1;
+      const currentSpeed = this.isGliding
+        ? this.horizontalSpeed * this.glideForwardBoost
+        : this.horizontalSpeed;
+      this.vx = moveX * currentSpeed;
+    }
 
-    const currentSpeed = this.isGliding
-      ? this.horizontalSpeed * this.glideForwardBoost
-      : this.horizontalSpeed;
-
-    this.vx = moveX * currentSpeed;
     this.x += this.vx * dt;
     this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
 

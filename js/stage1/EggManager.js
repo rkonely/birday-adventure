@@ -326,6 +326,10 @@ export class EggManager {
     if (chosenType === 'Gold') {
       audio.playGoldJingle();
     }
+
+    if (this.onThrowCallback) {
+      this.onThrowCallback(chosenType);
+    }
   }
 
   /**

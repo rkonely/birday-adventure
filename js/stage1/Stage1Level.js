@@ -52,9 +52,7 @@ export class Stage1Level {
     // Состояние игрока
     this.bird = null;
     this.eggManager = new EggManager();
-    this.hearts = 3;
-    this.maxHearts = 3;
-    this.stamina = 100;
+    this.stamina = 100; // Энергия птицы (100% макс)
     this.maxStamina = 100;
     this.score = 0;
     this.invulnerableTimer = 0;
@@ -184,9 +182,18 @@ export class Stage1Level {
     this.bird.x = this.checkpoint.x;
     this.bird.y = this.checkpoint.y;
     this.bird.scale = 0.105;
+    this.bird.onlyForward = true;
+    this.bird.baseForwardSpeed = 190;
 
     this.bird.onCrashCallback = () => {
-      this.takeDamage(1, 'Падение на землю!');
+      this.takeDamage(15, 'Падение на землю!');
+    };
+
+    // Бросок яйца отнимает 10% энергии
+    this.eggManager.onThrowCallback = () => {
+      this.stamina = Math.max(0, this.stamina - 10);
+      this.showToast('🥚 Бросок яйца (-10% ⚡)');
+      this.updateHUD();
     };
 
     // 2. Создание структуры декораций (деревья, камни, кусты)
@@ -501,33 +508,29 @@ export class Stage1Level {
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
-      // W / Стрелка вверх: Взмах крыльями вверх
+      // W / Стрелка вверх: Взмах крыльями (-5% энергии)
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
         e.preventDefault();
         this.input.up = true;
-        if (this.bird && !e.repeat) {
-          if (!this.input.shift || this.bird.isStunned) {
-            this.bird.flap();
-          }
+        if (!e.repeat) {
+          this.attemptFlap();
         }
       }
 
-      // Shift: Режим планирования
+      // Shift: Режим планирования (0% расхода энергии)
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         this.input.shift = true;
         this.input.up = false;
       }
 
-      // ПРОБЕЛ: Активирует замедление времени (застывание на 1 сек) и режим прицеливания яйцом!
+      // ПРОБЕЛ: Активирует замедление времени (застывание на 1 сек) и режим прицеливания яйцом (-10% энергии)!
       if (e.code === 'Space') {
         e.preventDefault();
         if (this.bird) {
           if (this.bird.isStunned) {
             this.bird.recoverFromStun();
           } else if (!e.repeat) {
-            const worldMouseX = this.mouseX + this.cameraX;
-            const worldMouseY = this.mouseY;
-            this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
+            this.attemptStartAiming();
           }
         }
       }
@@ -535,14 +538,15 @@ export class Stage1Level {
       if (e.code === 'KeyS' || e.code === 'ArrowDown') {
         this.input.down = true;
       }
+      // Летать назад нельзя: только вперед!
       if (e.code === 'KeyA' || e.code === 'ArrowLeft') {
-        this.input.left = true;
+        this.input.left = false;
       }
       if (e.code === 'KeyD' || e.code === 'ArrowRight') {
         this.input.right = true;
       }
 
-      // F: Быстрый прицел/бросок
+      // F: Быстрый прицел/бросок (-10% энергии)
       if (e.code === 'KeyF' && !e.repeat) {
         this.quickThrowEgg();
       }
@@ -582,7 +586,7 @@ export class Stage1Level {
       if (e.code === 'KeyW' || e.code === 'ArrowUp') this.input.up = false;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.input.shift = false;
       if (e.code === 'KeyS' || e.code === 'ArrowDown') this.input.down = false;
-      if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.input.left = false;
+      this.input.left = false;
       if (e.code === 'KeyD' || e.code === 'ArrowRight') this.input.right = false;
     });
 
@@ -596,7 +600,7 @@ export class Stage1Level {
       this.mouseY = (e.clientY - rect.top) * scaleY;
     });
 
-    // Мышь: ЛКМ — взмах (или бросок если целились), ПКМ — планирование
+    // Мышь: ЛКМ — взмах (-5% энергии) или бросок яйца, ПКМ — планирование (0% энергии)
     window.addEventListener('pointerdown', (e) => {
       if (!this.isActive) return;
 
@@ -610,11 +614,9 @@ export class Stage1Level {
         if (this.eggManager.isAiming && this.bird) {
           // Если целились пробелом и кликнули — мгновенно бросаем!
           this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
-        } else if (this.bird) {
-          // Обычный ЛКМ в полёте -> Взмах крыльями!
-          if (!this.input.shift || this.bird.isStunned) {
-            this.bird.flap();
-          }
+        } else {
+          // Обычный ЛКМ в полёте -> Взмах крыльями (-5% энергии)
+          this.attemptFlap();
         }
       }
     });
@@ -632,20 +634,45 @@ export class Stage1Level {
     });
   }
 
-  startAiming() {
+  attemptFlap() {
+    if (!this.bird) return;
+    if (this.bird.isStunned) {
+      if (this.bird.stunTimer > 0.25) {
+        this.bird.recoverFromStun();
+      }
+      return;
+    }
+
+    // В режиме планирования взмах заблокирован
+    if (this.input.shift) return;
+
+    if (this.stamina < 5) {
+      this.showToast('⚠️ Нет энергии для взмаха! (нужно 5% ⚡)');
+      return;
+    }
+
+    this.stamina = Math.max(0, this.stamina - 5);
+    this.bird.flap();
+    this.updateHUD();
+  }
+
+  attemptStartAiming() {
     if (!this.bird || this.bird.isStunned || this.eggManager.isAiming) return;
+    if (this.stamina < 10) {
+      this.showToast('⚠️ Недостаточно энергии для броска яйца! (нужно 10% ⚡)');
+      return;
+    }
     const worldMouseX = this.mouseX + this.cameraX;
     const worldMouseY = this.mouseY;
     this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
   }
 
-  releaseEggThrow() {
-    if (!this.eggManager.isAiming || !this.bird) return;
-    this.eggManager.releaseAndThrow(this.bird.vx, this.bird.vy);
-  }
-
   quickThrowEgg() {
     if (!this.bird || this.bird.isStunned) return;
+    if (this.stamina < 10) {
+      this.showToast('⚠️ Недостаточно энергии для броска яйца! (нужно 10% ⚡)');
+      return;
+    }
     const worldMouseX = this.mouseX + this.cameraX;
     const worldMouseY = this.mouseY;
     this.eggManager.startAiming(this.bird.x, this.bird.y, worldMouseX, worldMouseY);
@@ -668,8 +695,8 @@ export class Stage1Level {
     this.isActive = true;
     this.isVictory = false;
     this.isGameOver = false;
-    this.hearts = 3;
     this.stamina = 100;
+    this.maxStamina = 100;
     this.score = 0;
     this.levelTime = 0;
     this.nestsCompleted = 0;
@@ -718,19 +745,19 @@ export class Stage1Level {
       <!-- Верхняя панель HUD -->
       <div class="level-hud-bar">
         
-        <!-- Левый блок: Имя, Жизни, Стамина, Счет -->
+        <!-- Левый блок: Имя, Энергия, Счет -->
         <div class="hud-left-stats">
           <div class="pilot-profile">
             <span class="pilot-avatar">🪶</span>
             <div class="pilot-details">
               <span class="pilot-callsign" id="hud-pilot-name">${playerName}</span>
-              <div class="pilot-hearts" id="hud-hearts">❤️❤️❤️</div>
+              <span class="pilot-energy-text" id="hud-energy-text">⚡ 100% ЭНЕРГИЯ</span>
             </div>
           </div>
 
-          <div class="stamina-wrapper">
+          <div class="stamina-wrapper" title="Энергия: Взмах -5%, Бросок яйца -10%, Кормушка +25%">
             <div class="stamina-bar-fill" id="hud-stamina-bar" style="width: 100%;"></div>
-            <span class="stamina-label">ВЕТЕР / СТАМИНА</span>
+            <span class="stamina-label" id="hud-stamina-label">⚡ ЭНЕРГИЯ: 100%</span>
           </div>
 
           <div class="hud-score-chip">
@@ -791,9 +818,10 @@ export class Stage1Level {
 
       <!-- Всплывающая подсказка управления внизу экрана -->
       <div class="hud-bottom-tip">
-        <span class="tip-key">[W / ЛКМ]</span> Взмах &nbsp;•&nbsp; 
-        <span class="tip-key">[SHIFT / ПКМ]</span> Планирование &nbsp;•&nbsp; 
-        <span class="tip-key">[ПРОБЕЛ]</span> Прицел (застыть 1 сек) & бросок &nbsp;•&nbsp; 
+        <span class="tip-key">[W / ЛКМ]</span> Взмах (-5% ⚡) &nbsp;•&nbsp; 
+        <span class="tip-key">[SHIFT / ПКМ]</span> Планирование (0% ⚡) &nbsp;•&nbsp; 
+        <span class="tip-key">[ПРОБЕЛ]</span> Прицел & бросок (-10% ⚡) &nbsp;•&nbsp; 
+        <span class="tip-key">[Кормушка]</span> +25% ⚡ &nbsp;•&nbsp; 
         <span class="tip-key">[1-6]</span> Яйцо
       </div>
 
@@ -882,17 +910,36 @@ export class Stage1Level {
   updateHUD() {
     if (!this.uiOverlay) return;
 
-    // Жизни
-    const hudHearts = document.getElementById('hud-hearts');
-    if (hudHearts) {
-      hudHearts.textContent = '❤️'.repeat(Math.max(0, this.hearts)) + '🖤'.repeat(Math.max(0, this.maxHearts - this.hearts));
+    const energyPct = Math.round(Math.max(0, Math.min(100, this.stamina)));
+
+    // Энергия
+    const hudEnergy = document.getElementById('hud-energy-text');
+    if (hudEnergy) {
+      hudEnergy.textContent = `⚡ ${energyPct}% ЭНЕРГИЯ`;
+      if (energyPct > 40) {
+        hudEnergy.style.color = '#34d399';
+      } else if (energyPct > 20) {
+        hudEnergy.style.color = '#f59e0b';
+      } else {
+        hudEnergy.style.color = '#ef4444';
+      }
     }
 
-    // Стамина
+    // Стамина-бар
     const hudStamina = document.getElementById('hud-stamina-bar');
+    const hudStaminaLabel = document.getElementById('hud-stamina-label');
     if (hudStamina) {
-      hudStamina.style.width = `${Math.max(0, Math.min(100, this.stamina))}%`;
-      hudStamina.style.background = this.stamina > 30 ? 'linear-gradient(90deg, #0ea5e9, #38bdf8)' : 'linear-gradient(90deg, #ef4444, #f87171)';
+      hudStamina.style.width = `${energyPct}%`;
+      if (energyPct > 40) {
+        hudStamina.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+      } else if (energyPct > 20) {
+        hudStamina.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+      } else {
+        hudStamina.style.background = 'linear-gradient(90deg, #dc2626, #f87171)';
+      }
+    }
+    if (hudStaminaLabel) {
+      hudStaminaLabel.textContent = `⚡ ЭНЕРГИЯ: ${energyPct}%`;
     }
 
     // Очки
@@ -961,21 +1008,20 @@ export class Stage1Level {
 
     // 1. Обновление птицы
     if (this.bird) {
-      // Стамина тратится при частом взмахе и восстанавливается при парении (Shift)
-      if (this.bird.isGliding) {
-        this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
-      } else if (this.bird.isFlapping) {
-        this.stamina = Math.max(0, this.stamina - 12 * dt);
-      } else {
-        this.stamina = Math.min(this.maxStamina, this.stamina + 8 * dt);
-      }
-
       this.bird.update(effectiveDt, this.input);
 
-      // Плавное следование камеры за птицей
-      this.targetCameraX = this.bird.x - this.viewWidth * 0.35;
-      this.targetCameraX = Math.max(0, Math.min(this.worldWidth - this.viewWidth, this.targetCameraX));
+      // Плавное следование камеры за птицей ТОЛЬКО ВПЕРЁД
+      const desiredCameraX = this.bird.x - this.viewWidth * 0.35;
+      this.targetCameraX = Math.max(this.cameraX, Math.min(this.worldWidth - this.viewWidth, desiredCameraX));
       this.cameraX += (this.targetCameraX - this.cameraX) * Math.min(1, 6 * dt);
+
+      // Птица не может улететь назад за левый край экрана
+      this.bird.minX = Math.max(60, this.cameraX + 40);
+
+      // Если энергия исчерпана и птица лежит на земле — перезапуск с чекпоинта
+      if (this.stamina <= 0 && this.bird.isStunned && !this.isGameOver) {
+        this.triggerGameOver();
+      }
     }
 
     // 2. Обновление летящих яиц и прицеливания (Slo-Mo тикает в реальном dt)
@@ -1090,7 +1136,7 @@ export class Stage1Level {
       // Столкновение с птицей
       const dist = Math.hypot(p.x - this.bird.x, p.y - this.bird.y);
       if (dist < 26 && this.invulnerableTimer <= 0) {
-        this.takeDamage(1, 'Попадание шишкой от белки!');
+        this.takeDamage(15, 'Попадание шишкой от белки!');
         this.projectiles.splice(i, 1);
         continue;
       }
@@ -1127,7 +1173,7 @@ export class Stage1Level {
         const dx = Math.abs(this.bird.x - (item.x + 30));
         const dy = Math.abs(this.bird.y - (item.y + 20));
         if (dx < 45 && dy < 40 && this.invulnerableTimer <= 0) {
-          this.takeDamage(1, 'Укол о колючие кусты!');
+          this.takeDamage(15, 'Укол о колючие кусты!');
         }
       }
     });
@@ -1138,11 +1184,11 @@ export class Stage1Level {
       const dist = Math.hypot(this.bird.x - enemy.x, this.bird.y - enemy.y);
       if (dist < 38 && this.invulnerableTimer <= 0) {
         if (enemy.type === 'bee') {
-          this.takeDamage(1, 'Укус злой пчелы!');
+          this.takeDamage(15, 'Укус злой пчелы!');
         } else if (enemy.type === 'crow') {
-          this.takeDamage(1, 'Атака вороны!');
+          this.takeDamage(15, 'Атака вороны!');
         } else if (enemy.type === 'beehive') {
-          this.takeDamage(1, 'Столкновение с ульем!');
+          this.takeDamage(15, 'Столкновение с ульем!');
         }
       }
     });
@@ -1158,16 +1204,14 @@ export class Stage1Level {
           audio.playPeckSeed();
           audio.playSuccess();
 
-          // Восстановление здоровья и стамины
-          if (this.hearts < this.maxHearts) {
-            this.hearts++;
-          }
-          this.stamina = this.maxStamina;
+          // Пополнение 25% энергии
+          this.stamina = Math.min(this.maxStamina, this.stamina + 25);
           this.score += 250;
 
-          // Спавн лечебных сердечек и конфетти
+          // Спавн лечебных частиц и конфетти
           this.spawnCelebrationParticles(feeder.x, feeder.y, '#22c55e');
-          this.showToast(`🏡 ${feeder.name || 'Кормушка'}! +1 ❤️ +СТАМИНА (Чекпоинт сохранён)`);
+          this.showToast(`🏡 ${feeder.name || 'Кормушка'}! +25% ⚡ Энергии (Чекпоинт сохранён)`);
+          this.updateHUD();
         }
       }
     });
@@ -1234,9 +1278,10 @@ export class Stage1Level {
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#38bdf8');
           } else if (enemy.type === 'beehive') {
             this.score += 400;
-            if (this.hearts < this.maxHearts) this.hearts++;
-            this.showToast('🍯 Мёд из улья! (+400 и +1 ❤️)');
+            this.stamina = Math.min(this.maxStamina, this.stamina + 20);
+            this.showToast('🍯 Мёд из улья! (+400 очков и +20% ⚡ энергии)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#f59e0b');
+            this.updateHUD();
           } else if (enemy.type === 'trap_squirrel') {
             this.score += 250;
             this.showToast('🐿️ Белка-разбойник выронила запасы! (+250)');
@@ -1258,10 +1303,10 @@ export class Stage1Level {
     });
   }
 
-  takeDamage(amount, reason) {
+  takeDamage(amount = 15, reason) {
     if (this.invulnerableTimer > 0) return;
 
-    this.hearts -= amount;
+    this.stamina = Math.max(0, this.stamina - amount);
     this.invulnerableTimer = 1.4;
     audio.playHurt();
 
@@ -1271,9 +1316,10 @@ export class Stage1Level {
       this.bird.spawnFlapParticles();
     }
 
-    this.showToast(`💥 ${reason} (-1 ❤️)`);
+    this.showToast(`💥 ${reason} (-${amount}% ⚡)`);
+    this.updateHUD();
 
-    if (this.hearts <= 0) {
+    if (this.stamina <= 0) {
       this.triggerGameOver();
     }
   }
@@ -1281,7 +1327,7 @@ export class Stage1Level {
   triggerGameOver() {
     this.isGameOver = true;
     audio.playBonk();
-    this.showToast('💀 Кукушка выбилась из сил! Перезапуск с чекпоинта...');
+    this.showToast('💀 Кукушка выбилась из сил (0% ⚡)! Перезапуск с чекпоинта...');
 
     setTimeout(() => {
       this.respawnAtCheckpoint();
@@ -1289,8 +1335,7 @@ export class Stage1Level {
   }
 
   respawnAtCheckpoint() {
-    this.hearts = this.maxHearts;
-    this.stamina = this.maxStamina;
+    this.stamina = 100;
     this.isGameOver = false;
     this.invulnerableTimer = 2.0;
 
@@ -1300,7 +1345,8 @@ export class Stage1Level {
       this.bird.y = this.checkpoint.y;
     }
 
-    this.showToast(`🔄 Возрождение на чекпоинте: ${this.checkpoint.name}`);
+    this.showToast(`🔄 Возрождение на чекпоинте: ${this.checkpoint.name} (⚡ 100% Энергии)`);
+    this.updateHUD();
   }
 
   triggerVictory() {
