@@ -1,3 +1,5 @@
+import { gameState } from './GameState.js';
+
 /**
  * VideoManager — управление фоновыми видео игры
  *
@@ -5,6 +7,8 @@
  * - WAITING: "MainMenu - Waiting.mp4" (Зацикленное видео в главном меню)
  * - TYPING:  "MainMenu - Typing.mp4"  (Инструктор печатает / форма ввода)
  * - START:   "MainMenu - Start .mp4"  (Старт полета / подтверждение допуска)
+ * - END_FIRST_LEVEL: "End First Level .mp4" (Завершение 1 уровня)
+ * - SECOND_LEVEL_IDE: "Sesond Level IDE.mp4" (Тизер 2 уровня)
  */
 export class VideoManager {
   constructor() {
@@ -14,10 +18,13 @@ export class VideoManager {
     this.videoSources = {
       WAITING: 'assets/videos/MainMenu - Waiting.mp4',
       TYPING: 'assets/videos/MainMenu - Typing.mp4',
-      START: 'assets/videos/MainMenu - Start .mp4'
+      START: 'assets/videos/MainMenu - Start .mp4',
+      END_FIRST_LEVEL: 'assets/videos/End First Level .mp4',
+      SECOND_LEVEL_IDE: 'assets/videos/Sesond Level IDE.mp4'
     };
 
     this.currentState = 'WAITING';
+    this._activeEndedHandler = null;
 
     this.initVideo();
   }
@@ -55,6 +62,12 @@ export class VideoManager {
     const src = this.videoSources[stateKey];
     if (!src) return;
 
+    // Снимаем предыдущий обработчик ended, если был
+    if (this._activeEndedHandler) {
+      this.videoEl.removeEventListener('ended', this._activeEndedHandler);
+      this._activeEndedHandler = null;
+    }
+
     // Проверяем, не играет ли уже то же самое видео
     const currentSrc = decodeURIComponent(this.videoEl.currentSrc || this.videoEl.src || '');
     if (!currentSrc.includes(src)) {
@@ -63,19 +76,47 @@ export class VideoManager {
 
     this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING');
 
+    // Управление звуком: катсцены озвучиваются, если звук включен
+    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE') {
+      this.videoEl.muted = !gameState.data.soundEnabled;
+      this.videoEl.volume = 1.0;
+    } else {
+      this.videoEl.muted = true;
+    }
+
     if (onEnded && !this.videoEl.loop) {
-      const handler = () => {
-        this.videoEl.removeEventListener('ended', handler);
+      this._activeEndedHandler = () => {
+        if (this._activeEndedHandler) {
+          this.videoEl.removeEventListener('ended', this._activeEndedHandler);
+          this._activeEndedHandler = null;
+        }
         onEnded();
       };
-      this.videoEl.addEventListener('ended', handler);
+      this.videoEl.addEventListener('ended', this._activeEndedHandler);
     }
 
     const playPromise = this.videoEl.play();
     if (playPromise !== undefined) {
       playPromise.catch((err) => {
-        console.warn(`[VideoManager] Автовоспроизведение "${stateKey}" ожидает клика пользователя:`, err);
+        console.warn(`[VideoManager] Автовоспроизведение "${stateKey}" со звуком заблокировано:`, err);
+        // Запасной запуск без звука, если браузер заблокировал
+        if (!this.videoEl.muted) {
+          this.videoEl.muted = true;
+          this.videoEl.play().catch(() => {});
+        }
       });
+    }
+  }
+
+  skipVideo() {
+    if (this._activeEndedHandler) {
+      const handler = this._activeEndedHandler;
+      this.videoEl.removeEventListener('ended', handler);
+      this._activeEndedHandler = null;
+      try {
+        this.videoEl.pause();
+      } catch (e) {}
+      handler();
     }
   }
 

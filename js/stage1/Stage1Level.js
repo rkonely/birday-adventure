@@ -80,6 +80,14 @@ export class Stage1Level {
     this.totalNests = 5;
     this.levelTime = 0;
 
+    // Статистика уровня (для экрана LEVEL 2 START)
+    this.stats = {
+      eggsLaid: 0,
+      feedersEaten: 0,
+      fallsCount: 0,
+      levelTime: 0
+    };
+
     // Ввод
     this.input = {
       up: false,
@@ -187,11 +195,13 @@ export class Stage1Level {
     this.bird.baseForwardSpeed = 190;
 
     this.bird.onCrashCallback = () => {
+      this.stats.fallsCount++;
       this.takeDamage(15, 'Падение на землю!');
     };
 
     // Бросок яйца отнимает 10% энергии
     this.eggManager.onThrowCallback = () => {
+      this.stats.eggsLaid++;
       this.stamina = Math.max(0, this.stamina - 10);
       this.showToast('🥚 Бросок яйца (-10% ⚡)');
       this.updateHUD();
@@ -719,12 +729,26 @@ export class Stage1Level {
     this.levelTime = 0;
     this.nestsCompleted = 0;
 
+    // Сброс статистики
+    this.stats = {
+      eggsLaid: 0,
+      feedersEaten: 0,
+      fallsCount: 0,
+      levelTime: 0
+    };
+
+    if (this.eggManager) {
+      this.eggManager.eggsThrown = 0;
+      this.eggManager.eggs = [];
+    }
+
     if (this.canvas) {
       this.canvas.style.display = 'block';
     }
 
     if (this.bird) {
       this.bird.reset();
+      this.bird.crashCount = 0;
       this.bird.x = this.checkpoint.x;
       this.bird.y = this.checkpoint.y;
     }
@@ -733,6 +757,8 @@ export class Stage1Level {
     this.nests.forEach(n => { n.filled = false; });
     // Сброс врагов
     this.enemies.forEach(en => { en.alive = true; });
+    // Сброс кормушек
+    this.feeders.forEach(f => { f.visited = false; });
 
     // Скрываем общую шапку сайта и очищаем тосты для максимального минимализма
     const topBar = document.getElementById('top-bar');
@@ -1130,6 +1156,7 @@ export class Stage1Level {
       if (dist < radius) {
         if (!feeder.visited) {
           feeder.visited = true;
+          this.stats.feedersEaten++;
           this.checkpoint = { x: feeder.x, y: feeder.y - 30, name: feeder.name };
           audio.playPeckSeed();
           audio.playSuccess();
@@ -1297,31 +1324,35 @@ export class Stage1Level {
   }
 
   triggerVictory() {
+    if (this.isVictory) return;
     this.isVictory = true;
+    this.stats.levelTime = this.levelTime;
+    this.stats.eggsLaid = Math.max(this.stats.eggsLaid, this.eggManager ? this.eggManager.eggsThrown : 0);
+    this.stats.fallsCount = Math.max(this.stats.fallsCount, this.bird ? this.bird.crashCount : 0);
+
     audio.playLevelComplete();
 
-    const modal = document.getElementById('level-victory-modal');
-    if (modal) {
-      modal.classList.remove('hidden');
+    const victoryStats = {
+      eggsLaid: this.stats.eggsLaid,
+      feedersEaten: this.stats.feedersEaten,
+      totalFeeders: this.feeders.length,
+      fallsCount: this.stats.fallsCount,
+      levelTime: this.levelTime,
+      score: this.score + (this.nestsCompleted * 500),
+      nestsCompleted: this.nestsCompleted,
+      totalNests: this.totalNests,
+      playerName: gameState.data.playerName || 'Пилот'
+    };
 
-      const vicScore = document.getElementById('vic-score');
-      if (vicScore) vicScore.textContent = String(this.score + (this.nestsCompleted * 500));
-
-      const vicNests = document.getElementById('vic-nests');
-      if (vicNests) vicNests.textContent = `${this.nestsCompleted} / ${this.totalNests}`;
-
-      const vicTime = document.getElementById('vic-time');
-      if (vicTime) {
-        const mins = Math.floor(this.levelTime / 60);
-        const secs = Math.floor(this.levelTime % 60);
-        vicTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    // Салют конфетти
+    if (this.bird) {
+      for (let i = 0; i < 40; i++) {
+        this.spawnCelebrationParticles(this.bird.x + (Math.random() * 400 - 200), 200 + Math.random() * 200);
       }
     }
 
-    // Салют конфетти
-    for (let i = 0; i < 60; i++) {
-      this.spawnCelebrationParticles(this.bird.x + (Math.random() * 400 - 200), 200 + Math.random() * 200);
-    }
+    // Испускаем событие победы для запуска видео 'End First Level' и экрана 'LEVEL 2 START'
+    events.emit('stage1:victory', victoryStats);
   }
 
   spawnCelebrationParticles(x, y, color = null) {

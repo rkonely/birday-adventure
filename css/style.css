@@ -2073,4 +2073,344 @@ body {
   color: #fef08a;
 }
 
+/* ==========================================================================
+   Кнопка пропуска видео (Катсцены)
+   ========================================================================== */
+.btn-skip-cutscene {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid #ffb703;
+  border-radius: 6px;
+  padding: 10px 18px;
+  color: #ffb703;
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), inset 0 0 8px rgba(255, 183, 3, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+}
+
+.btn-skip-cutscene:hover {
+  background: rgba(30, 41, 59, 0.95);
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), inset 0 0 12px rgba(255, 183, 3, 0.4);
+}
+
+.btn-skip-cutscene:active {
+  transform: scale(0.98);
+}
+
+.skip-btn-arrows {
+  font-size: 12px;
+  color: #fb8500;
+  animation: pulse-skip-arrows 1s infinite alternate;
+}
+
+@keyframes pulse-skip-arrows {
+  from { transform: translateX(0); }
+  to { transform: translateX(3px); }
+}
+
+/* ==========================================================================
+   Экран 4: LEVEL 2 START (Пройден 1 уровень, статистика кукушки)
+   ========================================================================== */
+#screen-level2-start {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+#screen-level2-start.hidden {
+  display: none !important;
+}
+
+.level2-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.88) 100%);
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}
+
+.level2-board-card {
+  position: relative;
+  z-index: 2;
+  width: min(88%, 940px);
+  aspect-ratio: 1039 / 678;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: level2-pop 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes level2-pop {
+  0% {
+    transform: scale(0.82) translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.level2-board-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.92));
+}
+
+.level2-board-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 13.5% 10% 7.5% 10%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Бейдж Пилота */
+.level2-pilot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(92, 45, 14, 0.16);
+  border: 1px dashed rgba(115, 60, 20, 0.6);
+  padding: 4px 14px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.l2-pilot-label {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #78350f;
+  letter-spacing: 1px;
+}
+
+.l2-pilot-val {
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  font-weight: bold;
+  color: #9a3412;
+  text-transform: uppercase;
+}
+
+/* Сетка статистики 2x2 */
+.level2-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 12px 18px;
+  width: 100%;
+  max-width: 680px;
+  margin: 4px 0;
+}
+
+.level2-stat-box {
+  background: linear-gradient(135deg, rgba(254, 240, 199, 0.75) 0%, rgba(245, 218, 163, 0.65) 100%);
+  border: 2px solid #854d0e;
+  border-radius: 6px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4), 2px 3px 0 rgba(0, 0, 0, 0.2);
+  transition: transform 0.12s ease;
+}
+
+.level2-stat-box:hover {
+  transform: translateY(-2px);
+}
+
+.stat-box-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-egg-icon {
+  width: 32px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.stat-feeder-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.stat-emoji {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.stat-box-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stat-box-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #713f12;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stat-box-number {
+  font-family: var(--font-pixel), monospace;
+  font-size: 24px;
+  font-weight: bold;
+  color: #451a03;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Дополнительная строка: Очки и Гнезда */
+.level2-sub-row {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  margin: 2px 0;
+}
+
+.level2-pill {
+  background: rgba(69, 26, 3, 0.1);
+  border: 1px solid rgba(133, 77, 14, 0.45);
+  border-radius: 4px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill-label {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: #854d0e;
+}
+
+.pill-value {
+  font-family: var(--font-pixel), monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #2e1065;
+}
+
+/* Кнопки действий */
+.level2-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.btn-l2-wood {
+  min-width: 130px;
+  height: 46px;
+  padding: 0 16px;
+  background: #a16207;
+  border: 3px solid #451a03;
+  border-radius: 6px;
+  color: #fffbeb;
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #451a03, 0 6px 12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 1px 1px 0 #451a03;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  user-select: none;
+}
+
+.btn-l2-wood:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 0 #451a03, 0 8px 16px rgba(0, 0, 0, 0.6);
+}
+
+.btn-l2-wood:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #451a03, 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.btn-l2-green {
+  background: #16a34a !important;
+  border-color: #14532d !important;
+  min-width: 170px;
+  font-size: 15px;
+  box-shadow: 0 4px 0 #14532d, 0 6px 12px rgba(0, 0, 0, 0.5) !important;
+  text-shadow: 1px 1px 0 #14532d !important;
+}
+
+.btn-l2-green:hover {
+  box-shadow: 0 6px 0 #14532d, 0 8px 16px rgba(0, 0, 0, 0.6) !important;
+}
+
+.btn-l2-green:active {
+  box-shadow: 0 2px 0 #14532d, 0 3px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.btn-l2-stone {
+  background: #475569 !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 4px 0 #1e293b, 0 6px 12px rgba(0, 0, 0, 0.5) !important;
+  text-shadow: 1px 1px 0 #1e293b !important;
+}
+
+.btn-l2-stone:hover {
+  box-shadow: 0 6px 0 #1e293b, 0 8px 16px rgba(0, 0, 0, 0.6) !important;
+}
+
+.btn-l2-stone:active {
+  box-shadow: 0 2px 0 #1e293b, 0 3px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+
 

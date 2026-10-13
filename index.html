@@ -158,6 +158,105 @@
         </div>
       </section>
 
+      <!-- Кнопка пропуска видео (активна во время видео-катсцен) -->
+      <button id="btn-skip-video" class="btn-skip-cutscene hidden" aria-label="Пропустить видео">
+        <span class="skip-btn-text">ПРОПУСТИТЬ</span>
+        <span class="skip-btn-arrows">▶▶</span>
+      </button>
+
+      <!-- Экран 4: Завершение Уровня 1 / Старт Уровня 2 (LEVEL 2 START) -->
+      <section id="screen-level2-start" class="screen hidden">
+        <div class="level2-backdrop"></div>
+        <div class="level2-board-card">
+          <!-- Картинка доски / свитка LEVEL 2 START.png -->
+          <img src="assets/UI/LEVEL 2 START.png" alt="Первый Рубеж ПРОЙДЕН!" class="level2-board-img" id="level2-board-img" />
+
+          <!-- Контентная зона со статистикой на пергаменте -->
+          <div class="level2-board-content">
+            
+            <div class="level2-pilot-badge">
+              <span class="l2-pilot-label">ПИЛОТ:</span>
+              <span class="l2-pilot-val" id="l2-pilot-name">ИМЕНИННИК</span>
+            </div>
+
+            <!-- Сетка статистики первого уровня -->
+            <div class="level2-stats-grid">
+              
+              <!-- 1. Сколько яиц отложил -->
+              <div class="level2-stat-box">
+                <div class="stat-box-icon">
+                  <img src="assets/First-Level/Item/Egg/Default-Egg.png" alt="Яйцо" class="stat-egg-icon" />
+                </div>
+                <div class="stat-box-text">
+                  <span class="stat-box-title">ОТЛОЖЕНО ЯИЦ</span>
+                  <span class="stat-box-number" id="l2-stat-eggs">0</span>
+                </div>
+              </div>
+
+              <!-- 2. Сколько кормушек съел -->
+              <div class="level2-stat-box">
+                <div class="stat-box-icon">
+                  <img src="assets/First-Level/Feeder/feeder-house.png" alt="Кормушка" class="stat-feeder-icon" />
+                </div>
+                <div class="stat-box-text">
+                  <span class="stat-box-title">КОРМУШЕК СЪЕДЕНО</span>
+                  <span class="stat-box-number" id="l2-stat-feeders">0 / 4</span>
+                </div>
+              </div>
+
+              <!-- 3. Сколько раз упал вниз -->
+              <div class="level2-stat-box">
+                <div class="stat-box-icon">
+                  <span class="stat-emoji">💥</span>
+                </div>
+                <div class="stat-box-text">
+                  <span class="stat-box-title">ПАДЕНИЙ ВНИЗ</span>
+                  <span class="stat-box-number" id="l2-stat-falls">0</span>
+                </div>
+              </div>
+
+              <!-- 4. Время прохождения уровня -->
+              <div class="level2-stat-box">
+                <div class="stat-box-icon">
+                  <span class="stat-emoji">⏱️</span>
+                </div>
+                <div class="stat-box-text">
+                  <span class="stat-box-title">ВРЕМЯ УРОВНЯ</span>
+                  <span class="stat-box-number" id="l2-stat-time">00:00</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Дополнительная сводка: Очки и Гнезда -->
+            <div class="level2-sub-row">
+              <div class="level2-pill">
+                <span class="pill-label">ОЧКИ:</span>
+                <span class="pill-value" id="l2-stat-score">0</span>
+              </div>
+              <div class="level2-pill">
+                <span class="pill-label">ГНЁЗДА:</span>
+                <span class="pill-value" id="l2-stat-nests">0 / 5</span>
+              </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="level2-actions-row">
+              <button id="btn-level2-start-next" class="btn-l2-wood btn-l2-green" title="Начать Уровень 2">
+                <span>УРОВЕНЬ 2 ▶</span>
+              </button>
+              <button id="btn-level2-replay" class="btn-l2-wood" title="Пройти Уровень 1 заново">
+                <span>ПОВТОРИТЬ 🔄</span>
+              </button>
+              <button id="btn-level2-menu" class="btn-l2-wood btn-l2-stone" title="В Главное меню">
+                <span>В МЕНЮ 🏠</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <!-- Уведомления -->
       <div id="toast-container"></div>
     </div>

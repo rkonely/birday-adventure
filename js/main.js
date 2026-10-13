@@ -2,6 +2,7 @@ import { VideoManager } from './core/VideoManager.js';
 import { UIManager } from './ui/UIManager.js';
 import { GameLoop } from './core/GameLoop.js';
 import { gameState } from './core/GameState.js';
+import { audio } from './core/AudioManager.js';
 import { events } from './core/EventManager.js';
 import { Stage1Flight } from './stage1/Stage1Flight.js';
 import { Stage1Level } from './stage1/Stage1Level.js';
@@ -18,6 +19,9 @@ class BirDayApp {
     this.stage1Flight = null; // Калибровочная тестовая комната
     this.stage1Level = null;  // Полноценный уровень 1 (Лесной Полёт)
     this.stage1Editor = null; // Конструктор / Редактор уровней
+
+    this.screenLevel2Start = document.getElementById('screen-level2-start');
+    this.btnSkipVideo = document.getElementById('btn-skip-video');
 
     this.init();
   }
@@ -74,6 +78,47 @@ class BirDayApp {
     events.on('stage:exit_to_title', () => {
       this.exitToTitle();
     });
+
+    // 9. Финиш Уровня 1 -> запуск видео End First Level и экрана LEVEL 2 START
+    events.on('stage1:victory', (stats) => {
+      this.handleStage1Victory(stats);
+    });
+
+    // 10. Кнопка пропуска видео
+    if (this.btnSkipVideo) {
+      this.btnSkipVideo.addEventListener('click', () => {
+        audio.playClick();
+        this.videoManager.skipVideo();
+      });
+    }
+
+    // 11. Кнопки экрана LEVEL 2 START
+    const btnL2StartNext = document.getElementById('btn-level2-start-next');
+    if (btnL2StartNext) {
+      btnL2StartNext.addEventListener('click', () => {
+        audio.playClick();
+        this.hideLevel2StartScreen();
+        this.startLevel2Teaser();
+      });
+    }
+
+    const btnL2Replay = document.getElementById('btn-level2-replay');
+    if (btnL2Replay) {
+      btnL2Replay.addEventListener('click', () => {
+        audio.playClick();
+        this.hideLevel2StartScreen();
+        this.startStage1Level();
+      });
+    }
+
+    const btnL2Menu = document.getElementById('btn-level2-menu');
+    if (btnL2Menu) {
+      btnL2Menu.addEventListener('click', () => {
+        audio.playClick();
+        this.hideLevel2StartScreen();
+        this.exitToTitle();
+      });
+    }
 
     // 9. Кнопки быстрого доступа в верхнем баре
     const btnDevFlight = document.getElementById('btn-dev-flight');
@@ -148,6 +193,8 @@ class BirDayApp {
   }
 
   hideMenuScreens() {
+    this.hideLevel2StartScreen();
+
     const videoWrapper = document.getElementById('video-wrapper');
     if (videoWrapper) videoWrapper.style.display = 'none';
 
@@ -162,6 +209,109 @@ class BirDayApp {
       screenForm.classList.remove('active');
       screenForm.classList.add('hidden');
     }
+  }
+
+  /* ==========================================================================
+     Завершение 1 уровня: Видео End First Level -> Экран LEVEL 2 START
+     ========================================================================== */
+  handleStage1Victory(stats) {
+    console.log('🏆 [BirDayApp] Финиш 1 уровня! Запуск видео "End First Level"...', stats);
+
+    // 1. Останавливаем игровой процесс и скрываем холст
+    if (this.stage1Level) {
+      this.stage1Level.stop();
+    }
+
+    // 2. Скрываем экран итогов (если был открыт)
+    this.hideLevel2StartScreen();
+
+    // 3. Открываем видео-обертку
+    const videoWrapper = document.getElementById('video-wrapper');
+    if (videoWrapper) {
+      videoWrapper.style.display = 'block';
+    }
+
+    // 4. Показываем кнопку "ПРОПУСТИТЬ ВИДЕО"
+    if (this.btnSkipVideo) {
+      this.btnSkipVideo.classList.remove('hidden');
+    }
+
+    // 5. Запускаем видео "End First Level .mp4"
+    this.videoManager.playVideo('END_FIRST_LEVEL', () => {
+      console.log('🎬 [BirDayApp] Видео завершено -> открываем экран LEVEL 2 START со статистикой!');
+      this.showLevel2StartScreen(stats);
+    });
+  }
+
+  showLevel2StartScreen(stats) {
+    // Скрываем кнопку пропуска
+    if (this.btnSkipVideo) {
+      this.btnSkipVideo.classList.add('hidden');
+    }
+
+    // Заполняем статистику персонажа за 1 уровень
+    const elEggs = document.getElementById('l2-stat-eggs');
+    if (elEggs) elEggs.textContent = String(stats.eggsLaid ?? 0);
+
+    const elFeeders = document.getElementById('l2-stat-feeders');
+    if (elFeeders) elFeeders.textContent = `${stats.feedersEaten ?? 0} / ${stats.totalFeeders ?? 4}`;
+
+    const elFalls = document.getElementById('l2-stat-falls');
+    if (elFalls) elFalls.textContent = String(stats.fallsCount ?? 0);
+
+    const elTime = document.getElementById('l2-stat-time');
+    if (elTime) {
+      const totalSecs = Math.max(0, Math.floor(stats.levelTime || 0));
+      const mins = Math.floor(totalSecs / 60);
+      const secs = totalSecs % 60;
+      elTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    const elScore = document.getElementById('l2-stat-score');
+    if (elScore) elScore.textContent = String(stats.score ?? 0);
+
+    const elNests = document.getElementById('l2-stat-nests');
+    if (elNests) elNests.textContent = `${stats.nestsCompleted ?? 0} / ${stats.totalNests ?? 5}`;
+
+    const elPilot = document.getElementById('l2-pilot-name');
+    if (elPilot) elPilot.textContent = stats.playerName || gameState.data.playerName || 'Пилот';
+
+    // Открываем экран LEVEL 2 START на весь экран
+    if (this.screenLevel2Start) {
+      this.screenLevel2Start.classList.remove('hidden');
+      this.screenLevel2Start.classList.add('active');
+    }
+
+    // Звук фанфар / успеха
+    audio.playSuccess();
+  }
+
+  hideLevel2StartScreen() {
+    if (this.screenLevel2Start) {
+      this.screenLevel2Start.classList.remove('active');
+      this.screenLevel2Start.classList.add('hidden');
+    }
+    if (this.btnSkipVideo) {
+      this.btnSkipVideo.classList.add('hidden');
+    }
+  }
+
+  startLevel2Teaser() {
+    console.log('🎬 [BirDayApp] Запуск тизера Уровня 2 (Sesond Level IDE)...');
+    const videoWrapper = document.getElementById('video-wrapper');
+    if (videoWrapper) {
+      videoWrapper.style.display = 'block';
+    }
+
+    if (this.btnSkipVideo) {
+      this.btnSkipVideo.classList.remove('hidden');
+    }
+
+    this.videoManager.playVideo('SECOND_LEVEL_IDE', () => {
+      if (this.btnSkipVideo) this.btnSkipVideo.classList.add('hidden');
+      this.uiManager.showToast('🚀 Уровень 2 в активной разработке! Скоро выйдет продолжение!');
+      this.exitToTitle();
+    });
   }
 
   startStage1Level() {
@@ -230,6 +380,8 @@ class BirDayApp {
   }
 
   exitToTitle() {
+    this.hideLevel2StartScreen();
+
     // Останавливаем все сцены
     if (this.stage1Flight) this.stage1Flight.stop();
     if (this.stage1Level) this.stage1Level.stop();
