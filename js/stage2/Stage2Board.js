@@ -267,6 +267,40 @@ export class Stage2Board {
         </div>
       </div>
 
+      <!-- 3D Арена броска кубика прямо на игровое поле -->
+      <div id="s2-dice-3d-arena" class="s2-dice-3d-arena hidden">
+        <div id="s2-dice-shadow" class="s2-dice-shadow"></div>
+        <div id="s2-dice-cube" class="s2-dice-cube">
+          <div class="dice-face face-front" data-face="1">
+            <span class="pip pip-center"></span>
+          </div>
+          <div class="dice-face face-back" data-face="6">
+            <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+            <span class="pip pip-ml"></span><span class="pip pip-mr"></span>
+            <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+          </div>
+          <div class="dice-face face-right" data-face="2">
+            <span class="pip pip-tl"></span><span class="pip pip-br"></span>
+          </div>
+          <div class="dice-face face-left" data-face="5">
+            <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+            <span class="pip pip-center"></span>
+            <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+          </div>
+          <div class="dice-face face-top" data-face="3">
+            <span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span>
+          </div>
+          <div class="dice-face face-bottom" data-face="4">
+            <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+            <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+          </div>
+        </div>
+        <div id="s2-dice-result-badge" class="s2-dice-result-badge hidden">
+          <span>🎲 ВЫПАЛО:</span>
+          <span id="s2-dice-result-num">5</span>
+        </div>
+      </div>
+
       <!-- Нижняя контрольная панель с кубиком -->
       <div class="s2-control-panel">
         <div class="s2-dice-box" id="s2-dice-box">
@@ -326,44 +360,178 @@ export class Stage2Board {
   }
 
   /* ==========================================================================
-     Механика броска кубика и перемещения
+     Реалистичный 3D Бросок Кубика с падением на изометрическую карту
      ========================================================================== */
   rollDice() {
     if (this.isRollingDice || this.isMoving || this.cells.length === 0) return;
 
-    audio.playClick();
     this.isRollingDice = true;
-    this.diceRollAnimTimer = 0;
-
-    const diceFace = document.getElementById('s2-dice-face');
-    const diceNum = document.getElementById('s2-dice-num');
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) btnRoll.disabled = true;
 
-    // Анимация вращения кубика
-    let rollFrames = 0;
-    const rollInterval = setInterval(() => {
-      rollFrames++;
-      const randVal = Math.floor(Math.random() * 6) + 1;
-      if (diceNum) diceNum.textContent = String(randVal);
-      if (diceFace) {
-        diceFace.style.transform = `rotate(${rollFrames * 45}deg) scale(1.15)`;
-      }
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const cube = document.getElementById('s2-dice-cube');
+    const shadow = document.getElementById('s2-dice-shadow');
+    const badge = document.getElementById('s2-dice-result-badge');
+    const resultNum = document.getElementById('s2-dice-result-num');
+    const hudDiceNum = document.getElementById('s2-dice-num');
 
-      if (rollFrames >= 14) {
-        clearInterval(rollInterval);
-        const finalValue = Math.floor(Math.random() * 6) + 1;
-        this.diceValue = finalValue;
-        if (diceNum) diceNum.textContent = String(finalValue);
-        if (diceFace) {
-          diceFace.style.transform = 'rotate(0deg) scale(1)';
+    if (!arena || !cube || !shadow) {
+      // Фолбэк, если элементы недоступны
+      const finalVal = Math.floor(Math.random() * 6) + 1;
+      this.advancePlayer(finalVal);
+      return;
+    }
+
+    // 1. Заранее определяем выпавшее число от 1 до 6
+    const finalValue = Math.floor(Math.random() * 6) + 1;
+    this.diceValue = finalValue;
+
+    // Точные углы Эйлера (в градусах), чтобы верхняя грань кубика показала нужное число:
+    // 1: front (rx: 0, ry: 0)
+    // 2: right (rx: 0, ry: -90)
+    // 3: top (rx: -90, ry: 0)
+    // 4: bottom (rx: 90, ry: 0)
+    // 5: left (rx: 0, ry: 90)
+    // 6: back (rx: 0, ry: 180)
+    const faceAngles = {
+      1: { rx: 0, ry: 0 },
+      2: { rx: 0, ry: -90 },
+      3: { rx: -90, ry: 0 },
+      4: { rx: 90, ry: 0 },
+      5: { rx: 0, ry: 90 },
+      6: { rx: 0, ry: 180 }
+    };
+    const targetFace = faceAngles[finalValue] || { rx: 0, ry: 0 };
+
+    // Звук замаха и броска
+    audio.playDiceThrow();
+
+    // 2. Начальные физические параметры броска
+    arena.classList.remove('hidden');
+    if (badge) badge.classList.add('hidden');
+
+    // Старт броска: снизу от контрольной панели
+    const startX = 688;
+    const startY = 670;
+    // Случайная точка приземления на деревянной карте
+    const targetLandingX = 620 + (Math.random() - 0.5) * 220;
+    const targetLandingY = 460 + (Math.random() - 0.5) * 110;
+
+    let posX = startX;
+    let posY = startY;
+    let posZ = 0; // высота над поверхностью стола (в пикселях)
+
+    const flightDuration = 0.55; // секунд первого полета до первого удара
+    let velX = (targetLandingX - startX) / flightDuration;
+    let velY = (targetLandingY - startY) / flightDuration;
+    let velZ = 750 + Math.random() * 120; // вертикальный импульс вверх
+    const gravity = -2400; // гравитация
+
+    // Вращение в 3D
+    let rotX = Math.random() * 360;
+    let rotY = Math.random() * 360;
+    let rotZ = Math.random() * 360;
+    let rotVelX = 1400 + Math.random() * 400;
+    let rotVelY = 1600 + Math.random() * 500;
+    let rotVelZ = 900 + Math.random() * 400;
+
+    let bounces = 0;
+    let lastTime = performance.now();
+
+    const animatePhysics = (now) => {
+      const dt = Math.min(0.035, (now - lastTime) / 1000);
+      lastTime = now;
+
+      // Применяем гравитацию и скорости
+      velZ += gravity * dt;
+      posX += velX * dt;
+      posY += velY * dt;
+      posZ += velZ * dt;
+
+      rotX += rotVelX * dt;
+      rotY += rotVelY * dt;
+      rotZ += rotVelZ * dt;
+
+      // Удар о деревянный стол настолки
+      if (posZ <= 0) {
+        posZ = 0;
+        bounces++;
+
+        // Звук удара по доске
+        const bounceIntensity = bounces === 1 ? 1.0 : (bounces === 2 ? 0.55 : 0.25);
+        audio.playDiceBounce(bounceIntensity);
+
+        if (bounces < 3) {
+          // Отскок кубика с коэффициентом упругости
+          velZ = -velZ * 0.42;
+          velX *= 0.55;
+          velY *= 0.55;
+          rotVelX *= 0.45;
+          rotVelY *= 0.45;
+          rotVelZ *= 0.45;
+        } else {
+          // Кубик успокаивается на столе!
+          velZ = 0;
+          velX = 0;
+          velY = 0;
+
+          // Финальное выравнивание под нужное выпавшее число
+          // Округляем до ближайших кратных 360 градусов + целевой угол грани
+          const roundTo360 = (val, target) => {
+            const turns = Math.round(val / 360);
+            return turns * 360 + target;
+          };
+
+          const finalRx = roundTo360(rotX, targetFace.rx);
+          const finalRy = roundTo360(rotY, targetFace.ry);
+          const finalRz = Math.round(rotZ / 360) * 360;
+
+          cube.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          cube.style.transform = `translate(-50%, -50%) rotateX(${finalRx}deg) rotateY(${finalRy}deg) rotateZ(${finalRz}deg)`;
+
+          // Звук успеха и показ бейджа
+          setTimeout(() => {
+            audio.playSuccess();
+            if (badge && resultNum) {
+              resultNum.textContent = String(finalValue);
+              badge.style.left = `${posX}px`;
+              badge.style.top = `${posY}px`;
+              badge.classList.remove('hidden');
+            }
+            if (hudDiceNum) {
+              hudDiceNum.textContent = String(finalValue);
+            }
+
+            // Через 600мс плавно скрываем 3D кубик и передвигаем фишку по сетке
+            setTimeout(() => {
+              arena.classList.add('hidden');
+              cube.style.transition = '';
+              this.isRollingDice = false;
+              this.advancePlayer(finalValue);
+            }, 650);
+          }, 180);
+
+          return;
         }
-        this.isRollingDice = false;
-
-        audio.playSuccess();
-        this.advancePlayer(finalValue);
       }
-    }, 60);
+
+      // Обновляем визуальную позицию тени и 3D кубика
+      shadow.style.left = `${posX}px`;
+      shadow.style.top = `${posY}px`;
+      const shadowScale = Math.max(0.4, 1 - (posZ / 380));
+      shadow.style.transform = `translate(-50%, -50%) scale(${shadowScale})`;
+      shadow.style.opacity = String(Math.max(0.18, 0.85 - (posZ / 320)));
+      shadow.style.filter = `blur(${Math.min(12, 2 + posZ / 25)}px)`;
+
+      cube.style.left = `${posX}px`;
+      cube.style.top = `${posY - posZ}px`;
+      cube.style.transform = `translate(-50%, -50%) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+
+      requestAnimationFrame(animatePhysics);
+    };
+
+    requestAnimationFrame(animatePhysics);
   }
 
   advancePlayer(steps) {

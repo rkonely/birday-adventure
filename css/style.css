@@ -3074,5 +3074,120 @@ body {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   3D Кубик для Настольной Игры (Stage 2 3D Dice)
+   ========================================================================== */
+.s2-dice-3d-arena {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  perspective: 950px;
+  perspective-origin: 50% 45%;
+  z-index: 80;
+  overflow: hidden;
+}
+
+/* Динамическая тень кубика на поверхности доски */
+.s2-dice-shadow {
+  position: absolute;
+  width: 76px;
+  height: 42px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.3) 50%, transparent 75%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  will-change: transform, opacity, filter;
+}
+
+/* 3D Куб */
+.s2-dice-cube {
+  position: absolute;
+  width: 62px;
+  height: 62px;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Грани кубика */
+.dice-face {
+  position: absolute;
+  width: 62px;
+  height: 62px;
+  background: linear-gradient(135deg, #fffdf8 0%, #f7f1e6 55%, #dfceb7 100%);
+  border: 2px solid #a88d6b;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.95);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 8px;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+}
+
+/* Точки (Pips) */
+.pip {
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle at 35% 35%, #2b1f1d 0%, #110908 75%);
+  border-radius: 50%;
+  margin: auto;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* Рубиновая центральная точка на грани 1 */
+.face-front .pip-center {
+  width: 14px;
+  height: 14px;
+  background: radial-gradient(circle at 35% 35%, #e63946 0%, #9e1b27 80%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(230, 57, 70, 0.6);
+}
+
+/* Позиционирование точек 3х3 */
+.pip-tl { grid-column: 1; grid-row: 1; }
+.pip-tr { grid-column: 3; grid-row: 1; }
+.pip-ml { grid-column: 1; grid-row: 2; }
+.pip-mr { grid-column: 3; grid-row: 2; }
+.pip-bl { grid-column: 1; grid-row: 3; }
+.pip-br { grid-column: 3; grid-row: 3; }
+.pip-center { grid-column: 2; grid-row: 2; }
+
+/* 3D грани кубика (сторона 62px -> смещение по Z = 31px) */
+.face-front  { transform: rotateY(0deg) translateZ(31px); }
+.face-back   { transform: rotateY(180deg) translateZ(31px); }
+.face-right  { transform: rotateY(90deg) translateZ(31px); }
+.face-left   { transform: rotateY(-90deg) translateZ(31px); }
+.face-top    { transform: rotateX(90deg) translateZ(31px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(31px); }
+
+/* Бейдж результата над приземлившимся кубиком */
+.s2-dice-result-badge {
+  position: absolute;
+  transform: translate(-50%, -130%);
+  background: #ffb703;
+  color: #000;
+  border: 3px solid #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 6px 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8), 0 0 14px rgba(255, 183, 3, 0.6);
+  pointer-events: none;
+  animation: s2BadgePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 100;
+}
+
+@keyframes s2BadgePop {
+  0% { transform: translate(-50%, -70%) scale(0.4); opacity: 0; }
+  100% { transform: translate(-50%, -130%) scale(1); opacity: 1; }
+}
+
 
 

@@ -238,6 +238,53 @@ export class AudioManager {
     }
   }
 
+  // Звук броска кубика в воздух
+  playDiceThrow() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.18);
+    } catch (e) {}
+  }
+
+  // Звук удара кубика о деревянную поверхность карты
+  playDiceBounce(intensity = 1) {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(420 + Math.random() * 80, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.09);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.25 * intensity, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.09);
+    } catch (e) {}
+  }
+
   // Звук удара о землю / оглушения
   playBonk() {
     if (!this.ctx || !gameState.data.soundEnabled) return;
