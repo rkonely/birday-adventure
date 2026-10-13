@@ -75,6 +75,7 @@ export class Stage1Level {
     this.isActive = false;
     this.isVictory = false;
     this.isGameOver = false;
+    this.isTutorialOpen = true; // Окно обучения перед первым полётом
     this.nestsCompleted = 0;
     this.totalNests = 5;
     this.levelTime = 0;
@@ -508,6 +509,15 @@ export class Stage1Level {
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
+      // Если открыто окно обучения — закрываем по Space, Enter или Escape
+      if (this.isTutorialOpen) {
+        if (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape') {
+          e.preventDefault();
+          this.closeTutorialModal();
+        }
+        return;
+      }
+
       // W / Стрелка вверх: Взмах крыльями (-5% энергии)
       if (e.code === 'KeyW' || e.code === 'ArrowUp') {
         e.preventDefault();
@@ -602,7 +612,7 @@ export class Stage1Level {
 
     // Мышь: ЛКМ — взмах (-5% энергии) или бросок яйца, ПКМ — планирование (0% энергии)
     window.addEventListener('pointerdown', (e) => {
-      if (!this.isActive) return;
+      if (!this.isActive || this.isTutorialOpen) return;
 
       if (e.button === 2) {
         // ПКМ -> Режим планирования
@@ -695,6 +705,7 @@ export class Stage1Level {
     this.isActive = true;
     this.isVictory = false;
     this.isGameOver = false;
+    this.isTutorialOpen = true; // Открываем обучение перед началом полёта
     this.stamina = 100;
     this.maxStamina = 100;
     this.score = 0;
@@ -717,6 +728,7 @@ export class Stage1Level {
     this.enemies.forEach(en => { en.alive = true; });
 
     this.createUIOverlay();
+    this.showTutorialModal();
     gameState.setStage('STAGE_1_LEVEL');
     console.log('🌲 [Stage1Level] Уровень 1 "Лесной Полёт" запущен!');
   }
@@ -742,87 +754,44 @@ export class Stage1Level {
     const playerName = gameState.data.playerName || 'Пилот';
 
     overlay.innerHTML = `
-      <!-- Верхняя панель HUD -->
-      <div class="level-hud-bar">
+      <!-- Минималистичный HUD Уровня 1 -->
+      <div class="hud-minimal-topbar">
         
-        <!-- Левый блок: Имя, Энергия, Счет -->
-        <div class="hud-left-stats">
-          <div class="pilot-profile">
-            <span class="pilot-avatar">🪶</span>
-            <div class="pilot-details">
-              <span class="pilot-callsign" id="hud-pilot-name">${playerName}</span>
-              <span class="pilot-energy-text" id="hud-energy-text">⚡ 100% ЭНЕРГИЯ</span>
-            </div>
+        <!-- Левый верхний угол: Энергия с Energy UI.png и полосой #4ad3b7 -->
+        <div class="hud-energy-widget">
+          <div class="hud-energy-slot">
+            <div class="hud-energy-bar" id="hud-energy-bar" style="width: 100%;"></div>
           </div>
-
-          <div class="stamina-wrapper" title="Энергия: Взмах -5%, Бросок яйца -10%, Кормушка +25%">
-            <div class="stamina-bar-fill" id="hud-stamina-bar" style="width: 100%;"></div>
-            <span class="stamina-label" id="hud-stamina-label">⚡ ЭНЕРГИЯ: 100%</span>
-          </div>
-
-          <div class="hud-score-chip">
-            <span class="score-label">ОЧКИ:</span>
-            <span class="score-value" id="hud-score-num">0</span>
-          </div>
+          <img src="assets/First-Level/UI/Energy UI.png" class="hud-energy-frame" alt="Энергия" />
+          <span class="hud-energy-value" id="hud-energy-val">100%</span>
         </div>
 
-        <!-- Центральный блок: Трек Прогресса Уровня -->
-        <div class="hud-center-track">
-          <div class="track-header">
-            <span class="track-title">ЛЕСНОЙ МАРШРУТ (ЭТАП I)</span>
-            <span class="track-percentage" id="hud-track-pct">0%</span>
-          </div>
-          <div class="progress-track-rail">
-            <div class="progress-track-fill" id="hud-track-fill" style="width: 5%;"></div>
-            <div class="track-pin pin-start" title="Старт">🚩</div>
-            <div class="track-pin pin-f1" style="left: 11%;" title="Кормушка 1">🏡</div>
-            <div class="track-pin pin-n1" style="left: 18%;" title="Гнездо 1">🪺</div>
-            <div class="track-pin pin-f2" style="left: 31%;" title="Кормушка 2">🏡</div>
-            <div class="track-pin pin-n2" style="left: 38%;" title="Гнездо 2">🪺</div>
-            <div class="track-pin pin-f3" style="left: 52%;" title="Кормушка 3">🏡</div>
-            <div class="track-pin pin-n3" style="left: 58%;" title="Гнездо 3">🪺</div>
-            <div class="track-pin pin-f4" style="left: 73%;" title="Кормушка 4">🏡</div>
-            <div class="track-pin pin-n4" style="left: 80%;" title="Гнездо 4">🪺</div>
-            <div class="track-pin pin-n5" style="left: 89%;" title="Гнездо 5">🪺</div>
-            <div class="track-pin pin-finish" style="left: 97%;" title="Великое Гнездо">🏆</div>
-            <div class="track-bird-cursor" id="hud-bird-cursor" style="left: 5%;">🦅</div>
-          </div>
-        </div>
-
-        <!-- Правый блок: Цели, Яйцо, Кнопки перехода -->
-        <div class="hud-right-goals">
-          <div class="goal-chip">
-            <span class="goal-icon">🪺</span>
-            <span class="goal-text">ГНЁЗДА: <b id="hud-nests-count">0 / 5</b></span>
+        <!-- Правый верхний угол: Картинка яйца X число отложенных яиц -->
+        <div class="hud-top-right-group">
+          <div class="hud-egg-counter-widget" title="Отложено яиц в чужие гнезда">
+            <img src="assets/First-Level/Item/Egg/Default-Egg.png" class="hud-egg-img" alt="Яйцо" />
+            <span class="hud-egg-cross">X</span>
+            <span class="hud-egg-num" id="hud-egg-num">0</span>
           </div>
 
-          <div class="egg-pouch-chip" id="hud-egg-pouch" title="Нажмите 1-6 или Q/E для смены">
-            <span class="egg-icon">🥚</span>
-            <span class="egg-type-text" id="hud-egg-type">Default</span>
-          </div>
-
-          <div class="hud-actions-group">
-            <button id="btn-hud-to-editor" class="btn-hud-action" style="border-color: #facc15; color: #facc15;" title="Конструктор / Редактор уровня">
-              <span>🛠️</span> РЕДАКТОР
-            </button>
-            <button id="btn-hud-to-test" class="btn-hud-action" title="Перейти в калибровочную комнату">
-              <span>🪶</span> ТЕСТ
-            </button>
-            <button id="btn-hud-to-menu" class="btn-hud-action" title="Выйти в меню">
-              <span>🏠</span> МЕНЮ
-            </button>
+          <!-- Компактные быстрые кнопки (Обучение, Редактор, Меню) -->
+          <div class="hud-minimal-buttons">
+            <button id="btn-hud-to-tutorial" class="btn-hud-min" title="Обучение"><span>📖</span></button>
+            <button id="btn-hud-to-editor" class="btn-hud-min" title="Редактор"><span>🛠️</span></button>
+            <button id="btn-hud-to-menu" class="btn-hud-min" title="Меню"><span>🏠</span></button>
           </div>
         </div>
 
       </div>
 
-      <!-- Всплывающая подсказка управления внизу экрана -->
-      <div class="hud-bottom-tip">
-        <span class="tip-key">[W / ЛКМ]</span> Взмах (-5% ⚡) &nbsp;•&nbsp; 
-        <span class="tip-key">[SHIFT / ПКМ]</span> Планирование (0% ⚡) &nbsp;•&nbsp; 
-        <span class="tip-key">[ПРОБЕЛ]</span> Прицел & бросок (-10% ⚡) &nbsp;•&nbsp; 
-        <span class="tip-key">[Кормушка]</span> +25% ⚡ &nbsp;•&nbsp; 
-        <span class="tip-key">[1-6]</span> Яйцо
+      <!-- Модальное окно обучения перед стартом уровня -->
+      <div id="level-tutorial-modal" class="level-tutorial-modal">
+        <div class="tutorial-modal-card">
+          <img src="assets/First-Level/UI/TUTORIAL.png" alt="Обучение полету" class="tutorial-board-img" />
+          <button id="btn-tutorial-ready" class="fl-wooden-btn" type="button" title="Нажмите, чтобы начать полёт!">
+            <span>ГОТОВО</span>
+          </button>
+        </div>
       </div>
 
       <!-- Модальное окно победы (скрыто по умолчанию) -->
@@ -859,6 +828,22 @@ export class Stage1Level {
     this.uiOverlay = overlay;
 
     // Обработчики кнопок UI
+    const btnTutorialReady = document.getElementById('btn-tutorial-ready');
+    if (btnTutorialReady) {
+      btnTutorialReady.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeTutorialModal();
+      });
+    }
+
+    const btnToTutorial = document.getElementById('btn-hud-to-tutorial');
+    if (btnToTutorial) {
+      btnToTutorial.addEventListener('click', () => {
+        audio.playClick();
+        this.showTutorialModal();
+      });
+    }
+
     const btnToEditor = document.getElementById('btn-hud-to-editor');
     if (btnToEditor) {
       btnToEditor.addEventListener('click', () => {
@@ -900,6 +885,25 @@ export class Stage1Level {
     }
   }
 
+  showTutorialModal() {
+    this.isTutorialOpen = true;
+    const modal = document.getElementById('level-tutorial-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  closeTutorialModal() {
+    if (!this.isTutorialOpen) return;
+    this.isTutorialOpen = false;
+    audio.playClick();
+    const modal = document.getElementById('level-tutorial-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+    this.showToast('🚀 В добрый путь! Удачи в полёте!');
+  }
+
   removeUIOverlay() {
     if (this.uiOverlay) {
       this.uiOverlay.remove();
@@ -912,69 +916,27 @@ export class Stage1Level {
 
     const energyPct = Math.round(Math.max(0, Math.min(100, this.stamina)));
 
-    // Энергия
-    const hudEnergy = document.getElementById('hud-energy-text');
-    if (hudEnergy) {
-      hudEnergy.textContent = `⚡ ${energyPct}% ЭНЕРГИЯ`;
-      if (energyPct > 40) {
-        hudEnergy.style.color = '#34d399';
-      } else if (energyPct > 20) {
-        hudEnergy.style.color = '#f59e0b';
+    // 1. Полоса энергии (#4ad3b7)
+    const hudEnergyBar = document.getElementById('hud-energy-bar');
+    if (hudEnergyBar) {
+      hudEnergyBar.style.width = `${energyPct}%`;
+      if (energyPct <= 20) {
+        hudEnergyBar.style.background = '#ef4444';
       } else {
-        hudEnergy.style.color = '#ef4444';
+        hudEnergyBar.style.background = '#4ad3b7';
       }
     }
 
-    // Стамина-бар
-    const hudStamina = document.getElementById('hud-stamina-bar');
-    const hudStaminaLabel = document.getElementById('hud-stamina-label');
-    if (hudStamina) {
-      hudStamina.style.width = `${energyPct}%`;
-      if (energyPct > 40) {
-        hudStamina.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
-      } else if (energyPct > 20) {
-        hudStamina.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
-      } else {
-        hudStamina.style.background = 'linear-gradient(90deg, #dc2626, #f87171)';
-      }
-    }
-    if (hudStaminaLabel) {
-      hudStaminaLabel.textContent = `⚡ ЭНЕРГИЯ: ${energyPct}%`;
+    const hudEnergyVal = document.getElementById('hud-energy-val');
+    if (hudEnergyVal) {
+      hudEnergyVal.textContent = `${energyPct}%`;
     }
 
-    // Очки
-    const hudScore = document.getElementById('hud-score-num');
-    if (hudScore) {
-      hudScore.textContent = String(this.score);
+    // 2. Счетчик отложенных яиц: картинка X число
+    const hudEggNum = document.getElementById('hud-egg-num');
+    if (hudEggNum) {
+      hudEggNum.textContent = String(this.nestsCompleted);
     }
-
-    // Гнезда
-    const hudNests = document.getElementById('hud-nests-count');
-    if (hudNests) {
-      hudNests.textContent = `${this.nestsCompleted} / ${this.totalNests}`;
-      if (this.nestsCompleted === this.totalNests) {
-        hudNests.style.color = '#facc15';
-      }
-    }
-
-    // Выбранное яйцо
-    const hudEgg = document.getElementById('hud-egg-type');
-    if (hudEgg) {
-      hudEgg.textContent = this.eggManager.currentEggType;
-    }
-
-    // Прогресс по маршруту
-    const progressRatio = Math.max(0, Math.min(1, (this.bird ? this.bird.x : 0) / this.worldWidth));
-    const pct = Math.round(progressRatio * 100);
-
-    const hudPct = document.getElementById('hud-track-pct');
-    if (hudPct) hudPct.textContent = `${pct}%`;
-
-    const hudFill = document.getElementById('hud-track-fill');
-    if (hudFill) hudFill.style.width = `${Math.max(4, pct)}%`;
-
-    const hudCursor = document.getElementById('hud-bird-cursor');
-    if (hudCursor) hudCursor.style.left = `${Math.max(2, Math.min(97, pct))}%`;
   }
 
   showToast(text) {
@@ -996,6 +958,7 @@ export class Stage1Level {
      ========================================================================== */
   update(dt) {
     if (!this.isActive || !this.isLoaded) return;
+    if (this.isTutorialOpen) return;
 
     this.levelTime += dt;
 
@@ -1595,11 +1558,6 @@ export class Stage1Level {
       }
       ctx.drawImage(img, animal.x - w / 2, animal.y - h / 2, w, h);
 
-      // Имя и бейдж животного
-      ctx.font = '10px monospace';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.textAlign = 'center';
-      ctx.fillText(animal.name, animal.x, animal.y - h / 2 - 8);
       ctx.restore();
     });
   }
@@ -1650,58 +1608,32 @@ export class Stage1Level {
   }
 
   renderFeeders(ctx) {
-    this.feeders.forEach((feeder, idx) => {
+    this.feeders.forEach(feeder => {
       if (feeder.x < this.cameraX - 250 || feeder.x > this.cameraX + this.viewWidth + 250) return;
 
-      const radius = feeder.radius || 52;
-      ctx.save();
-
-      // Отрисовка спрайта (если это отдельный объект, а не чисто зона на карте)
+      // Отрисовка спрайта (если это отдельный ассет, а не нарисованная на карте кормушка)
       if (feeder.key && feeder.key !== 'zone_feeder') {
         const img = this.images[feeder.key];
         if (img) {
           const w = img.width * (feeder.scale || 0.5);
           const h = img.height * (feeder.scale || 0.5);
+          ctx.save();
           if (feeder.opacity !== undefined) ctx.globalAlpha = feeder.opacity;
           ctx.drawImage(img, feeder.x - w / 2, feeder.y - h / 2, w, h);
+          ctx.restore();
         }
       }
 
-      // Интерактивная зона кормушки
-      if (feeder.visited) {
-        ctx.font = 'bold 11px monospace';
-        ctx.fillStyle = '#4ade80';
-        ctx.textAlign = 'center';
-        ctx.fillText('✓ КОРМУШКА (ЭНЕРГИЯ)', feeder.x, feeder.y - radius - 10);
-      } else {
-        // Пульсирующая зеленая зона энергии вокруг кормушки
-        const pulse = Math.sin(this.levelTime * 3 + idx) * 3 + radius;
-        ctx.strokeStyle = 'rgba(74, 222, 128, 0.65)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.arc(feeder.x, feeder.y, pulse, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.font = 'bold 11px monospace';
-        ctx.fillStyle = '#4ade80';
-        ctx.textAlign = 'center';
-        ctx.fillText(`🏡 ${feeder.name || 'КОРМУШКА'}`, feeder.x, feeder.y - pulse - 8);
-      }
-
-      ctx.restore();
+      // В обычной игре подсказки и тестовые круги скрыты для погружения
     });
   }
 
   renderNests(ctx) {
-    this.nests.forEach((nest, idx) => {
+    this.nests.forEach(nest => {
       const cupX = nest.cupX !== undefined ? nest.cupX : nest.x;
       const cupY = nest.cupY !== undefined ? nest.cupY : nest.y;
-      const radius = nest.radius || 46;
 
       if (cupX < this.cameraX - 250 || cupX > this.cameraX + this.viewWidth + 250) return;
-
-      ctx.save();
 
       // Отрисовка спрайта (если это отдельный ассет, а не чисто зона на карте)
       if (nest.key && nest.key !== 'zone_nest') {
@@ -1710,79 +1642,32 @@ export class Stage1Level {
         if (img) {
           const w = img.width * (nest.scale || 0.5);
           const h = img.height * (nest.scale || 0.5);
+          ctx.save();
           if (nest.opacity !== undefined) ctx.globalAlpha = nest.opacity;
           ctx.drawImage(img, nest.x - w / 2, nest.y - h / 2, w, h);
+          ctx.restore();
         }
       }
 
-      // Интерактивная зона гнезда (куда кидать яйцо)
+      // Аккуратное отображение яйца в гнезде, когда оно успешно подкинуто
       if (nest.filled) {
-        // Золотое яйцо внутри заполненного гнезда
-        ctx.fillStyle = '#facc15';
+        ctx.save();
+        ctx.fillStyle = '#fde047';
         ctx.beginPath();
-        ctx.ellipse(cupX, cupY - 2, 11, 15, 0, 0, Math.PI * 2);
+        ctx.ellipse(cupX, cupY - 2, 8, 11, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#854d0e';
+        ctx.lineWidth = 1.2;
         ctx.stroke();
-
-        ctx.font = 'bold 11px monospace';
-        ctx.fillStyle = '#facc15';
-        ctx.textAlign = 'center';
-        ctx.fillText('🪺 ЯЙЦО ПОДКИНУТО!', cupX, cupY - radius - 10);
-      } else {
-        // Пульсирующий круг-мишень для незаполненного гнезда
-        const pulse = Math.sin(this.levelTime * 4 + idx) * 3 + radius;
-        ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.arc(cupX, cupY, pulse, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Центр мишени
-        ctx.fillStyle = 'rgba(250, 204, 21, 0.35)';
-        ctx.beginPath();
-        ctx.arc(cupX, cupY, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font = 'bold 10px monospace';
-        ctx.fillStyle = '#facc15';
-        ctx.textAlign = 'center';
-        ctx.fillText(`🎯 ${nest.title || nest.name || 'Гнездо'}`, cupX, cupY - pulse - 6);
+        ctx.restore();
       }
 
-      ctx.restore();
+      // В обычной игре мишени и подсказки скрыты
     });
   }
 
   renderFinishZone(ctx) {
-    if (!this.finishZone) return;
-    const fz = this.finishZone;
-    if (fz.x < this.cameraX - 250 || fz.x > this.cameraX + this.viewWidth + 250) return;
-
-    const r = fz.radius || 110;
-    const pulse = Math.sin(this.levelTime * 3) * 6 + r;
-
-    ctx.save();
-    // Золотое свечение финишной зоны
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.85)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.arc(fz.x, fz.y, pulse, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(250, 204, 21, 0.12)';
-    ctx.beginPath();
-    ctx.arc(fz.x, fz.y, pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillStyle = '#facc15';
-    ctx.textAlign = 'center';
-    ctx.fillText('🏁 ' + (fz.name || 'Великое Гнездо (ФИНИШ)'), fz.x, fz.y - pulse - 12);
-    ctx.restore();
+    // В обычной игре декорация финишного дерева нарисована на панораме, вспомогательные круги скрыты
   }
 
   renderParticles(ctx) {

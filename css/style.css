@@ -1143,243 +1143,160 @@ body {
   justify-content: space-between;
 }
 
-.level-hud-bar {
+/* ==========================================================================
+   Минималистичный HUD Уровня 1: Энергия + Счетчик отложенных яиц
+   ========================================================================== */
+.hud-minimal-topbar {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  right: 16px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 8px 14px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(15, 23, 42, 0.8) 75%, transparent 100%);
-  border-bottom: 2px solid rgba(255, 183, 3, 0.35);
-  pointer-events: auto;
-  gap: 12px;
+  pointer-events: none;
+  z-index: 50;
 }
 
-/* Левая часть HUD */
-.hud-left-stats {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pilot-profile {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  padding: 4px 8px;
-}
-
-.pilot-avatar {
-  font-size: 18px;
-}
-
-.pilot-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.pilot-callsign {
-  font-size: 11px;
-  font-weight: bold;
-  color: #facc15;
-  letter-spacing: 0.5px;
-}
-
-.pilot-energy-text {
-  font-size: 10px;
-  font-weight: bold;
-  color: #34d399;
-  letter-spacing: 0.5px;
-  text-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
-}
-
-.stamina-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 130px;
-}
-
-.stamina-bar-fill {
-  height: 8px;
-  background: linear-gradient(90deg, #10b981, #34d399);
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-  transition: width 0.12s ease-out, background 0.2s ease;
-}
-
-.stamina-label {
-  font-size: 9px;
-  font-weight: bold;
-  color: #e2e8f0;
-  letter-spacing: 0.5px;
-}
-
-.hud-score-chip {
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid #f59e0b;
-  border-radius: 5px;
-  padding: 4px 8px;
-  display: flex;
-  gap: 5px;
-  font-size: 11px;
-  align-items: center;
-}
-
-.score-label {
-  color: #fcd34d;
-}
-
-.score-value {
-  color: #ffffff;
-  font-weight: bold;
-}
-
-/* Центральный трек прогресса */
-.hud-center-track {
-  flex: 1;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.track-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: #94a3b8;
-  font-weight: bold;
-}
-
-.track-percentage {
-  color: #38bdf8;
-}
-
-.progress-track-rail {
+/* Виджет энергии (Energy UI.png + заливка #4ad3b7) */
+.hud-energy-widget {
   position: relative;
-  height: 8px;
-  background: #1e293b;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  width: 320px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75));
+  pointer-events: auto;
+  user-select: none;
 }
 
-.progress-track-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e, #eab308);
+.hud-energy-slot {
+  position: absolute;
+  left: 21.2%;
+  top: 28.5%;
+  width: 76.8%;
+  height: 42.8%;
+  background: rgba(15, 23, 42, 0.85);
   border-radius: 3px;
-  transition: width 0.15s ease-out;
+  overflow: hidden;
+  z-index: 1;
 }
 
-.track-pin {
+.hud-energy-bar {
+  width: 100%;
+  height: 100%;
+  background: #4ad3b7;
+  box-shadow: 0 0 10px rgba(74, 211, 183, 0.6);
+  transition: width 0.15s cubic-bezier(0.25, 1, 0.5, 1), background 0.2s ease;
+}
+
+.hud-energy-frame {
   position: absolute;
-  top: -6px;
-  font-size: 10px;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 1px 2px #000);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: 2;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
-.track-bird-cursor {
+.hud-energy-value {
   position: absolute;
-  top: -8px;
-  font-size: 14px;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 2px 4px rgba(234, 179, 8, 0.8));
-  transition: left 0.15s ease-out;
+  left: 58%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  letter-spacing: 1px;
 }
 
-/* Правая часть HUD */
-.hud-right-goals {
+/* Правый блок: Картинка яйца X число отложенных яиц */
+.hud-top-right-group {
   display: flex;
   align-items: center;
   gap: 10px;
+  pointer-events: auto;
 }
 
-.goal-chip {
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid #38bdf8;
-  border-radius: 5px;
-  padding: 4px 8px;
+.hud-egg-counter-widget {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 2px solid #8b5a2b;
+  border-radius: 10px;
+  padding: 5px 14px 5px 10px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  user-select: none;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
 }
 
-.goal-text b {
-  color: #38bdf8;
+.hud-egg-img {
+  width: 26px;
+  height: 34px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
-.egg-pouch-chip {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid #facc15;
-  border-radius: 5px;
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  cursor: pointer;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.2);
-}
-
-.egg-type-text {
-  color: #facc15;
+.hud-egg-cross {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 16px;
   font-weight: bold;
+  color: #ffb703;
+  text-shadow: 2px 2px 0 #000;
+  margin: 0 1px;
 }
 
-.hud-actions-group {
+.hud-egg-num {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000, 0 0 8px rgba(250, 204, 21, 0.4);
+  min-width: 18px;
+  text-align: center;
+}
+
+.hud-minimal-buttons {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.btn-hud-action {
-  background: #1e293b;
-  border: 1px solid #64748b;
-  color: #f8fafc;
-  font-size: 10px;
-  font-family: inherit;
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
+.btn-hud-min {
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.15s ease;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.btn-hud-action:hover {
-  background: #334155;
+.btn-hud-min:hover {
+  transform: scale(1.08);
   border-color: #38bdf8;
-  color: #ffffff;
+  background: rgba(30, 41, 59, 0.95);
 }
 
-/* Подсказка внизу */
-.hud-bottom-tip {
-  align-self: center;
-  margin-bottom: 8px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 4px 14px;
-  font-size: 10px;
-  color: #cbd5e1;
-  pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.tip-key {
-  color: #38bdf8;
-  font-weight: bold;
+.btn-hud-min:active {
+  transform: scale(0.95);
 }
 
 /* ==========================================================================
@@ -2040,4 +1957,123 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   Окно Обучения (Tutorial Modal) — Первый Уровень
+   ========================================================================== */
+.level-tutorial-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 26, 0.82);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+.level-tutorial-modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+
+.tutorial-modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  animation: tutorialPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+  max-width: 95%;
+  max-height: 95%;
+}
+
+@keyframes tutorialPopIn {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.tutorial-board-img {
+  max-width: 820px;
+  max-height: 520px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.85));
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+/* Деревянная кнопка "ГОТОВО" (UI -FL-Button / FL-Button-Active) */
+.fl-wooden-btn {
+  width: 202px;
+  height: 76px;
+  background-color: transparent !important;
+  background-image: url('../assets/First-Level/UI/FL-Button.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 100% 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+  transition: transform 0.12s ease, filter 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+  margin-top: -6px;
+}
+
+.fl-wooden-btn:hover {
+  background-color: transparent !important;
+  transform: scale(1.06);
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.8)) brightness(1.1);
+}
+
+.fl-wooden-btn:active,
+.fl-wooden-btn.active {
+  background-color: transparent !important;
+  background-image: url('../assets/First-Level/UI/FL-Button-Active.png');
+  transform: scale(0.97);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.85));
+}
+
+.fl-wooden-btn span {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff9eb;
+  text-shadow: 2px 2px 0 #3b1d06, -1px -1px 0 #3b1d06, 1px -1px 0 #3b1d06, -1px 1px 0 #3b1d06, 0 2px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 2px;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.fl-wooden-btn:active span,
+.fl-wooden-btn.active span {
+  transform: translateY(1px);
+  color: #fef08a;
+}
+
 
