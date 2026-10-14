@@ -399,7 +399,7 @@ export class Stage2Board {
           </div>
         </div>
         <div id="s2-dice-result-badge" class="s2-dice-result-badge hidden">
-          <span>🎲 ВЫПАЛО:</span>
+          <span>ВЫПАЛО:</span>
           <span id="s2-dice-result-num">5</span>
         </div>
       </div>
@@ -443,21 +443,24 @@ export class Stage2Board {
 
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
-      diceBox.addEventListener('mousedown', (e) => {
+      const handleDown = (e) => {
         if (e.target === btnRoll) return;
         if (this.isDiceSettled) {
           this.confirmStep();
           return;
         }
         this.startHoldingDice(e);
-      });
+      };
+      diceBox.addEventListener('mousedown', handleDown);
+      diceBox.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) handleDown(e.touches[0]);
+      }, { passive: false });
     }
-
 
     const arena = document.getElementById('s2-dice-3d-arena');
     if (arena) {
       arena.addEventListener('mousedown', (e) => {
-        if (!this.isRollingDice) {
+        if (!this.isRollingDice && !this.isDiceSettled) {
           this.startHoldingDice(e);
         }
       });
@@ -466,6 +469,16 @@ export class Stage2Board {
     // Отслеживание движения и броска мыши по всему окну
     window.addEventListener('mousemove', (e) => this.onDiceMouseMove(e));
     window.addEventListener('mouseup', (e) => this.onDiceMouseUp(e));
+    window.addEventListener('touchmove', (e) => {
+      if (this.isHoldingDice && e.touches && e.touches[0]) {
+        this.onDiceMouseMove(e.touches[0]);
+      }
+    }, { passive: false });
+    window.addEventListener('touchend', (e) => {
+      if (this.isHoldingDice && e.changedTouches && e.changedTouches[0]) {
+        this.onDiceMouseUp(e.changedTouches[0]);
+      }
+    });
   }
 
   removeUI() {
@@ -479,13 +492,11 @@ export class Stage2Board {
      Интерактивный бросок кубика мышкой (Drag & Flick Physics)
      ========================================================================== */
   startHoldingDice(e) {
+    if (e && e.preventDefault) e.preventDefault();
     if (this.isRollingDice || this.isMoving || this.cells.length === 0) return;
 
     this.isHoldingDice = true;
     this.mouseHistory = [];
-
-    const coords = this.getCanvasCoords(e);
-    this.mouseHistory.push({ x: coords.x, y: coords.y, time: performance.now() });
 
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
@@ -493,22 +504,30 @@ export class Stage2Board {
     const badge = document.getElementById('s2-dice-result-badge');
     const diceBox = document.getElementById('s2-dice-box');
 
-    if (arena) arena.classList.remove('hidden');
-    if (arena) arena.classList.add('grabbing');
+    const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0 };
+    const curX = e.clientX - arenaRect.left;
+    const curY = e.clientY - arenaRect.top;
+
+    this.mouseHistory.push({ x: curX, y: curY, time: performance.now() });
+
+    if (arena) {
+      arena.classList.remove('hidden');
+      arena.classList.add('grabbing');
+    }
     if (diceBox) diceBox.classList.add('holding');
     if (badge) badge.classList.add('hidden');
 
-    // Поднимаем кубик в воздух под курсор
+    // Поднимаем кубик в воздух прямо под курсор мыши
     if (cube && shadow) {
       cube.style.transition = 'none';
-      cube.style.left = `${coords.x}px`;
-      cube.style.top = `${coords.y - 40}px`;
-      cube.style.transform = `translate(-50%, -50%) rotateX(25deg) rotateY(-20deg) scale(1.15)`;
+      cube.style.left = `${curX}px`;
+      cube.style.top = `${curY - 45}px`;
+      cube.style.transform = `translate(-50%, -50%) rotateX(25deg) rotateY(-20deg) scale(1.2)`;
 
-      shadow.style.left = `${coords.x}px`;
-      shadow.style.top = `${coords.y}px`;
-      shadow.style.transform = `translate(-50%, -50%) scale(0.85)`;
-      shadow.style.opacity = '0.55';
+      shadow.style.left = `${curX}px`;
+      shadow.style.top = `${curY}px`;
+      shadow.style.transform = `translate(-50%, -50%) scale(0.9)`;
+      shadow.style.opacity = '0.6';
       shadow.style.filter = 'blur(6px)';
     }
 
@@ -518,9 +537,13 @@ export class Stage2Board {
   onDiceMouseMove(e) {
     if (!this.isActive || !this.isHoldingDice) return;
 
-    const coords = this.getCanvasCoords(e);
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0 };
+    const curX = e.clientX - arenaRect.left;
+    const curY = e.clientY - arenaRect.top;
+
     const now = performance.now();
-    this.mouseHistory.push({ x: coords.x, y: coords.y, time: now });
+    this.mouseHistory.push({ x: curX, y: curY, time: now });
     if (this.mouseHistory.length > 6) this.mouseHistory.shift();
 
     const cube = document.getElementById('s2-dice-cube');
@@ -529,16 +552,16 @@ export class Stage2Board {
     if (cube && shadow) {
       // Покачивание кубика при движении руки
       const speedX = this.mouseHistory.length > 1
-        ? (coords.x - this.mouseHistory[0].x) * 0.25 : 0;
+        ? (curX - this.mouseHistory[0].x) * 0.25 : 0;
       const speedY = this.mouseHistory.length > 1
-        ? (coords.y - this.mouseHistory[0].y) * 0.25 : 0;
+        ? (curY - this.mouseHistory[0].y) * 0.25 : 0;
 
-      cube.style.left = `${coords.x}px`;
-      cube.style.top = `${coords.y - 45}px`;
-      cube.style.transform = `translate(-50%, -50%) rotateX(${25 - speedY}deg) rotateY(${-20 + speedX}deg) rotateZ(${speedX * 0.5}deg) scale(1.15)`;
+      cube.style.left = `${curX}px`;
+      cube.style.top = `${curY - 45}px`;
+      cube.style.transform = `translate(-50%, -50%) rotateX(${25 - speedY}deg) rotateY(${-20 + speedX}deg) rotateZ(${speedX * 0.5}deg) scale(1.2)`;
 
-      shadow.style.left = `${coords.x}px`;
-      shadow.style.top = `${coords.y}px`;
+      shadow.style.left = `${curX}px`;
+      shadow.style.top = `${curY}px`;
     }
   }
 
@@ -551,7 +574,9 @@ export class Stage2Board {
     if (arena) arena.classList.remove('grabbing');
     if (diceBox) diceBox.classList.remove('holding');
 
-    const coords = this.getCanvasCoords(e);
+    const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0 };
+    const curX = e.clientX - arenaRect.left;
+    const curY = e.clientY - arenaRect.top;
     const now = performance.now();
 
     // Вычисляем скорость броска (flick velocity)
@@ -560,32 +585,40 @@ export class Stage2Board {
     if (this.mouseHistory.length >= 2) {
       const oldest = this.mouseHistory[0];
       const dt = Math.max(0.016, (now - oldest.time) / 1000);
-      vx = (coords.x - oldest.x) / dt;
-      vy = (coords.y - oldest.y) / dt;
+      vx = (curX - oldest.x) / dt;
+      vy = (curY - oldest.y) / dt;
     }
 
     const flingSpeed = Math.hypot(vx, vy);
 
-    if (flingSpeed > 220) {
+    if (flingSpeed > 180) {
       // Игрок дернул мышкой (швырнул со всего маху!)
-      // Ограничиваем скорость в разумных пределах
       const clampedSpeed = Math.min(2200, Math.max(350, flingSpeed));
       const factor = clampedSpeed / flingSpeed;
       const launchVx = vx * factor * 0.85;
       const launchVy = vy * factor * 0.85;
-      // Сила броска вверх зависит от размаха
       const launchVz = Math.min(1350, 480 + clampedSpeed * 0.45);
 
-      this.launchDicePhysics(coords.x, coords.y, launchVx, launchVy, launchVz, true);
+      this.launchDicePhysics(curX, curY, launchVx, launchVy, launchVz, true);
     } else {
       // Игрок просто отпустил мышь или нажал без замаха -> красивый авто-бросок на середину стола
-      this.launchDicePhysics(coords.x, coords.y, null, null, null, false);
+      this.launchDicePhysics(curX, curY, null, null, null, false);
     }
   }
 
   rollDice() {
     if (this.isRollingDice || this.isMoving || this.cells.length === 0 || this.isDiceSettled) return;
-    this.launchDicePhysics(688, 670, null, null, null, false);
+    const diceBox = document.getElementById('s2-dice-box');
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0, width: 1366, height: 768 };
+    let startX = (arena ? arena.clientWidth : 1366) * 0.5 - 120;
+    let startY = (arena ? arena.clientHeight : 768) - 70;
+    if (diceBox) {
+      const boxRect = diceBox.getBoundingClientRect();
+      startX = boxRect.left + boxRect.width / 2 - arenaRect.left;
+      startY = boxRect.top + boxRect.height / 2 - arenaRect.top;
+    }
+    this.launchDicePhysics(startX, startY, null, null, null, false);
   }
 
   /* ==========================================================================
@@ -633,9 +666,12 @@ export class Stage2Board {
     // Звук замаха и броска
     audio.playDiceThrow();
 
+    const arenaWidth = arena.clientWidth || window.innerWidth || 1366;
+    const arenaHeight = arena.clientHeight || window.innerHeight || 768;
+
     // Начальные физические координаты
-    let posX = Math.max(180, Math.min(1200, startX));
-    let posY = Math.max(160, Math.min(680, startY));
+    let posX = Math.max(80, Math.min(arenaWidth - 80, startX));
+    let posY = Math.max(80, Math.min(arenaHeight - 80, startY));
     let posZ = 30;
 
     let velX, velY, velZ;
@@ -646,8 +682,8 @@ export class Stage2Board {
       velZ = customVz || 700;
     } else {
       // Авто-бросок в центр игрового стола
-      const targetLandingX = 640 + (Math.random() - 0.5) * 200;
-      const targetLandingY = 460 + (Math.random() - 0.5) * 100;
+      const targetLandingX = (arenaWidth * 0.5) + (Math.random() - 0.5) * 160;
+      const targetLandingY = (arenaHeight * 0.48) + (Math.random() - 0.5) * 100;
       const flightDuration = 0.55;
       velX = (targetLandingX - posX) / flightDuration;
       velY = (targetLandingY - posY) / flightDuration;
@@ -669,8 +705,8 @@ export class Stage2Board {
     let lastTime = performance.now();
 
     // Границы игрового стола, от которых кубик отскакивает (бортики)
-    const minBoundX = 140, maxBoundX = 1230;
-    const minBoundY = 120, maxBoundY = 680;
+    const minBoundX = 70, maxBoundX = arenaWidth - 70;
+    const minBoundY = 60, maxBoundY = arenaHeight - 60;
 
     const animatePhysics = (now) => {
       const dt = Math.min(0.035, (now - lastTime) / 1000);

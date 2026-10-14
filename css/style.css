@@ -2590,11 +2590,12 @@ body {
 
 .board-quest-window {
   position: relative;
-  width: min(840px, 92vw);
+  width: min(1200px, 95vw);
   aspect-ratio: 1039 / 678;
+  max-height: 94vh;
   background: url('../assets/UI/Big Frame.png') no-repeat center / 100% 100%;
   image-rendering: pixelated;
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.95));
+  filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
   box-sizing: border-box;
   animation: s2Pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -2602,11 +2603,11 @@ body {
 /* Заголовок в верхней деревянной плашке */
 .board-quest-title-header {
   position: absolute;
-  top: 4.8%;
+  top: 4.2%;
   left: 50%;
   transform: translateX(-50%);
-  width: 64%;
-  height: 9%;
+  width: 70%;
+  height: 9.8%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2615,11 +2616,11 @@ body {
 
 .board-quest-title-text {
   font-family: var(--font-pixel), monospace !important;
-  font-size: 19px;
+  font-size: 26px;
   font-weight: bold;
   color: #ffecd1;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   text-shadow: 2px 2px 0 #4a2810, -1px -1px 0 #4a2810, 0 3px 6px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
   overflow: hidden;
@@ -2628,62 +2629,39 @@ body {
 }
 
 .btn-quest-close {
-  position: absolute;
-  top: 4%;
-  right: 6%;
-  width: 32px;
-  height: 32px;
-  background: #3e240c;
-  border: 2px solid #8d4f43;
-  color: #ffecd1;
-  font-family: var(--font-pixel), monospace !important;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.7);
-  transition: transform 0.15s, background 0.15s, border-color 0.15s;
-  z-index: 10;
-}
-
-.btn-quest-close:hover {
-  background: #8b2520;
-  border-color: #ffb703;
-  transform: scale(1.1);
+  display: none !important;
 }
 
 /* Тело квеста на пергаменте */
 .board-quest-content {
   position: absolute;
-  top: 16%;
-  left: 9%;
-  width: 82%;
-  height: 76%;
+  top: 15%;
+  left: 8%;
+  width: 84%;
+  height: 78%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 14px 14px;
+  padding: 12px 24px 24px;
   box-sizing: border-box;
   overflow-y: auto;
 }
 
-/* Видео Катсцена в Cut-Scene-Boardgame.png */
+/* Видео Катсцена в Cut-Scene-Boardgame.png (без сторонних рамок и фонов) */
 .board-cutscene-container {
   position: relative;
-  width: min(490px, 76vw);
+  width: min(720px, 80vw);
   aspect-ratio: 615 / 410;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 6px;
-  background: #000;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
-  overflow: hidden;
+  margin: 0 auto 10px;
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
 }
 
 .board-cutscene-video {
@@ -2706,25 +2684,56 @@ body {
 }
 
 .btn-skip-cutscene {
-  position: absolute;
-  bottom: 8px;
-  right: 12px;
-  z-index: 5;
-  background: rgba(15, 12, 10, 0.85);
-  border: 1px solid #ffb703;
-  color: #ffd166;
-  font-family: var(--font-pixel), monospace !important;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 3px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s;
+  display: none !important;
 }
 
-.btn-skip-cutscene:hover {
-  background: #ffb703;
-  color: #1a1005;
+/* Нижняя панель действий квеста (кнопка за пределами нижней границы рамки) */
+.board-quest-bottom-bar {
+  position: absolute;
+  bottom: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.btn-quest-main-btn {
+  width: 330px !important;
+  height: 100px !important;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 20px rgba(76, 175, 80, 0.75)) !important;
+  animation: s2GreenBtnPulse 2.2s infinite ease-in-out;
+  cursor: pointer;
+}
+
+.btn-quest-main-btn:hover:not(:disabled) {
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(120, 255, 140, 0.95)) brightness(1.15) !important;
+  transform: translateY(-4px) scale(1.05) !important;
+}
+
+.btn-quest-main-btn:active:not(:disabled) {
+  transform: translateY(2px) scale(0.97) !important;
+}
+
+.btn-quest-main-btn .btn-leaf-green-text,
+.btn-quest-main-btn span {
+  font-size: 22px !important;
+  letter-spacing: 2px !important;
+  text-shadow: 2px 2px 0 #143714, -1px -1px 0 #143714, 1px -1px 0 #143714, -1px 1px 0 #143714, 0 3px 6px #000 !important;
+}
+
+@keyframes s2GreenBtnPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 20px rgba(76, 175, 80, 0.75));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(120, 255, 140, 0.95));
+  }
 }
 
 /* Блок диалогов */
@@ -2732,31 +2741,34 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   text-align: center;
-  max-width: 92%;
+  max-width: 94%;
 }
 
 .board-speaker-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .board-speaker-name {
-  font-size: 13px;
+  font-family: var(--font-pixel), monospace !important;
+  font-size: 22px;
   font-weight: bold;
-  color: #78350f;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: #6b2e0b;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7);
   letter-spacing: 0.5px;
 }
 
 .board-quest-desc {
-  font-size: 13px;
-  color: #45230c;
-  line-height: 1.35;
+  font-family: var(--font-pixel), monospace !important;
+  font-size: 20px;
+  color: #381a07;
+  line-height: 1.5;
   font-weight: bold;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+  max-width: 920px;
 }
 
 /* Кнопки ответов Boardgame-UI-Answer.png (196 x 54) */
@@ -2765,21 +2777,21 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .board-answers-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   justify-content: center;
-  max-width: 500px;
+  max-width: 720px;
 }
 
 .btn-board-answer {
   position: relative;
-  width: 220px;
-  height: 56px;
+  width: 280px;
+  height: 68px;
   background: url('../assets/UI/Boardgame-UI-Answer.png') no-repeat center / 100% 100%;
   background-color: transparent;
   border: none;
@@ -2788,7 +2800,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 12px;
+  padding: 6px 16px;
   box-sizing: border-box;
   image-rendering: pixelated;
   transition: transform 0.1s ease, filter 0.12s ease;
@@ -2806,12 +2818,12 @@ body {
 
 .btn-board-answer-text {
   font-family: var(--font-pixel), monospace !important;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: bold;
   color: #ffecd1;
   text-shadow: 1px 1px 0 #3e240c, -1px -1px 0 #3e240c, 0 2px 4px #000;
   text-align: center;
-  line-height: 1.15;
+  line-height: 1.2;
   pointer-events: none;
 }
 
@@ -2820,14 +2832,14 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
 }
 
 .strongman-gauge-track {
   position: relative;
-  width: 440px;
-  height: 34px;
+  width: 580px;
+  height: 42px;
   background: #1e1510;
   border: 3px solid #8d6b4f;
   border-radius: 8px;
@@ -2897,9 +2909,9 @@ body {
 .bingo-tickets-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 16px;
   justify-content: center;
-  max-width: 480px;
+  max-width: 680px;
 }
 
 /* Блок итогового результата */
@@ -2907,20 +2919,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   text-align: center;
 }
 
 .board-result-text {
-  font-size: 15px;
+  font-family: var(--font-pixel), monospace !important;
+  font-size: 22px;
   font-weight: bold;
   color: #3b1e08;
-  line-height: 1.4;
+  line-height: 1.45;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-  background: rgba(255, 215, 0, 0.15);
-  border: 1px solid #d4a373;
-  padding: 8px 18px;
+  background: rgba(255, 215, 0, 0.18);
+  border: 2px solid #d4a373;
+  padding: 10px 24px;
   border-radius: 8px;
+  max-width: 850px;
 }
 
 /* ==========================================================================
@@ -4200,15 +4214,17 @@ body {
 }
 
 .s2-dice-widget-box:hover {
-  transform: translateY(-3px) scale(1.04);
-  filter: brightness(1.12);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.75);
+  transform: translateY(-4px) scale(1.08);
+  filter: brightness(1.18) drop-shadow(0 0 8px rgba(255, 183, 3, 0.7));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.85);
 }
 
 .s2-dice-widget-box:active,
 .s2-dice-widget-box.holding {
   cursor: grabbing !important;
-  transform: scale(0.96);
+  transform: scale(0.92);
+  opacity: 0.25;
+  filter: grayscale(0.5);
 }
 
 .s2-dice {
