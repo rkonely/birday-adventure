@@ -9,6 +9,7 @@ import { Stage1Level } from './stage1/Stage1Level.js';
 import { Stage1Editor } from './stage1/Stage1Editor.js';
 import { Stage2Board } from './stage2/Stage2Board.js';
 import { Stage2Editor } from './stage2/Stage2Editor.js';
+import { BossArena } from './stage3/BossArena.js';
 
 /**
  * Главная точка входа приложения BirDay Adventure
@@ -23,6 +24,7 @@ class BirDayApp {
     this.stage1Editor = null; // Конструктор / Редактор уровней
     this.stage2Board = null;  // Настольная игра (Этап 2)
     this.stage2Editor = null; // Конструктор карты настольной игры (Этап 2)
+    this.bossArena = null;    // Финальная битва с Бобром (Этап 3)
 
     this.screenLevel2Start = document.getElementById('screen-level2-start');
     this.level2BoardCard = document.getElementById('level2-board-card');
@@ -53,6 +55,8 @@ class BirDayApp {
     this.stage2Board = new Stage2Board(this.videoManager);
     // - Конструктор карты настольной игры (Этап 2)
     this.stage2Editor = new Stage2Editor(this.stage2Board);
+    // - Финальная битва с Бобром (Этап 3)
+    this.bossArena = new BossArena(this.videoManager);
 
     // 4. Игровой цикл
     this.gameLoop = new GameLoop(
@@ -91,6 +95,10 @@ class BirDayApp {
 
     events.on('stage:switch_to_stage2_editor', () => {
       this.startStage2Editor();
+    });
+
+    events.on('stage:switch_to_boss_arena', () => {
+      this.startBossArena();
     });
 
     // 8. Возврат в Главное меню
@@ -149,6 +157,17 @@ class BirDayApp {
     }
 
     // 12. Кнопки быстрого доступа в верхнем баре
+    const btnBossArena = document.getElementById('btn-boss-arena');
+    if (btnBossArena) {
+      btnBossArena.addEventListener('click', () => {
+        if (this.bossArena.isActive) {
+          this.exitToTitle();
+        } else {
+          this.startBossArena();
+        }
+      });
+    }
+
     const btnStage2Board = document.getElementById('btn-stage2-board');
     if (btnStage2Board) {
       btnStage2Board.addEventListener('click', () => {
@@ -252,15 +271,22 @@ class BirDayApp {
         } else {
           this.startStage2Editor();
         }
+      } else if (e.code === 'F6') {
+        e.preventDefault();
+        if (this.bossArena.isActive) {
+          this.exitToTitle();
+        } else {
+          this.startBossArena();
+        }
       } else if (e.code === 'Escape') {
-        if (this.stage1Level.isActive || this.stage1Flight.isActive || this.stage1Editor.isActive || this.stage2Board.isActive || this.stage2Editor.isActive) {
+        if (this.stage1Level.isActive || this.stage1Flight.isActive || this.stage1Editor.isActive || this.stage2Board.isActive || this.stage2Editor.isActive || this.bossArena.isActive) {
           e.preventDefault();
           this.exitToTitle();
         }
       }
     });
 
-    console.log('✨ [BirDay Adventure] Готово к старту! [🎲 НАСТОЛКА F4] [🗺️ РЕДАКТОР 2 F5] [🛠️ РЕДАКТОР 1 F3] [🌲 УРОВЕНЬ 1 F1] [🪶 ПОЛЁТ F2].');
+    console.log('✨ [BirDay Adventure] Готово к старту! [🦫 БОСС F6] [🎲 НАСТОЛКА F4] [🗺️ РЕДАКТОР 2 F5] [🛠️ РЕДАКТОР 1 F3] [🌲 УРОВЕНЬ 1 F1] [🪶 ПОЛЁТ F2].');
   }
 
   hideMenuScreens() {
@@ -534,6 +560,40 @@ class BirDayApp {
     if (btnDev) btnDev.classList.remove('active');
   }
 
+  startBossArena() {
+    // Останавливаем все другие сцены
+    if (this.stage1Flight) this.stage1Flight.stop();
+    if (this.stage1Level) this.stage1Level.stop();
+    if (this.stage1Editor) this.stage1Editor.stop();
+    if (this.stage2Board) this.stage2Board.stop();
+    if (this.stage2Editor) this.stage2Editor.stop();
+
+    this.hideMenuScreens();
+
+    // Запускаем Арену Босса
+    if (this.bossArena) {
+      this.bossArena.start();
+    }
+
+    const btnBoss = document.getElementById('btn-boss-arena');
+    if (btnBoss) btnBoss.classList.add('active');
+
+    const btnBoard = document.getElementById('btn-stage2-board');
+    if (btnBoard) btnBoard.classList.remove('active');
+
+    const btnEd2 = document.getElementById('btn-stage2-editor');
+    if (btnEd2) btnEd2.classList.remove('active');
+
+    const btnLvl = document.getElementById('btn-stage1-forest');
+    if (btnLvl) btnLvl.classList.remove('active');
+
+    const btnEd = document.getElementById('btn-stage1-editor');
+    if (btnEd) btnEd.classList.remove('active');
+
+    const btnDev = document.getElementById('btn-dev-flight');
+    if (btnDev) btnDev.classList.remove('active');
+  }
+
   exitToTitle() {
     this.hideLevel2StartScreen();
 
@@ -543,6 +603,7 @@ class BirDayApp {
     if (this.stage1Editor) this.stage1Editor.stop();
     if (this.stage2Board) this.stage2Board.stop();
     if (this.stage2Editor) this.stage2Editor.stop();
+    if (this.bossArena) this.bossArena.stop();
 
     // Возвращаем фоновое видео ожидания
     const videoWrapper = document.getElementById('video-wrapper');
@@ -581,10 +642,15 @@ class BirDayApp {
 
     const btnEd2 = document.getElementById('btn-stage2-editor');
     if (btnEd2) btnEd2.classList.remove('active');
+
+    const btnBoss = document.getElementById('btn-boss-arena');
+    if (btnBoss) btnBoss.classList.remove('active');
   }
 
   update(dt) {
-    if (this.stage2Editor && this.stage2Editor.isActive) {
+    if (this.bossArena && this.bossArena.isActive) {
+      this.bossArena.update(dt);
+    } else if (this.stage2Editor && this.stage2Editor.isActive) {
       this.stage2Editor.update(dt);
     } else if (this.stage2Board && this.stage2Board.isActive) {
       this.stage2Board.update(dt);
@@ -598,7 +664,9 @@ class BirDayApp {
   }
 
   render(alpha) {
-    if (this.stage2Editor && this.stage2Editor.isActive) {
+    if (this.bossArena && this.bossArena.isActive) {
+      this.bossArena.render(alpha);
+    } else if (this.stage2Editor && this.stage2Editor.isActive) {
       this.stage2Editor.render(alpha);
     } else if (this.stage2Board && this.stage2Board.isActive) {
       this.stage2Board.render(alpha);

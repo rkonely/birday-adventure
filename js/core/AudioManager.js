@@ -320,6 +320,63 @@ export class AudioManager {
     } catch (e) {}
   }
 
+  // Звук монеты / розыгрыша карты
+  playCoin() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(987.77, this.ctx.currentTime); // B5
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1318.51, this.ctx.currentTime + 0.08); // E6
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start(this.ctx.currentTime);
+      osc1.stop(this.ctx.currentTime + 0.08);
+      osc2.start(this.ctx.currentTime + 0.08);
+      osc2.stop(this.ctx.currentTime + 0.3);
+    } catch (e) {}
+  }
+
+  // Звук сокрушительного удара / взрыва атаки босса
+  playImpact() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.28);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(400, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.28);
+
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.28);
+    } catch (e) {}
+  }
+
   // Звук входа в слоумо / замедление времени
   playSloMoEnter() {
     if (!this.ctx || !gameState.data.soundEnabled) return;

@@ -960,6 +960,9 @@ export class Stage2Board {
     if (cell.type === 'DICE_BONUS') {
       // Бонус: дополнительный бросок
       setTimeout(() => this.rollDice(), 300);
+    } else if (cell.type === 'BOSS') {
+      audio.playClick();
+      events.emit('stage:switch_to_boss_arena');
     } else if (cell.type === 'FINISH') {
       audio.playSuccess();
       alert('🎉 ПОЗДРАВЛЯЕМ! Вы прошли карту Настольной Игры!');
