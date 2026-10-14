@@ -110,6 +110,8 @@ export class BossArena {
 
     // DOM контейнер интерфейса карт и боя
     this.uiContainer = null;
+    this.isInspectOpen = false;
+    this.inspectModalEl = null;
 
     this.setupEvents();
   }
@@ -123,9 +125,14 @@ export class BossArena {
 
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
+      if (e.code === 'Escape' && this.isInspectOpen) {
+        e.preventDefault();
+        this.closeCardInspect();
+        return;
+      }
       if (e.code === 'Space') {
         const btn = document.getElementById('btn-end-turn');
-        if (btn && !btn.disabled && !this.isResolvingTurn) {
+        if (btn && !btn.disabled && !this.isResolvingTurn && !this.isInspectOpen) {
           e.preventDefault();
           audio.playClick();
           this.executeTurn();
@@ -137,6 +144,24 @@ export class BossArena {
       this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
       this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
       this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+      this.canvas.addEventListener('contextmenu', (e) => {
+        if (!this.isActive || this.isResolvingTurn) return;
+        const pos = this.getCanvasMousePos(e);
+        for (const [key, coords] of Object.entries(ARENA_TILES_COORDS)) {
+          if (
+            pos.x >= coords.x &&
+            pos.x <= coords.x + coords.w &&
+            pos.y >= coords.y &&
+            pos.y <= coords.y + coords.h
+          ) {
+            if (this.gridUnits[key]) {
+              e.preventDefault();
+              this.openCardInspect(this.gridUnits[key]);
+            }
+            break;
+          }
+        }
+      });
     }
   }
 
@@ -241,6 +266,8 @@ export class BossArena {
   stop() {
     if (!this.isActive) return;
     this.isActive = false;
+
+    this.closeCardInspect();
 
     if (this.canvas) {
       this.canvas.style.display = 'none';
@@ -488,6 +515,43 @@ export class BossArena {
         ${isDamaged ? `<div class="card-damaged-hp-badge" title="Текущее здоровье: ${displayHp}/${card.hp}">❤️ ${displayHp}</div>` : ''}
       `;
 
+      // Механика зажатия карты для подробного осмотра на весь экран
+      let holdTimer = null;
+      let isHeld = false;
+
+      const startHold = (e) => {
+        if (e.button !== undefined && e.button !== 0) return; // Только левая кнопка мыши или палец
+        isHeld = false;
+        cardEl.classList.add('is-pressing');
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(() => {
+          isHeld = true;
+          cardEl.classList.remove('is-pressing');
+          this.openCardInspect(card);
+        }, 320); // Зажатие на 320мс открывает карточку на весь экран
+      };
+
+      const cancelHold = () => {
+        cardEl.classList.remove('is-pressing');
+        clearTimeout(holdTimer);
+      };
+
+      cardEl.addEventListener('mousedown', startHold);
+      cardEl.addEventListener('touchstart', startHold, { passive: true });
+
+      cardEl.addEventListener('mouseup', cancelHold);
+      cardEl.addEventListener('mouseleave', cancelHold);
+      cardEl.addEventListener('touchend', cancelHold);
+      cardEl.addEventListener('touchcancel', cancelHold);
+
+      // Правый клик мыши открывает подробное описание карты сразу
+      cardEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelHold();
+        this.openCardInspect(card);
+      });
+
       cardEl.addEventListener('mouseenter', () => {
         this.hoveredCardIndex = index;
       });
@@ -498,6 +562,10 @@ export class BossArena {
 
       cardEl.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (isHeld) {
+          isHeld = false;
+          return;
+        }
         this.selectCard(index);
       });
 
@@ -1025,14 +1093,137 @@ export class BossArena {
         if (this.player.selectedCardIndex >= 0) {
           this.placeCardOnTile(key);
         } else if (this.gridUnits[key]) {
-          // Клик по уже выставленной птице — показ инфо
+          // Клик по уже выставленной птице — открытие подробного осмотра карты
           const unit = this.gridUnits[key];
-          this.addFloatingText(coords.x + coords.w / 2, coords.y - 15, `${unit.name}: ${unit.currentHp}/${unit.maxHp} HP`, '#ffd166', 1.5);
-          audio.playClick();
+          this.openCardInspect(unit);
         }
         break;
       }
     }
+  }
+
+  openCardInspect(card) {
+    if (!card) return;
+    this.closeCardInspect();
+    this.isInspectOpen = true;
+
+    audio.playClick();
+
+    const isDamaged = card.currentHp !== undefined && card.currentHp < (card.maxHp || card.hp);
+    const displayHp = card.currentHp !== undefined ? card.currentHp : (card.hp || 10);
+    const maxHp = card.maxHp || card.hp || 10;
+    const hpPct = Math.max(0, Math.min(100, Math.round((displayHp / maxHp) * 100)));
+    const rarity = card.rarity || 'common';
+    const rarityTitles = {
+      common: 'Обычная карта',
+      uncommon: 'Необычная карта',
+      rare: 'Редкая карта',
+      epic: 'Эпическая карта',
+      legendary: 'Легендарная карта'
+    };
+    const rarityText = rarityTitles[rarity] || 'Карта существа';
+
+    const modal = document.createElement('div');
+    modal.id = 'boss-card-inspect-modal';
+    modal.className = 'boss-card-inspect-modal';
+
+    modal.innerHTML = `
+      <div class="boss-card-inspect-dialog">
+        <!-- Кнопка быстрого закрытия в правом верхнем углу рамки -->
+        <button class="inspect-dialog-close-x" id="btn-inspect-close-x" aria-label="Закрыть" title="Закрыть [ESC]"></button>
+
+        <!-- Левая часть: Крупная текстура карты -->
+        <div class="inspect-card-preview-wrap ${rarity}">
+          <img src="${card.image}" alt="${card.name}" class="inspect-card-img" draggable="false" />
+        </div>
+
+        <!-- Правая часть: Подробные характеристики и описание в рамках -->
+        <div class="inspect-info-panel">
+          <div class="inspect-header">
+            <div class="inspect-name-row">
+              <h2 class="inspect-card-name">${card.name}</h2>
+              <span class="inspect-rarity-badge ${rarity}">${rarityText}</span>
+            </div>
+            ${card.subname ? `<div class="inspect-card-subname">«${card.subname}»</div>` : ''}
+          </div>
+
+          <!-- 4 плашки: Атака и Здоровье (Металл), Роль и Состояние (Дерево) - БЕЗ ЭМОДЗИ -->
+          <div class="inspect-stats-grid">
+            <div class="inspect-stat-tile stat-metal">
+              <span class="inspect-stat-label">АТАКА</span>
+              <span class="inspect-stat-val val-atk">${card.currentAtk !== undefined ? card.currentAtk : card.atk} ATK</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-metal">
+              <span class="inspect-stat-label">ЗДОРОВЬЕ</span>
+              <span class="inspect-stat-val val-hp">${displayHp} / ${maxHp} HP</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-wood">
+              <span class="inspect-stat-label">РОЛЬ В БОЮ</span>
+              <span class="inspect-stat-val val-role">${card.role || 'Боец'}</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-wood">
+              <span class="inspect-stat-label">СОСТОЯНИЕ</span>
+              <span class="inspect-stat-val val-status" style="color: ${card.tileKey ? '#ffb703' : '#4ede80'};">
+                ${card.tileKey ? `Клетка [${card.tileKey}]` : 'В руке (Готова)'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Описание способности с фоном Card-Detail-DESCRIPTION.png -->
+          <div class="inspect-ability-box">
+            <div class="inspect-ability-title">СПОСОБНОСТЬ: ${card.abilityName || 'Боевой навык'}</div>
+            <div class="inspect-ability-desc">
+              ${card.abilityDesc || 'Базовое пернатое существо. Атакует босса в фазе боя и блокирует входящий урон на занятой клетке.'}
+            </div>
+          </div>
+
+          <!-- Нижняя панель действий -->
+          <div class="inspect-footer">
+            <span class="inspect-hint">Нажмите [ESC] или в любом месте, чтобы закрыть</span>
+            <button class="inspect-close-btn" id="btn-inspect-close">ВЕРНУТЬСЯ К БОЮ ▶</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Клик по фону закрывает модалку
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.closeCardInspect();
+      }
+    });
+
+    const closeBtn = modal.querySelector('#btn-inspect-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeCardInspect();
+      });
+    }
+
+    const closeXBtn = modal.querySelector('#btn-inspect-close-x');
+    if (closeXBtn) {
+      closeXBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeCardInspect();
+      });
+    }
+
+    const gameContainer = document.getElementById('game-container') || document.body;
+    gameContainer.appendChild(modal);
+    this.inspectModalEl = modal;
+  }
+
+  closeCardInspect() {
+    if (this.inspectModalEl) {
+      audio.playClick();
+      this.inspectModalEl.remove();
+      this.inspectModalEl = null;
+    }
+    this.isInspectOpen = false;
   }
 
   addFloatingText(x, y, text, color = '#ffd166', duration = 1.5) {

@@ -394,19 +394,6 @@ export const CARDS_DATABASE = [
     image: 'assets/Market/Card/Celestial Knight.png',
     abilityName: 'Небесный стыд',
     abilityDesc: 'Сокрушительный удар на 28 урона. Комичный вид в труселях смущает бобра, снижая его меткость на 50%.'
-  },
-  {
-    id: 'eagle_champion',
-    name: 'Орёл — Владыка Небес',
-    subname: 'Изумрудный страж бури',
-    role: 'Легендарный защитник',
-    rarity: 'legendary',
-    cost: 5,
-    atk: 25,
-    hp: 40,
-    image: 'assets/Market/Card/The Eagle - Heavenly Knight.png',
-    abilityName: 'Грозовой триумф',
-    abilityDesc: 'Призывает молнию на 20 урона и укрывает всех союзников щитом из плюща на 15 HP.'
   }
 ];
 
