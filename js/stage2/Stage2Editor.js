@@ -76,11 +76,9 @@ export class Stage2Editor {
     this.ensureCellPoints();
     this.saveUndoState();
 
-    // Запускаем видео бобра в центре
-    const videoWrapper = document.getElementById('video-wrapper');
-    if (videoWrapper) videoWrapper.style.display = 'block';
+    // Запускаем видеоряд босса в центре стола
     if (this.stage2Board.videoManager) {
-      this.stage2Board.videoManager.playVideo('BOARD_BEAVER');
+      this.stage2Board.videoManager.startBoardGameBossSequence();
     }
 
     // Настраиваем Canvas
@@ -100,6 +98,9 @@ export class Stage2Editor {
     this.removeEditorUI();
     if (this.canvas) {
       this.canvas.style.display = 'none';
+    }
+    if (this.stage2Board.videoManager) {
+      this.stage2Board.videoManager.stopBoardGameBossSequence();
     }
   }
 

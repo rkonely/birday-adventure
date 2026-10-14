@@ -96,6 +96,19 @@ body {
   display: block;
 }
 
+/* Стили зацикленного видео бобра исключительно для режима Настольной игры (Этап 2) */
+#video-wrapper.board-game-mode #bg-video {
+  top: 31%;
+  left: 21%;
+  width: 50%;
+  height: 50%;
+  object-fit: cover;
+}
+
+#video-wrapper.board-game-mode .crt-overlay {
+  display: none;
+}
+
 /* Мягкий ретро-эффект CRT */
 .crt-overlay {
   position: absolute;

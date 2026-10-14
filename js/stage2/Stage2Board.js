@@ -68,6 +68,7 @@ export class Stage2Board {
     this.hoveredCell = null;
     this.selectedCell = null;
     this.activeEventModal = null; // если открыта карточка клетки
+    this.showDebugCells = false; // В игре контуры, клеточки и иконки скрыты (видны только в редакторе)
 
     // Анимации и время
     this.animTime = 0;
@@ -250,13 +251,9 @@ export class Stage2Board {
     // 1. Устанавливаем статус
     gameState.setStage('STAGE_2_BOARD');
 
-    // 2. Включаем видео-обёртку и зацикленное видео с бобром в центре
-    const videoWrapper = document.getElementById('video-wrapper');
-    if (videoWrapper) {
-      videoWrapper.style.display = 'block';
-    }
+    // 2. Включаем видеоряд босса в центре стола (появление -> случайный цикл IDE1 / IDE2)
     if (this.videoManager) {
-      this.videoManager.playVideo('BOARD_BEAVER');
+      this.videoManager.startBoardGameBossSequence();
     }
 
     // 3. Настраиваем холст
@@ -277,6 +274,9 @@ export class Stage2Board {
     this.isActive = false;
     if (this.canvas) {
       this.canvas.style.display = 'none';
+    }
+    if (this.videoManager) {
+      this.videoManager.stopBoardGameBossSequence();
     }
     this.removeUI();
   }
@@ -889,20 +889,20 @@ export class Stage2Board {
     // 1. Очищаем холст — благодаря этому видео снизу просвечивает сквозь дырку
     this.ctx.clearRect(0, 0, this.boardWidth, this.boardHeight);
 
-    // 2. Отрисовываем карту Board.png
+    // 2. Отрисовываем чистую карту Board.png
     if (this.isLoaded && this.boardImage.complete) {
       this.ctx.drawImage(this.boardImage, 0, 0, this.boardWidth, this.boardHeight);
     }
 
-    // 3. Соединительные линии между клетками
-    this.renderTrackLines();
-
-    // 4. Отрисовка клеток
-    for (let i = 0; i < this.cells.length; i++) {
-      this.renderCell(this.cells[i], i);
+    // 3. Отладочные контуры, клетки и иконки (отображаются только в режиме отладки/настройки)
+    if (this.showDebugCells) {
+      this.renderTrackLines();
+      for (let i = 0; i < this.cells.length; i++) {
+        this.renderCell(this.cells[i], i);
+      }
     }
 
-    // 5. Отрисовка фишки игрока
+    // 4. Отрисовка фишки игрока (в игре видны только пешка и поле)
     this.renderPlayerPawn();
   }
 
