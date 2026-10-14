@@ -69,10 +69,10 @@ export class BossArena {
       intents: [] // запланированные атаки на следующий ход
     };
 
-    // Состояние игрока
+    // Состояние игрока (без семян — упор на перекрытие клеток сетки)
     this.player = {
-      maxSeeds: 4,
-      currentSeeds: 4,
+      maxHp: 100,
+      hp: 100,
       round: 1,
       deck: [],
       hand: [],
@@ -169,15 +169,15 @@ export class BossArena {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 
     // 4. Сброс состояния матча
-    this.boss.maxHp = 320;
-    this.boss.hp = 320;
+    this.boss.maxHp = 240;
+    this.boss.hp = 240;
     this.boss.armor = 0;
     this.boss.isEnraged = false;
     this.boss.hitFlashTimer = 0;
 
     this.player.round = 1;
-    this.player.maxSeeds = 4;
-    this.player.currentSeeds = 4;
+    this.player.maxHp = 100;
+    this.player.hp = 100;
 
     if (customDeck && customDeck.length > 0) {
       this.player.deck = [...customDeck].sort(() => 0.5 - Math.random());
@@ -247,7 +247,7 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     DOM HUD: Рука карт, энергия, индикатор здоровья босса
+     DOM HUD: Рука карт, здоровье игрока и индикатор босса
      ========================================================================== */
   createDomHUD() {
     if (this.uiContainer) {
@@ -287,28 +287,31 @@ export class BossArena {
 
       <!-- Центральная подсказка при выборе карты -->
       <div id="boss-card-hint" class="boss-card-hint hidden">
-        Выберите клетку на поле 5×3, чтобы выставить героя
+        Выберите клетку на поле 5×3, чтобы выставить героя и перекрыть удар!
       </div>
 
-      <!-- Нижняя панель игрока: Энергия (Семечки), Кнопка Хода, Рука карт -->
+      <!-- Нижняя панель игрока: Защита игрока, Кнопка Хода, Рука карт -->
       <div class="player-bottom-hud">
         <div class="player-controls-row">
-          <!-- Ресурс семечек -->
-          <div class="seeds-resource-pill">
-            <span class="seed-icon">🌰</span>
-            <div class="seeds-text-col">
-              <span class="seeds-label">СЕМЕЧКИ</span>
-              <span id="seeds-count" class="seeds-value">${this.player.currentSeeds} / ${this.player.maxSeeds}</span>
+          <!-- Здоровье / Защита игрока -->
+          <div class="player-hp-pill">
+            <span class="player-hp-icon">🛡️</span>
+            <div class="player-hp-col">
+              <span class="player-hp-label">ВАША ЗАЩИТА</span>
+              <div class="player-hp-track">
+                <div id="player-hp-bar" class="player-hp-bar" style="width: 100%"></div>
+                <span id="player-hp-num" class="player-hp-num">${this.player.hp} / ${this.player.maxHp} HP</span>
+              </div>
             </div>
           </div>
 
           <!-- Кнопка "В АТАКУ! / ЗАВЕРШИТЬ ХОД" -->
-          <button id="btn-end-turn" class="btn-boss-action btn-end-turn" title="Завершить ход и атаковать">
+          <button id="btn-end-turn" class="btn-boss-action btn-end-turn" title="Завершить расстановку и отразить атаку">
             <span class="btn-action-icon">⚔️</span>
             <span class="btn-action-title">В АТАКУ!</span>
           </button>
 
-          <!-- Счетчик колоды и сброса -->
+          <!-- Счетчик колоды и раунда -->
           <div class="deck-discard-pill">
             <span id="deck-counter" title="Карт в колоде">🎴 ${this.player.deck.length}</span>
             <span id="round-counter" class="round-counter">РАУНД ${this.player.round}</span>
@@ -347,9 +350,12 @@ export class BossArena {
       hpNum.textContent = `${Math.max(0, this.boss.hp)} / ${this.boss.maxHp} HP`;
     }
 
-    const seedsCount = document.getElementById('seeds-count');
-    if (seedsCount) {
-      seedsCount.textContent = `${this.player.currentSeeds} / ${this.player.maxSeeds}`;
+    const playerBar = document.getElementById('player-hp-bar');
+    const playerNum = document.getElementById('player-hp-num');
+    if (playerBar && playerNum) {
+      const pPct = Math.max(0, Math.min(100, (this.player.hp / this.player.maxHp) * 100));
+      playerBar.style.width = `${pPct}%`;
+      playerNum.textContent = `${Math.max(0, this.player.hp)} / ${this.player.maxHp} HP`;
     }
 
     const deckCounter = document.getElementById('deck-counter');
@@ -369,7 +375,7 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     Рендер руки карт
+     Рендер руки карт (без затрат семян — свободный выбор)
      ========================================================================== */
   renderHandDOM() {
     const container = document.getElementById('boss-hand-container');
@@ -385,12 +391,6 @@ export class BossArena {
         cardEl.classList.add('selected');
       }
 
-      // Не хватает семечек
-      const canAfford = this.player.currentSeeds >= card.cost;
-      if (!canAfford) {
-        cardEl.classList.add('cant-afford');
-      }
-
       // Небольшой веерный наклон карт
       const centerOffset = index - (totalCards - 1) / 2;
       const rotateDeg = centerOffset * 3.5;
@@ -398,9 +398,6 @@ export class BossArena {
       cardEl.style.transform = `rotate(${rotateDeg}deg) translateY(${translateY}px)`;
 
       cardEl.innerHTML = `
-        <div class="card-cost-badge" title="Стоимость в семечках">
-          <span>🌰</span> ${card.cost}
-        </div>
         <div class="card-art-box">
           <img src="${card.image}" alt="${card.name}" draggable="false" />
         </div>
@@ -447,18 +444,11 @@ export class BossArena {
     if (this.isResolvingTurn) return;
 
     if (this.player.selectedCardIndex === index) {
-      // Снять выбор
       this.player.selectedCardIndex = -1;
       audio.playClick();
     } else {
-      const card = this.player.hand[index];
-      if (card && this.player.currentSeeds >= card.cost) {
-        this.player.selectedCardIndex = index;
-        audio.playClick();
-      } else {
-        this.addFloatingText(this.arenaWidth / 2, this.arenaHeight - 200, 'Не хватает семечек! 🌰', '#ff4d4d', 1.5);
-        if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
-      }
+      this.player.selectedCardIndex = index;
+      audio.playClick();
     }
     this.renderHandDOM();
   }
@@ -466,7 +456,6 @@ export class BossArena {
   drawCards(count = 2) {
     for (let i = 0; i < count; i++) {
       if (this.player.deck.length === 0) {
-        // Перемешиваем сброс обратно в колоду
         if (this.player.discard.length > 0) {
           this.player.deck = [...this.player.discard].sort(() => 0.5 - Math.random());
           this.player.discard = [];
@@ -486,7 +475,7 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     Логика размещения птицы на клетку 5x3
+     Логика размещения птицы на клетку 5x3 (перекрытие атак)
      ========================================================================== */
   placeCardOnTile(tileKey) {
     if (this.player.selectedCardIndex < 0) return;
@@ -499,13 +488,7 @@ export class BossArena {
       return;
     }
 
-    if (this.player.currentSeeds < card.cost) {
-      this.addFloatingText(this.arenaWidth / 2, 400, 'Не хватает семечек! 🌰', '#ff4d4d', 1.2);
-      return;
-    }
-
-    // Списываем семечки и удаляем карту из руки
-    this.player.currentSeeds -= card.cost;
+    // Удаляем карту из руки без траты энергии
     this.player.hand.splice(this.player.selectedCardIndex, 1);
     this.player.selectedCardIndex = -1;
 
@@ -587,7 +570,7 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     Телеграфирование атак Бобра (Намерения)
+     Телеграфирование атак Бобра (Намерения) с нарастающей сложностью
      ========================================================================== */
   generateBossIntents() {
     // Очищаем старые метки целей
@@ -596,76 +579,81 @@ export class BossArena {
       this.tileEffects[key].intentDamage = 0;
     }
 
-    const intentsPool = [
-      {
-        type: 'AXE_STRIKE',
-        description: '🪓 Сокрушительный замах топором (2 колонки)!',
-        damage: 18,
-        pickTargets: () => {
-          // Выбираем 2 соседние колонки
-          const startCol = Math.random() < 0.5 ? 2 : 3;
-          const targeted = [];
-          for (let r = 1; r <= 3; r++) {
-            targeted.push(`${startCol}x${r}`);
-            targeted.push(`${startCol + 1}x${r}`);
-          }
-          return targeted;
-        }
-      },
-      {
-        type: 'LOG_ROLL',
-        description: '🪵 Сброс гигантских брёвен по горизонтали!',
-        damage: 14,
-        pickTargets: () => {
-          // Бьет по 1 случайному ряду (из 3)
-          const targetRow = Math.floor(Math.random() * 3) + 1;
-          const targeted = [];
-          for (let c = 1; c <= 5; c++) {
-            targeted.push(`${c}x${targetRow}`);
-          }
-          return targeted;
-        }
-      },
-      {
-        type: 'CIRCULAR_SAW',
-        description: '🪚 Циркулярные пилы проносятся по краям арены!',
-        damage: 22,
-        pickTargets: () => {
-          // Бьет по боковым колонкам 1 и 5
-          const targeted = [];
-          for (let r = 1; r <= 3; r++) {
-            targeted.push(`1x${r}`);
-            targeted.push(`5x${r}`);
-          }
-          return targeted;
-        }
-      },
-      {
-        type: 'SLAM_CENTER',
-        description: '💥 Удар плотины по центру поля!',
-        damage: 25,
-        pickTargets: () => {
-          return ['2x2', '3x1', '3x2', '3x3', '4x2'];
-        }
+    const allKeys = Object.keys(ARENA_TILES_COORDS);
+    const round = this.player.round;
+
+    let targetCount = 1;
+    let damagePerCell = 1;
+    let attackTitle = '';
+
+    if (round === 1) {
+      targetCount = 1;
+      damagePerCell = 1;
+      attackTitle = '🪓 Пробный замах';
+    } else if (round === 2) {
+      targetCount = 2;
+      damagePerCell = 3;
+      attackTitle = '🪵 Рубка брёвен';
+    } else if (round === 3) {
+      targetCount = 3;
+      damagePerCell = 5;
+      attackTitle = '🪚 Циркулярные пилы';
+    } else if (round === 4) {
+      targetCount = Math.random() < 0.5 ? 3 : 4;
+      damagePerCell = 7;
+      attackTitle = '💥 Грохот плотины';
+    } else {
+      // Раунд 5 и выше: 4 клетки, урон до 10 за клетку (максимум -40 при полном пропуске!)
+      targetCount = 4;
+      damagePerCell = Math.min(10, 8 + Math.min(2, round - 5));
+      attackTitle = '⚡ Смертоносный удар плотины';
+    }
+
+    // Подбор комбинаций клеток
+    let chosenKeys = [];
+    const patternType = Math.floor(Math.random() * 3);
+
+    if (patternType === 0 && targetCount >= 3) {
+      if (Math.random() < 0.5) {
+        // Линия по горизонтали
+        const row = Math.floor(Math.random() * 3) + 1;
+        const rowKeys = allKeys.filter(k => k.endsWith(`x${row}`));
+        chosenKeys = [...rowKeys].sort(() => 0.5 - Math.random()).slice(0, targetCount);
+      } else {
+        // Соседние колонки
+        const col = Math.floor(Math.random() * 4) + 1;
+        const colKeys = allKeys.filter(k => k.startsWith(`${col}x`) || k.startsWith(`${col + 1}x`));
+        chosenKeys = [...colKeys].sort(() => 0.5 - Math.random()).slice(0, targetCount);
       }
-    ];
+    } else {
+      const shuffled = [...allKeys].sort(() => 0.5 - Math.random());
+      chosenKeys = shuffled.slice(0, targetCount);
+    }
 
-    const chosenIntent = intentsPool[Math.floor(Math.random() * intentsPool.length)];
-    const targetKeys = chosenIntent.pickTargets();
-
-    targetKeys.forEach(k => {
+    chosenKeys.forEach(k => {
       if (this.tileEffects[k]) {
         this.tileEffects[k].isTargeted = true;
-        this.tileEffects[k].intentDamage = chosenIntent.damage;
+        this.tileEffects[k].intentDamage = damagePerCell;
       }
     });
 
-    this.boss.intents = [chosenIntent];
+    const totalPotential = targetCount * damagePerCell;
+    const desc = `${attackTitle}: ${targetCount} ${targetCount === 1 ? 'клетка' : 'клетки'} по ${damagePerCell} ур. (до -${totalPotential} HP игроку!)`;
+
+    this.boss.intents = [{
+      type: 'SCALING_STRIKE',
+      title: attackTitle,
+      description: desc,
+      targetCount: targetCount,
+      damage: damagePerCell,
+      keys: chosenKeys
+    }];
+
     this.updateHUD();
   }
 
   /* ==========================================================================
-     Боевой цикл (Разрешение хода: атака птиц -> удар бобра -> очистка)
+     Боевой цикл (Разрешение хода: атака птиц -> удар бобра -> проверка HP игрока)
      ========================================================================== */
   async executeTurn() {
     this.isResolvingTurn = true;
@@ -703,13 +691,13 @@ export class BossArena {
       this.boss.hitFlashTimer = 0.5;
       this.screenShake(12, 0.4);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
-      this.addFloatingText(this.arenaWidth / 2 + (Math.random() * 60 - 30), 200, `-${totalBirdsDamage} УРОНА! 💥`, '#ff3333', 2.0);
+      this.addFloatingText(this.arenaWidth / 2 + (Math.random() * 60 - 30), 200, `-${totalBirdsDamage} УРОНА БОССУ! 💥`, '#ff3333', 2.0);
       this.updateHUD();
 
       await this.sleep(600);
     }
 
-    // Проверка победы
+    // Проверка победы игрока над боссом
     if (this.boss.hp <= 0) {
       this.boss.hp = 0;
       this.updateHUD();
@@ -718,45 +706,113 @@ export class BossArena {
     }
 
     // Шаг 3: Атака Бобра по намеченным клеткам
-    this.addFloatingText(this.arenaWidth / 2, 160, 'БОБЁР НАНОСИТ СОКРУШИТЕЛЬНЫЙ УДАР! 🪓', '#e63946', 2.0);
-    this.screenShake(18, 0.6);
+    const intent = this.boss.intents[0] || { damage: 1 };
+    this.addFloatingText(this.arenaWidth / 2, 160, 'БОБЁР НАНОСИТ УДАР! 🪓', '#e63946', 2.0);
+    this.screenShake(16, 0.5);
     if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
     await this.sleep(600);
 
-    const intent = this.boss.intents[0];
-    const incomingDmg = intent ? intent.damage : 15;
+    let directPlayerDamage = 0;
 
     for (const [key, effect] of Object.entries(this.tileEffects)) {
       if (effect.isTargeted) {
         effect.shakeTimer = 0.5;
+        const cellDamage = effect.intentDamage || intent.damage || 1;
         const unit = this.gridUnits[key];
-        if (unit) {
-          unit.currentHp -= incomingDmg;
-          unit.hitAnim = 0.5;
-          const tile = ARENA_TILES_COORDS[key];
-          this.addFloatingText(tile.x + tile.w / 2, tile.y + 20, `-${incomingDmg}`, '#ff3333', 1.5);
+        const tile = ARENA_TILES_COORDS[key];
 
+        if (unit) {
+          // Клетка ПЕРЕКРЫТА птицей! Птица принимает удар
+          unit.currentHp -= cellDamage;
+          unit.hitAnim = 0.5;
           if (unit.currentHp <= 0) {
-            // Птица повержена
             delete this.gridUnits[key];
-            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, 'Повержен! 🪶', '#aaa', 1.5);
+            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! Но ${unit.name} повержен! 🪶`, '#ffd166', 1.8);
+          } else {
+            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! -${cellDamage} HP 🛡️`, '#55efc4', 1.5);
           }
+        } else {
+          // Клетка НЕ ПЕРЕКРЫТА! Урон наносится напрямую игроку!
+          directPlayerDamage += cellDamage;
+          this.addFloatingText(tile.x + tile.w / 2, tile.y + 20, `ПРОПУСК! -${cellDamage} HP 💥`, '#ff3838', 2.0);
         }
       }
     }
 
+    // Наносим урон игроку за неперекрытые клетки
+    if (directPlayerDamage > 0) {
+      await this.sleep(400);
+      this.player.hp = Math.max(0, this.player.hp - directPlayerDamage);
+      this.screenShake(20, 0.6);
+      audio.playBonk();
+      this.addFloatingText(this.arenaWidth / 2, 430, `УРОН ИГРОКУ: -${directPlayerDamage} HP! 💔`, '#ff3838', 2.5);
+      this.updateHUD();
+    }
+
     await this.sleep(800);
 
-    // Шаг 4: Завершение раунда, пополнение энергии и подготовка следующего
+    // Проверка поражения игрока
+    if (this.player.hp <= 0) {
+      this.player.hp = 0;
+      this.updateHUD();
+      this.handleDefeat();
+      return;
+    }
+
+    // Шаг 4: Завершение раунда, добор 2 карт и подготовка следующей атаки
     this.player.round++;
-    this.player.maxSeeds = Math.min(7, 4 + Math.floor(this.player.round / 2));
-    this.player.currentSeeds = this.player.maxSeeds;
     this.drawCards(2);
     this.generateBossIntents();
 
     this.isResolvingTurn = false;
     if (btn) btn.disabled = false;
     this.updateHUD();
+  }
+
+  handleDefeat() {
+    audio.playBonk();
+    this.addFloatingText(this.arenaWidth / 2, 300, '💀 ВАША ЗАЩИТА ПАЛА! 💀', '#ff4d4d', 3.0);
+
+    setTimeout(() => {
+      const modal = document.createElement('div');
+      modal.id = 'boss-defeat-modal';
+      modal.className = 'boss-defeat-modal-overlay';
+      modal.innerHTML = `
+        <div class="boss-defeat-window">
+          <div class="boss-defeat-title-header">
+            <span class="boss-defeat-title-text">ЗАЩИТА ПАЛА</span>
+          </div>
+          <div class="boss-defeat-content">
+            <div class="boss-defeat-message">
+              <p class="boss-defeat-main-text">Бобёр-Дровосек пробил незащищённые клетки плотины!</p>
+              <p class="boss-defeat-prompt-text">Перекрывайте клетки с прицелом босса пернатыми героями, чтобы блокировать урон.</p>
+            </div>
+            <div class="boss-defeat-actions">
+              <button class="btn-leaf-green" id="btn-boss-retry" title="Попробовать бой снова">
+                <span class="btn-leaf-green-text">В БОЙ СНОВА 🔄</span>
+              </button>
+              <button class="btn-leaf-green btn-boss-to-market" id="btn-boss-to-market" title="Вернуться в Магазин Карт">
+                <span class="btn-leaf-green-text">В МАГАЗИН 🛒</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelector('#btn-boss-retry')?.addEventListener('click', () => {
+        audio.playClick();
+        modal.remove();
+        this.start();
+      });
+
+      modal.querySelector('#btn-boss-to-market')?.addEventListener('click', () => {
+        audio.playClick();
+        modal.remove();
+        this.stop();
+        events.emit('stage:open_market');
+      });
+    }, 1000);
   }
 
   handleVictory() {

@@ -104,16 +104,12 @@ export class CardMarket {
 
     this.container.innerHTML = `
       <div class="market-stage-viewport">
-        <!-- Верхний каменный баннер "ФИНАЛ!" -->
+        <!-- Верхний каменный баннер "В БОЙ С БОБРОМ! ⚔️" -->
         <div class="market-top-banner">
-          <div class="market-title-stone-wrap" id="btn-market-title-final" title="Перейти к финальной битве!">
-            <img src="assets/UI/Title Stone.png" alt="ФИНАЛ!" class="market-title-stone-img" />
-            <span class="market-title-stone-text">ФИНАЛ!</span>
+          <div class="market-title-stone-wrap" id="btn-market-title-final" title="Вступить в бой с Бобром!">
+            <img src="assets/UI/Title Stone.png" alt="В БОЙ С БОБРОМ!" class="market-title-stone-img" />
+            <span class="market-title-stone-text">В БОЙ С БОБРОМ! ⚔️</span>
           </div>
-          <!-- Кнопка "В БОЙ С БОБРОМ!" -->
-          <button id="btn-market-start-boss" class="btn-market-boss-fight" title="Вступить в бой с Бобром!">
-            <span class="boss-fight-text">В БОЙ С БОБРОМ! ⚔️</span>
-          </button>
         </div>
 
         <!-- Левый стрелочный переключатель (на кожаном ушке альбома) -->
@@ -168,15 +164,9 @@ export class CardMarket {
               <img src="assets/Market/Booster-Pack.png" alt="Forest Friends Booster Pack" class="market-booster-pack-img" />
             </div>
             
-            <!-- Кнопка покупки/открытия бустера -->
+            <!-- Кнопка покупки/открытия бустера Price-Buy-Btn -->
             <button id="btn-market-buy-booster" class="market-buy-btn market-booster-btn" title="Купить бустер карт">
-              <div class="market-buy-tab">
-                <img src="assets/First-Level/Item/Egg/Default-Egg.png" class="market-buy-egg-icon" alt="Яйцо" />
-                <span class="market-buy-price-text" id="market-booster-price-text">15</span>
-              </div>
-              <div class="market-buy-green-bar">
-                <span id="market-booster-btn-text">КУПИТЬ</span>
-              </div>
+              <span class="market-buy-price-val" id="market-booster-price-text">15</span>
             </button>
           </div>
 
@@ -185,14 +175,15 @@ export class CardMarket {
         <!-- Всплывающая подсказка с описанием карты при наведении -->
         <div id="market-card-tooltip" class="market-card-tooltip hidden"></div>
 
-        <!-- Модальное окно вскрытия Бустер-пака -->
+        <!-- Модальное окно вскрытия Бустер-пака (4 интерактивные карты) -->
         <div id="market-booster-modal" class="market-booster-modal hidden">
           <div class="market-booster-modal-content">
             <div class="market-booster-modal-header">
-              <span class="booster-modal-title">ВЫ ПОЛУЧИЛИ 3 НОВЫХ КАРТЫ!</span>
+              <span class="booster-modal-title">✨ ОТКРЫТИЕ БУСТЕРА КАРТ! ✨</span>
+              <div class="booster-modal-subtitle" id="booster-modal-subtitle">Нажмите на рубашку каждой карты, чтобы открыть её! (0 / 4)</div>
             </div>
             <div class="market-booster-cards-row" id="market-booster-cards-row"></div>
-            <button id="btn-market-close-booster" class="btn-leaf-green booster-collect-btn">
+            <button id="btn-market-close-booster" class="btn-leaf-green booster-collect-btn disabled" disabled title="Сначала откройте все 4 карты">
               <span class="btn-leaf-green-text">ЗАБРАТЬ В КОЛОДУ ▶</span>
             </button>
           </div>
@@ -236,14 +227,6 @@ export class CardMarket {
         const modal = document.getElementById('market-booster-modal');
         if (modal) modal.classList.add('hidden');
         this.renderAlbum();
-      });
-    }
-
-    const btnBoss = document.getElementById('btn-market-start-boss');
-    if (btnBoss) {
-      btnBoss.addEventListener('click', () => {
-        audio.playClick();
-        this.proceedToBoss();
       });
     }
 
@@ -346,20 +329,18 @@ export class CardMarket {
         <div class="market-card-item ${isOwned ? 'owned' : 'unowned'}" data-card-id="${card.id}">
           <div class="market-card-img-wrap">
             <img src="${card.image}" alt="${card.name}" class="market-card-img" />
+            <!-- Название способности прямо на карте -->
+            <div class="market-card-ability-badge" title="${card.abilityName}">
+              <span class="ability-badge-text">«${card.abilityName}»</span>
+            </div>
           </div>
 
-          <!-- Кнопка с ценой яйцами Price-Buy-Btn -->
+          <!-- Кнопка покупки Price-Buy-Btn -->
           <div class="market-buy-btn-wrap">
             <button class="market-buy-btn ${isOwned ? 'is-bought' : (canAfford ? '' : 'cant-afford')}" 
                     data-buy-id="${card.id}" 
                     title="${isOwned ? 'Карта уже в вашей колоде' : `Купить за ${price} яиц`}">
-              <div class="market-buy-tab">
-                <img src="assets/First-Level/Item/Egg/Default-Egg.png" class="market-buy-egg-icon" alt="Яйцо" />
-                <span class="market-buy-price-text">${isOwned ? '✔' : price}</span>
-              </div>
-              <div class="market-buy-green-bar">
-                <span>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</span>
-              </div>
+              <span class="market-buy-price-val">${isOwned ? '✔' : price}</span>
             </button>
           </div>
         </div>
@@ -414,12 +395,12 @@ export class CardMarket {
       // Открываем бесплатный бустер с настольной игры
       audio.playSuccess();
       this.consumeBooster();
-      this.openBoosterModal();
+      this.playBoosterOpeningVideo();
     } else if (currentEggs >= 15) {
       // Покупаем бустер за 15 яиц
       audio.playSuccess();
       this.setEggBalance(currentEggs - 15);
-      this.openBoosterModal();
+      this.playBoosterOpeningVideo();
     } else {
       // Недостаточно яиц
       audio.playImpact();
@@ -428,31 +409,108 @@ export class CardMarket {
     }
   }
 
+  playBoosterOpeningVideo() {
+    const videoWrapper = document.getElementById('video-wrapper');
+    const btnSkip = document.getElementById('btn-skip-video');
+
+    if (this.container) {
+      this.container.classList.add('hidden');
+    }
+    if (videoWrapper) {
+      videoWrapper.style.display = 'block';
+    }
+    if (btnSkip) {
+      btnSkip.classList.remove('hidden');
+    }
+
+    const onFinished = () => {
+      if (btnSkip) btnSkip.classList.add('hidden');
+      if (this.container) {
+        this.container.classList.remove('hidden');
+      }
+      this.openBoosterModal();
+    };
+
+    if (this.videoManager) {
+      this.videoManager.playVideo('BOOSTER_OPEN', onFinished);
+    } else {
+      onFinished();
+    }
+  }
+
   openBoosterModal() {
     const modal = document.getElementById('market-booster-modal');
     const cardsRow = document.getElementById('market-booster-cards-row');
+    const subtitleEl = document.getElementById('booster-modal-subtitle');
+    const btnCollect = document.getElementById('btn-market-close-booster');
     if (!modal || !cardsRow) return;
 
-    // Выбираем 3 случайные карты (приоритет не открытым)
+    // Выбираем 4 случайные карты (приоритет не открытым)
     const unowned = CARDS_DATABASE.filter(c => !this.ownedCardIds.has(c.id));
-    const pool = unowned.length >= 3 ? unowned : CARDS_DATABASE;
+    const pool = unowned.length >= 4 ? unowned : CARDS_DATABASE;
     const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    const dropped = shuffled.slice(0, 3);
+    const dropped = shuffled.slice(0, 4);
 
+    let openedCount = 0;
     cardsRow.innerHTML = '';
+
+    if (btnCollect) {
+      btnCollect.disabled = true;
+      btnCollect.classList.add('disabled');
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = `Нажмите на рубашку каждой карты, чтобы открыть её! (0 / 4)`;
+    }
+
     dropped.forEach((card, i) => {
-      this.ownedCardIds.add(card.id);
       const cardEl = document.createElement('div');
-      cardEl.className = 'booster-revealed-card';
-      cardEl.style.animationDelay = `${i * 0.15}s`;
+      cardEl.className = 'booster-flip-card';
+      cardEl.setAttribute('data-index', String(i));
+
       cardEl.innerHTML = `
-        <img src="${card.image}" alt="${card.name}" class="booster-card-img" />
-        <div class="booster-card-title">${card.name}</div>
+        <div class="booster-flip-inner">
+          <!-- Рубашка (закрытая карта) -->
+          <div class="booster-flip-front">
+            <img src="assets/Market/Card back/Back-Card01.png" alt="Рубашка карты" class="booster-shirt-img" />
+            <div class="booster-flip-hint">ОТКРЫТЬ ✨</div>
+          </div>
+          <!-- Лицевая сторона карты -->
+          <div class="booster-flip-back rarity-${card.rarity}">
+            <img src="${card.image}" alt="${card.name}" class="booster-revealed-img" />
+            <div class="booster-card-name">${card.name}</div>
+            <div class="booster-card-ability">«${card.abilityName}»</div>
+          </div>
+        </div>
       `;
+
+      cardEl.addEventListener('click', () => {
+        if (cardEl.classList.contains('is-flipped')) return;
+
+        cardEl.classList.add('is-flipped');
+        openedCount++;
+        this.ownedCardIds.add(card.id);
+
+        if (typeof audio.playSuccess === 'function') audio.playSuccess(); else audio.playClick();
+
+        if (subtitleEl) {
+          subtitleEl.textContent = `Нажмите на рубашку каждой карты, чтобы открыть её! (${openedCount} / 4)`;
+        }
+
+        if (openedCount >= 4) {
+          this.savePlayerCards();
+          if (subtitleEl) {
+            subtitleEl.textContent = `🎉 Все карты открыты! Заберите их в свою колоду:`;
+          }
+          if (btnCollect) {
+            btnCollect.disabled = false;
+            btnCollect.classList.remove('disabled');
+          }
+        }
+      });
+
       cardsRow.appendChild(cardEl);
     });
 
-    this.savePlayerCards();
     modal.classList.remove('hidden');
   }
 
@@ -487,7 +545,6 @@ export class CardMarket {
       <div class="market-tip-stats">
         <span class="tip-stat tip-atk">⚔️ ATK: ${card.atk}</span>
         <span class="tip-stat tip-hp">🛡️ HP: ${card.hp}</span>
-        <span class="tip-stat tip-cost">⚡ Семян: ${card.cost}</span>
       </div>
       <div class="market-tip-ability">
         <div class="tip-ability-name">★ ${card.abilityName || 'Способность'}:</div>

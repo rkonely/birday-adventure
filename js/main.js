@@ -119,6 +119,9 @@ class BirDayApp {
     events.on('stage:switch_to_market', () => {
       this.startMarketScreen();
     });
+    events.on('stage:open_market', () => {
+      this.startMarketScreen();
+    });
 
     // Переход на арену босса
     events.on('stage:switch_to_boss_arena', (deck) => {
@@ -216,11 +219,13 @@ class BirDayApp {
 
     const btnStageMarket = document.getElementById('btn-stage-market');
     if (btnStageMarket) {
-      btnStageMarket.addEventListener('click', () => {
-        if (this.cardMarket && this.cardMarket.isActive) {
+      btnStageMarket.addEventListener('click', (e) => {
+        if ((this.cardMarket && this.cardMarket.isActive) || (this.screenMarketIntro && this.screenMarketIntro.classList.contains('active'))) {
           this.exitToTitle();
-        } else {
+        } else if (e && e.shiftKey) {
           this.startMarketScreen();
+        } else {
+          this.startMarketIntro();
         }
       });
     }
@@ -338,10 +343,12 @@ class BirDayApp {
         }
       } else if (e.code === 'F6') {
         e.preventDefault();
-        if (this.cardMarket && this.cardMarket.isActive) {
+        if ((this.cardMarket && this.cardMarket.isActive) || (this.screenMarketIntro && this.screenMarketIntro.classList.contains('active'))) {
           this.exitToTitle();
-        } else {
+        } else if (e.shiftKey) {
           this.startMarketScreen();
+        } else {
+          this.startMarketIntro();
         }
       } else if (e.code === 'F7') {
         e.preventDefault();
@@ -457,6 +464,9 @@ class BirDayApp {
     if (this.screenMarketIntro) {
       this.screenMarketIntro.classList.remove('hidden');
       this.screenMarketIntro.classList.add('active');
+    }
+    if (this.btnMarketIntroContinue) {
+      this.btnMarketIntroContinue.classList.remove('hidden');
     }
   }
 
@@ -604,9 +614,6 @@ class BirDayApp {
       const secs = totalSecs % 60;
       elTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
-
-    const elScore = document.getElementById('l2-stat-score');
-    if (elScore) elScore.textContent = String(stats.score ?? 0);
 
     const elNests = document.getElementById('l2-stat-nests');
     if (elNests) elNests.textContent = `${stats.nestsCompleted ?? 0} / ${stats.totalNests ?? 5}`;

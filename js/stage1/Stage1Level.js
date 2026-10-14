@@ -1354,10 +1354,8 @@ export class Stage1Level {
           </div>
           <div class="stage1-defeat-actions">
             <button class="stage1-defeat-btn-restart" id="btn-stage1-restart" title="Начать первый этап с самого начала">
-              <span>НАЧАТЬ С НАЧАЛА 🔄</span>
-            </button>
-            <button class="stage1-defeat-btn-menu" id="btn-stage1-menu" title="Выйти в главное меню игры">
-              <span>В главное меню 🏠</span>
+              <span>НАЧАТЬ С НАЧАЛА</span>
+              <img src="assets/UI/UI-Repeat-Icon.png" alt="Повтор" class="stage1-defeat-repeat-icon" />
             </button>
           </div>
         </div>
@@ -1376,17 +1374,6 @@ export class Stage1Level {
         audio.playClick();
         this.hideDefeatModal();
         this.restartLevelFromBeginning();
-      });
-    }
-
-    // Обработчик кнопки возврата в главное меню
-    const btnMenu = modal.querySelector('#btn-stage1-menu');
-    if (btnMenu) {
-      btnMenu.addEventListener('click', () => {
-        audio.playClick();
-        this.hideDefeatModal();
-        this.stop();
-        events.emit('game:exit-to-title');
       });
     }
   }

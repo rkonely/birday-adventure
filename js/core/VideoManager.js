@@ -28,7 +28,8 @@ export class VideoManager {
       BOARD_BEAVER_IDLE1: 'assets/videos/BoardGame-Center-IDE1.mp4',
       BOARD_BEAVER_IDLE2: 'assets/videos/BoardGame-Center-IDE2.mp4',
       IDE_WAITING_PLAYER: 'assets/videos/IDE-Waiting player.mp4',
-      MARKET_START: 'assets/videos/Market-Start.mp4'
+      MARKET_START: 'assets/videos/Market-Start.mp4',
+      BOOSTER_OPEN: 'assets/videos/Boster Pack Opener.mp4'
     };
 
     this.currentState = 'WAITING';
@@ -48,6 +49,7 @@ export class VideoManager {
                            this.currentState === 'SECOND_LEVEL_IDE' ||
                            this.currentState === 'IDE_WAITING_PLAYER' ||
                            this.currentState === 'MARKET_START' ||
+                           this.currentState === 'BOOSTER_OPEN' ||
                            this.isBoardGameMode;
         if (isCutscene) {
           this.videoEl.muted = !enabled;

@@ -2353,26 +2353,32 @@ body {
   text-transform: uppercase;
 }
 
-/* Сетка статистики 2x2 */
+/* Сетка статистики: 3 плашки сверху, 2 снизу */
 .level2-stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 12px 18px;
+  grid-template-columns: repeat(6, 1fr);
+  grid-gap: 10px 14px;
   width: 100%;
-  max-width: 680px;
-  margin: 4px 0;
+  max-width: 720px;
+  margin: 6px 0;
 }
 
 .level2-stat-box {
-  background: linear-gradient(135deg, rgba(254, 240, 199, 0.75) 0%, rgba(245, 218, 163, 0.65) 100%);
+  grid-column: span 2;
+  background: linear-gradient(135deg, rgba(254, 240, 199, 0.85) 0%, rgba(245, 218, 163, 0.75) 100%);
   border: 2px solid #854d0e;
   border-radius: 6px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4), 2px 3px 0 rgba(0, 0, 0, 0.2);
+  gap: 10px;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.5), 2px 3px 0 rgba(0, 0, 0, 0.25);
   transition: transform 0.12s ease;
+}
+
+.level2-stat-box:nth-child(4),
+.level2-stat-box:nth-child(5) {
+  grid-column: span 3;
 }
 
 .level2-stat-box:hover {
@@ -2380,8 +2386,8 @@ body {
 }
 
 .stat-box-icon {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2402,8 +2408,29 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
+.stat-nest-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.stat-skull-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+}
+
+.stat-clock-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+}
+
 .stat-emoji {
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1;
 }
 
@@ -2426,44 +2453,11 @@ body {
 
 .stat-box-number {
   font-family: var(--font-pixel), monospace;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
   color: #451a03;
   letter-spacing: 1px;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-/* Дополнительная строка: Очки и Гнезда */
-.level2-sub-row {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  width: 100%;
-  margin: 2px 0;
-}
-
-.level2-pill {
-  background: rgba(69, 26, 3, 0.1);
-  border: 1px solid rgba(133, 77, 14, 0.45);
-  border-radius: 4px;
-  padding: 4px 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pill-label {
-  font-family: var(--font-pixel), monospace;
-  font-size: 12px;
-  font-weight: bold;
-  color: #854d0e;
-}
-
-.pill-value {
-  font-family: var(--font-pixel), monospace;
-  font-size: 16px;
-  font-weight: bold;
-  color: #2e1065;
 }
 
 /* Кнопки действий */
@@ -4488,10 +4482,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 50px;
+  display: block;
   z-index: 25;
   pointer-events: auto;
 }
@@ -4501,9 +4492,25 @@ body {
 }
 
 #btn-market-intro-continue {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: 3.2%;
+  transform: translateX(-50%);
+  width: 20.5%;
+  aspect-ratio: 797 / 265;
   z-index: 30;
-  animation: pulse-grow 2s ease-in-out infinite;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+#btn-market-intro-continue:hover {
+  background-image: url('../assets/UI/Start Button - Hover.png');
+  transform: translateX(-50%);
+}
+
+#btn-market-intro-continue:active {
+  background-image: url('../assets/UI/Start Button - Active.png');
+  transform: translateX(-50%) translateY(2px);
 }
 
 /* ==========================================================================
@@ -4535,31 +4542,37 @@ body {
   overflow: hidden;
 }
 
-/* Верхний баннер "ФИНАЛ!" и кнопка боя */
+/* Верхний баннер "В БОЙ С БОБРОМ!" */
 .market-top-banner {
   position: absolute;
-  top: 20px;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
   z-index: 20;
 }
 
 .market-title-stone-wrap {
   position: relative;
-  width: 250px;
-  height: 60px;
+  width: 380px;
+  height: 74px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
 }
 
 .market-title-stone-wrap:hover {
-  transform: scale(1.04);
+  transform: scale(1.05);
+  filter: drop-shadow(0 8px 22px rgba(255, 183, 3, 0.6));
+}
+
+.market-title-stone-wrap:active {
+  transform: scale(0.97);
 }
 
 .market-title-stone-img {
@@ -4576,45 +4589,11 @@ body {
   position: relative;
   z-index: 2;
   font-family: var(--font-pixel), monospace;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
-  color: #f8f9fa;
+  color: #ffecd1;
   letter-spacing: 2px;
   text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-}
-
-.btn-market-boss-fight {
-  background: url('../assets/UI/Leaf Green Button.png') center/100% 100% no-repeat;
-  border: none;
-  outline: none;
-  padding: 10px 24px;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
-}
-
-.btn-market-boss-fight:hover {
-  background-image: url('../assets/UI/Leaf Green Button - Hover.png');
-  transform: scale(1.05);
-  filter: drop-shadow(0 6px 12px rgba(255, 183, 3, 0.4));
-}
-
-.btn-market-boss-fight:active {
-  background-image: url('../assets/UI/Leaf Green Button - Active.png');
-  transform: scale(0.98);
-}
-
-.boss-fight-text {
-  font-family: var(--font-pixel), monospace;
-  font-size: 16px;
-  font-weight: bold;
-  color: #fff;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 0 #1b4332;
 }
 
 /* Стрелки перелистывания страниц */
@@ -4746,7 +4725,37 @@ body {
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7)) brightness(0.92);
 }
 
-/* Кнопка с ценой (Price-Buy-Btn.png) */
+/* Плашка способности прямо на карте */
+.market-card-ability-badge {
+  position: absolute;
+  bottom: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 86%;
+  background: rgba(28, 14, 6, 0.9);
+  border: 1px solid #ffd166;
+  border-radius: 4px;
+  padding: 2px 4px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ability-badge-text {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffe8b6;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Кнопка с ценой на основе Price-Buy-Btn.png */
 .market-buy-btn-wrap {
   position: absolute;
   bottom: 0%;
@@ -4756,102 +4765,71 @@ body {
 }
 
 .market-buy-btn {
-  width: 110px;
-  height: 64px;
-  background: none;
+  width: 105px;
+  height: 63px;
+  background-image: url('../assets/UI/Price-Buy-Btn.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
   border: none;
   outline: none;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  position: relative;
   cursor: pointer;
-  transition: transform 0.12s ease, filter 0.12s ease;
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
+  transition: transform 0.12s ease;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
 }
 
-.market-buy-btn:hover:not(.is-bought) {
-  transform: scale(1.06);
-  filter: drop-shadow(0 4px 8px rgba(255, 183, 3, 0.4));
+.market-buy-btn:hover:not(.is-bought):not(.cant-afford) {
+  background-image: url('../assets/UI/Price-Buy-Btn-Hover.png');
+  transform: scale(1.05);
 }
 
-.market-buy-btn:active:not(.is-bought) {
+.market-buy-btn:active:not(.is-bought):not(.cant-afford) {
+  background-image: url('../assets/UI/Price-Buy-Btn-Active.png');
   transform: scale(0.96);
 }
 
-.market-buy-tab {
-  height: 24px;
-  background: #f1dfbf;
-  border: 2px solid #3c2415;
-  border-bottom: 1px solid #7c5835;
-  border-radius: 6px 6px 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  box-sizing: border-box;
-}
-
-.market-buy-egg-icon {
-  width: 15px;
-  height: 16px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.market-buy-price-text {
+.market-buy-price-val {
+  position: absolute;
+  top: 4px;
+  right: 18px;
   font-family: var(--font-pixel), monospace;
   font-size: 15px;
   font-weight: bold;
   color: #3c2415;
-  letter-spacing: 0.5px;
-}
-
-.market-buy-green-bar {
-  height: 36px;
-  background: linear-gradient(180deg, #48ca38 0%, #2b8c22 100%);
-  border: 2px solid #1a5614;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.market-buy-green-bar span {
-  font-family: var(--font-pixel), monospace;
-  font-size: 15px;
-  font-weight: bold;
-  color: #ffffff;
-  letter-spacing: 1px;
-  text-shadow: 1px 1px 0 #133c0e;
-}
-
-.market-buy-btn:hover:not(.is-bought) .market-buy-green-bar {
-  background: linear-gradient(180deg, #5ae847 0%, #35ab2b 100%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .market-buy-btn.is-bought {
+  filter: grayscale(0.85) opacity(0.8);
   cursor: default;
-  filter: grayscale(0.2);
 }
 
-.market-buy-btn.is-bought .market-buy-tab {
-  background: #d8c8af;
-}
-
-.market-buy-btn.is-bought .market-buy-green-bar {
-  background: linear-gradient(180deg, #6c757d 0%, #495057 100%);
-  border-color: #343a40;
-}
-
-.market-buy-btn.is-bought .market-buy-green-bar span {
-  text-shadow: 1px 1px 0 #212529;
-  color: #e9ecef;
+.market-buy-btn.is-bought::after {
+  content: 'КУПЛЕНО';
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
 }
 
 .market-buy-btn.cant-afford {
-  filter: grayscale(0.5);
+  filter: grayscale(0.6) opacity(0.8);
+}
+
+.market-booster-btn {
+  width: 105px;
+  height: 63px;
 }
 
 /* Левая сторона стола: Колода и Счетчики */
@@ -5125,13 +5103,15 @@ body {
 
 .market-booster-modal-content {
   background: url('../assets/UI/Big Frame.png') center/100% 100% no-repeat;
-  width: 680px;
-  height: 480px;
+  width: 820px;
+  max-width: 95vw;
+  height: 520px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 40px 30px 35px;
+  padding: 38px 24px 30px;
   box-sizing: border-box;
   animation: modal-pop 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
@@ -5145,40 +5125,132 @@ body {
   letter-spacing: 1px;
 }
 
+.booster-modal-subtitle {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  color: #ffecd1;
+  margin-top: 4px;
+  text-shadow: 1px 1px 0 #000;
+}
+
 .market-booster-cards-row {
   display: flex;
-  gap: 24px;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.booster-flip-card {
+  perspective: 1000px;
+  width: 156px;
+  height: 235px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.booster-flip-card:hover:not(.is-flipped) {
+  transform: translateY(-6px) scale(1.04);
+}
+
+.booster-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.booster-flip-card.is-flipped .booster-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.booster-flip-front,
+.booster-flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+  border: 2px solid #5a3825;
+}
+
+.booster-flip-front {
+  background: #1e1007;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.booster-revealed-card {
-  width: 140px;
+.booster-shirt-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.booster-flip-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid #ffd166;
+  color: #ffd166;
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.booster-flip-back {
+  transform: rotateY(180deg);
+  background: #2b1810;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  animation: card-reveal 0.45s ease forwards;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 6px;
 }
 
-.booster-card-img {
+.booster-revealed-img {
   width: 100%;
-  height: 195px;
+  height: 76%;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 6px 14px rgba(255, 183, 3, 0.45));
 }
 
-.booster-card-title {
-  font-family: var(--font-pixel), monospace;
-  font-size: 13px;
+.booster-card-name {
+  font-family: 'Cinzel', serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95%;
+}
+
+.booster-card-ability {
+  font-size: 10px;
   font-weight: bold;
-  color: #f8f9fa;
-  text-align: center;
-  text-shadow: 1px 1px 0 #000;
+  color: #ffd166;
+  margin-bottom: 2px;
 }
 
-.booster-collect-btn {
+.booster-collect-btn.disabled {
+  filter: grayscale(0.8) opacity(0.5);
+  cursor: not-allowed;
+  pointer-events: none;
+}
   padding: 10px 24px;
 }
 
@@ -5370,34 +5442,113 @@ body {
   filter: brightness(0.95);
 }
 
-/* Кнопка выхода в меню */
-.stage1-defeat-btn-menu {
-  background: none;
-  border: none;
-  padding: 3px 10px;
+.stage1-defeat-repeat-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  margin-left: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  vertical-align: middle;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Boss Defeat Modal (Поражение на арене босса)
+   ========================================================================== */
+.boss-defeat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.boss-defeat-window {
+  position: relative;
+  width: min(620px, 94vw);
+  aspect-ratio: 473 / 320;
+  background-image: url('../assets/UI/Big Frame.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.9));
+}
+
+.boss-defeat-title-header {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.boss-defeat-title-text {
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(18px, 2.8vw, 26px);
+  color: #ff6b6b;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 15px rgba(255, 60, 60, 0.5);
+}
+
+.boss-defeat-content {
+  margin-top: 18%;
+  width: 82%;
+  height: 72%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.boss-defeat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boss-defeat-main-text {
   font-family: 'Outfit', sans-serif;
-  font-size: 13.5px;
-  font-weight: 800;
-  color: #3b1904;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.15s ease, transform 0.15s ease;
-  opacity: 0.9;
-  margin-top: -2px;
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 700;
+  color: #2b1810;
+  line-height: 1.35;
+  margin: 0;
 }
 
-.stage1-defeat-btn-menu:hover {
-  color: #000000;
-  opacity: 1;
-  transform: scale(1.04);
+.boss-defeat-prompt-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(12px, 1.6vw, 15px);
+  font-weight: 600;
+  color: #5c3a21;
+  line-height: 1.35;
+  margin: 0;
 }
 
+.boss-defeat-actions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
 
-
-
-
-
-
-
+.boss-defeat-actions .btn-leaf-green {
+  min-width: 170px;
+  padding: 10px 18px;
+}
 
