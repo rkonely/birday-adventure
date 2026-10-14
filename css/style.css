@@ -5197,6 +5197,203 @@ body {
   animation: shake-side 0.4s ease;
 }
 
+/* ==========================================================================
+   Окно Поражения Уровня 1 (Stage 1 Defeat / Out of Energy Modal)
+   ========================================================================== */
+.stage1-defeat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(10, 16, 12, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: defeatFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+}
+
+@keyframes defeatFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.stage1-defeat-window {
+  position: relative;
+  width: min(580px, 92vw);
+  aspect-ratio: 473 / 304;
+  max-height: 90vh;
+  background-image: url('../assets/UI/Bad Frame.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.85));
+}
+
+/* Заголовок в верхней деревянной плашке рамки Bad Frame */
+.stage1-defeat-title-header {
+  position: absolute;
+  top: 5.2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72%;
+  height: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.stage1-defeat-title-text {
+  font-family: 'Cinzel', 'Trajan Pro', serif;
+  font-weight: 900;
+  font-size: clamp(14px, 2.4vw, 21px);
+  color: #ffe6a7;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 12px rgba(255, 170, 40, 0.45);
+}
+
+/* Основной блок содержимого на пергаментном фоне внутри рамки */
+.stage1-defeat-content {
+  margin-top: 13.5%;
+  width: 82%;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 0 4px 6px 4px;
+}
+
+.stage1-defeat-canvas-wrap {
+  position: relative;
+  width: 220px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -6px;
+  margin-bottom: -4px;
+}
+
+.stage1-defeat-canvas {
+  width: 220px;
+  height: 110px;
+  image-rendering: pixelated;
+}
+
+.stage1-defeat-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  gap: 2px;
+}
+
+.stage1-defeat-main-text {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: clamp(13px, 1.8vw, 16px);
+  font-weight: 700;
+  color: #2b1706;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.stage1-defeat-prompt-text {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: clamp(15px, 2.1vw, 18px);
+  font-weight: 900;
+  color: #8b1818;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* Кнопки действий */
+.stage1-defeat-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+/* Кнопка "НАЧАТЬ С НАЧАЛА" на основе Leaf Green Button */
+.stage1-defeat-btn-restart {
+  position: relative;
+  width: min(290px, 80%);
+  aspect-ratio: 421 / 128;
+  background-image: url('../assets/UI/Leaf Green Button.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(13px, 1.9vw, 16px);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85), 0 0 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  user-select: none;
+}
+
+.stage1-defeat-btn-restart:hover {
+  background-image: url('../assets/UI/Leaf Green Button - Hover.png');
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.08) drop-shadow(0 6px 14px rgba(46, 117, 34, 0.5));
+}
+
+.stage1-defeat-btn-restart:active {
+  background-image: url('../assets/UI/Leaf Green Button - Active.png');
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* Кнопка выхода в меню */
+.stage1-defeat-btn-menu {
+  background: none;
+  border: none;
+  padding: 3px 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #3b1904;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease, transform 0.15s ease;
+  opacity: 0.9;
+  margin-top: -2px;
+}
+
+.stage1-defeat-btn-menu:hover {
+  color: #000000;
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+
 
 
 

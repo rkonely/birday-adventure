@@ -76,6 +76,7 @@ export class Stage1Level {
     this.isVictory = false;
     this.isGameOver = false;
     this.isTutorialOpen = true; // Окно обучения перед первым полётом
+    this.defeatAnimFrame = null; // Кадр анимации окна поражения
     this.nestsCompleted = 0;
     this.totalNests = 5;
     this.levelTime = 0;
@@ -594,9 +595,19 @@ export class Stage1Level {
         return;
       }
 
-      // R: Быстрый респавн на чекпоинте
+      // R: Быстрый перезапуск уровня с начала
       if (e.code === 'KeyR') {
-        this.respawnAtCheckpoint();
+        this.restartLevelFromBeginning();
+      }
+
+      // K: Быстрый тест окна поражения / краша птицы
+      if (e.code === 'KeyK') {
+        this.stamina = 0;
+        if (this.bird) {
+          this.bird.y = this.groundY;
+          this.bird.triggerStun();
+        }
+        this.triggerDefeatModal();
       }
     });
 
@@ -662,8 +673,9 @@ export class Stage1Level {
   }
 
   attemptFlap() {
-    if (!this.bird) return;
+    if (!this.bird || this.isGameOver) return;
     if (this.bird.isStunned) {
+      if (this.stamina <= 0) return; // Нет энергии — взлететь нельзя
       if (this.bird.stunTimer > 0.25) {
         this.bird.recoverFromStun();
       }
@@ -780,6 +792,7 @@ export class Stage1Level {
     }
     const topBar = document.getElementById('top-bar');
     if (topBar) topBar.style.display = '';
+    this.hideDefeatModal();
     this.removeUIOverlay();
   }
 
@@ -964,6 +977,7 @@ export class Stage1Level {
 
     // 1. Обновление птицы
     if (this.bird) {
+      this.bird.isExhausted = (this.stamina <= 0);
       this.bird.update(effectiveDt, this.input);
 
       // Плавное следование камеры за птицей ТОЛЬКО ВПЕРЁД
@@ -974,9 +988,9 @@ export class Stage1Level {
       // Птица не может улететь назад за левый край экрана
       this.bird.minX = Math.max(60, this.cameraX + 40);
 
-      // Если энергия исчерпана и птица лежит на земле — перезапуск с чекпоинта
+      // Если энергия исчерпана и птица лежит на земле — окно поражения и перезапуск с начала
       if (this.stamina <= 0 && this.bird.isStunned && !this.isGameOver) {
-        this.triggerGameOver();
+        this.triggerDefeatModal();
       }
     }
 
@@ -1278,7 +1292,7 @@ export class Stage1Level {
   }
 
   takeDamage(amount = 15, reason) {
-    if (this.invulnerableTimer > 0) return;
+    if (this.invulnerableTimer > 0 || this.isGameOver) return;
 
     this.stamina = Math.max(0, this.stamina - amount);
     this.invulnerableTimer = 1.4;
@@ -1293,34 +1307,237 @@ export class Stage1Level {
     this.showToast(`💥 ${reason} (-${amount}% ⚡)`);
     this.updateHUD();
 
-    if (this.stamina <= 0) {
-      this.triggerGameOver();
+    // Если птица упала/уже оглушена на земле и энергия на нуле
+    if (this.stamina <= 0 && this.bird && this.bird.isStunned && !this.isGameOver) {
+      this.triggerDefeatModal();
     }
   }
 
-  triggerGameOver() {
+  /* ==========================================================================
+     Окно поражения при падении на землю без энергии
+     ========================================================================== */
+  triggerDefeatModal() {
+    if (this.isGameOver) return;
     this.isGameOver = true;
     audio.playBonk();
-    this.showToast('💀 Кукушка выбилась из сил (0% ⚡)! Перезапуск с чекпоинта...');
+
+    if (this.bird) {
+      this.bird.vx = 0;
+      this.bird.vy = 0;
+      this.bird.isExhausted = true;
+    }
 
     setTimeout(() => {
-      this.respawnAtCheckpoint();
-    }, 1200);
+      if (!this.isActive) return;
+      this.showDefeatModal();
+    }, 450);
   }
 
-  respawnAtCheckpoint() {
+  showDefeatModal() {
+    this.hideDefeatModal();
+
+    const modal = document.createElement('div');
+    modal.id = 'stage1-defeat-modal';
+    modal.className = 'stage1-defeat-modal-overlay';
+    modal.innerHTML = `
+      <div class="stage1-defeat-window">
+        <div class="stage1-defeat-title-header">
+          <span class="stage1-defeat-title-text">СИЛЫ НА ИСХОДЕ</span>
+        </div>
+        <div class="stage1-defeat-content">
+          <div class="stage1-defeat-canvas-wrap">
+            <canvas id="stage1-defeat-canvas" class="stage1-defeat-canvas" width="220" height="110"></canvas>
+          </div>
+          <div class="stage1-defeat-message">
+            <p class="stage1-defeat-main-text">Кукушка потратила всю энергию и упала на землю без сил.</p>
+            <p class="stage1-defeat-prompt-text">Давай начнём всё сначала?</p>
+          </div>
+          <div class="stage1-defeat-actions">
+            <button class="stage1-defeat-btn-restart" id="btn-stage1-restart" title="Начать первый этап с самого начала">
+              <span>НАЧАТЬ С НАЧАЛА 🔄</span>
+            </button>
+            <button class="stage1-defeat-btn-menu" id="btn-stage1-menu" title="Выйти в главное меню игры">
+              <span>В главное меню 🏠</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Запуск плавной 60 FPS анимации птицы с вращающимися звездочками
+    this.initDefeatCanvas();
+
+    // Обработчик кнопки перезапуска уровня с начала
+    const btnRestart = modal.querySelector('#btn-stage1-restart');
+    if (btnRestart) {
+      btnRestart.addEventListener('click', () => {
+        audio.playClick();
+        this.hideDefeatModal();
+        this.restartLevelFromBeginning();
+      });
+    }
+
+    // Обработчик кнопки возврата в главное меню
+    const btnMenu = modal.querySelector('#btn-stage1-menu');
+    if (btnMenu) {
+      btnMenu.addEventListener('click', () => {
+        audio.playClick();
+        this.hideDefeatModal();
+        this.stop();
+        events.emit('game:exit-to-title');
+      });
+    }
+  }
+
+  hideDefeatModal() {
+    if (this.defeatAnimFrame) {
+      cancelAnimationFrame(this.defeatAnimFrame);
+      this.defeatAnimFrame = null;
+    }
+    const modal = document.getElementById('stage1-defeat-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  initDefeatCanvas() {
+    const canvas = document.getElementById('stage1-defeat-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let starAngle = 0;
+    const stunImg = this.stunSprite || new Image();
+    if (!stunImg.src) {
+      stunImg.src = 'assets/Character/BIRD-STUN/STUN.png';
+    }
+
+    const render = () => {
+      if (!this.isGameOver || !document.getElementById('stage1-defeat-modal')) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      starAngle += 0.055;
+
+      // Тень птицы на пергаменте
+      ctx.save();
+      ctx.fillStyle = 'rgba(40, 20, 5, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(canvas.width / 2, canvas.height - 18, 54, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Отрисовка спрайта оглушенной птицы (STUN.png) с легким мультяшным покачиванием
+      const wobble = Math.sin(starAngle * 1.5) * 0.035;
+      const breathe = Math.sin(starAngle * 2.2) * 1.8;
+
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2 + 10);
+      ctx.rotate(wobble);
+
+      const scale = 0.165;
+      const drawW = 1280 * scale;
+      const drawH = 720 * scale;
+      if (stunImg.complete && stunImg.naturalWidth > 0) {
+        ctx.drawImage(stunImg, -drawW * 0.5, -drawH * 0.5 + breathe * 0.3, drawW, drawH);
+      }
+      ctx.restore();
+
+      // Вращающиеся золотистые звездочки над головой птицы
+      const starCount = 3;
+      const centerX = canvas.width / 2 + 6;
+      const centerY = canvas.height / 2 - 20 + breathe * 0.3;
+      const radiusX = 26;
+      const radiusY = 9;
+
+      ctx.save();
+      for (let i = 0; i < starCount; i++) {
+        const a = starAngle + (i * (Math.PI * 2 / starCount));
+        const sx = centerX + Math.cos(a) * radiusX;
+        const sy = centerY + Math.sin(a) * radiusY;
+        const starScale = 1 + 0.25 * Math.sin(a * 2);
+
+        this.drawDefeatPixelStar(ctx, sx, sy, 5.5 * starScale);
+      }
+      ctx.restore();
+
+      this.defeatAnimFrame = requestAnimationFrame(render);
+    };
+
+    render();
+  }
+
+  drawDefeatPixelStar(ctx, cx, cy, size) {
+    ctx.save();
+    ctx.fillStyle = '#facc15';
+    ctx.strokeStyle = '#291400';
+    ctx.lineWidth = 1.8;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.35, cy - size * 0.35);
+    ctx.lineTo(cx + size, cy);
+    ctx.lineTo(cx + size * 0.35, cy + size * 0.35);
+    ctx.lineTo(cx, cy + size);
+    ctx.lineTo(cx - size * 0.35, cy + size * 0.35);
+    ctx.lineTo(cx - size, cy);
+    ctx.lineTo(cx - size * 0.35, cy - size * 0.35);
+    ctx.closePath();
+
+    ctx.fill();
+    ctx.stroke();
+
+    // Блик в центре
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - 2, cy - 2, 4, 4);
+    ctx.restore();
+  }
+
+  restartLevelFromBeginning() {
+    this.checkpoint = { x: 260, y: 320, name: 'Старт' };
     this.stamina = 100;
+    this.maxStamina = 100;
+    this.score = 0;
+    this.levelTime = 0;
+    this.cameraX = 0;
+    this.targetCameraX = 0;
     this.isGameOver = false;
+    this.isVictory = false;
+    this.isTutorialOpen = false;
     this.invulnerableTimer = 2.0;
+
+    this.stats = {
+      eggsLaid: 0,
+      feedersEaten: 0,
+      fallsCount: 0,
+      levelTime: 0
+    };
+
+    if (this.eggManager) {
+      this.eggManager.eggsThrown = 0;
+      this.eggManager.eggs = [];
+    }
 
     if (this.bird) {
       this.bird.reset();
+      this.bird.isExhausted = false;
       this.bird.x = this.checkpoint.x;
       this.bird.y = this.checkpoint.y;
+      this.bird.crashCount = 0;
     }
 
-    this.showToast(`🔄 Возрождение на чекпоинте: ${this.checkpoint.name} (⚡ 100% Энергии)`);
+    // Сброс гнезд
+    this.nests.forEach(n => { n.filled = false; });
+    // Сброс врагов
+    this.enemies.forEach(en => { en.alive = true; });
+    // Сброс кормушек
+    this.feeders.forEach(f => { f.visited = false; });
+    // Очистка снарядов
+    this.projectiles = [];
+
     this.updateHUD();
+    this.showToast('🚀 Начинаем с самого начала! Соберись с силами!');
   }
 
   triggerVictory() {

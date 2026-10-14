@@ -43,6 +43,7 @@ export class Bird {
 
     // Состояние оглушения (Краш о землю)
     this.isStunned = false;
+    this.isExhausted = false;     // Полное истощение сил (0% энергии) — взлететь нельзя
     this.stunTimer = 0;
     this.stunStarsAngle = 0;
     this.crashCount = 0;
@@ -75,8 +76,9 @@ export class Bird {
    * Импульс взмаха крыльями (Space, клик мыши, тап)
    */
   flap() {
-    // Если птица оглушена — нажатие клавиши пробуждает её и поднимает в воздух
+    // Если птица оглушена — нажатие клавиши пробуждает её и поднимает в воздух (только если есть силы)
     if (this.isStunned) {
+      if (this.isExhausted) return;
       if (this.stunTimer > 0.25) {
         this.recoverFromStun();
       }
@@ -160,6 +162,7 @@ export class Bird {
     this.isFlapping = false;
     this.isGliding = false;
     this.isStunned = false;
+    this.isExhausted = false;
     this.stunTimer = 0;
     this.flapTimer = 0;
     this.particles = [];
@@ -241,8 +244,8 @@ export class Bird {
         }
       }
 
-      // Авто-восстановление через 3.5 секунды, если игрок не нажал Пробел
-      if (this.stunTimer > 3.5) {
+      // Авто-восстановление через 3.5 секунды, если игрок не нажал Пробел (только если не истощена)
+      if (this.stunTimer > 3.5 && !this.isExhausted) {
         this.recoverFromStun();
       }
       return;
