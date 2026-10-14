@@ -62,6 +62,7 @@ export class Stage2Board {
     // Кубик
     this.diceValue = 1;
     this.isRollingDice = false;
+    this.isDiceSettled = false;
     this.diceRollAnimTimer = 0;
 
     // Наведение и выбор
@@ -213,6 +214,36 @@ export class Stage2Board {
         this.showCellInfoCard(clicked);
       }
     });
+
+    // Управление клавишей Пробел (Space): Бросок кубика -> Походить
+    window.addEventListener('keydown', (e) => {
+      if (!this.isActive) return;
+      if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+        return;
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+
+        // 1. Если открыта карточка события клетки — подтверждаем по Пробелу
+        if (this.activeEventModal) {
+          this.handleEventAction();
+          return;
+        }
+
+        // 2. Если кубик уже брошен и лежит на столе — делаем ход
+        if (this.isDiceSettled && !this.isMoving) {
+          this.confirmStep();
+          return;
+        }
+
+        // 3. Если кубик готов к броску — бросаем
+        if (!this.isRollingDice && !this.isMoving && !this.isDiceSettled) {
+          this.rollDice();
+          return;
+        }
+      }
+    });
   }
 
   getCanvasCoords(e) {
@@ -250,6 +281,9 @@ export class Stage2Board {
 
     // 1. Устанавливаем статус
     gameState.setStage('STAGE_2_BOARD');
+    this.isDiceSettled = false;
+    this.isRollingDice = false;
+    this.isMoving = false;
 
     // 2. Включаем видеоряд босса в центре стола (появление -> случайный цикл IDE1 / IDE2)
     if (this.videoManager) {
@@ -272,6 +306,9 @@ export class Stage2Board {
 
   stop() {
     this.isActive = false;
+    this.isDiceSettled = false;
+    this.isRollingDice = false;
+    this.isMoving = false;
     if (this.canvas) {
       this.canvas.style.display = 'none';
     }
@@ -349,11 +386,11 @@ export class Stage2Board {
           <div class="s2-dice" id="s2-dice-face">
             <span id="s2-dice-num">🎲</span>
           </div>
-          <button id="btn-s2-roll" class="btn-s2-wood btn-s2-roll">
-            <span>БРОСИТЬ КУБИК</span>
+          <button id="btn-s2-roll" class="btn-s2-throw" title="Бросить кубик (или нажмите Пробел)">
+            <span id="s2-roll-btn-text" class="btn-s2-throw-text">БРОСОК</span>
           </button>
         </div>
-        <div class="s2-dice-hint">🖐️ Зажмите кубик и резко швырните мышкой!</div>
+        <div class="s2-dice-hint" id="s2-dice-hint">🖐️ Зажмите кубик или нажмите Пробел для броска!</div>
       </div>
 
       <!-- Всплывающая карточка события клетки -->
@@ -383,7 +420,11 @@ export class Stage2Board {
     if (btnRoll) {
       btnRoll.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.rollDice();
+        if (this.isDiceSettled) {
+          this.confirmStep();
+        } else {
+          this.rollDice();
+        }
       });
     }
 
@@ -535,7 +576,7 @@ export class Stage2Board {
   }
 
   rollDice() {
-    if (this.isRollingDice || this.isMoving || this.cells.length === 0) return;
+    if (this.isRollingDice || this.isMoving || this.cells.length === 0 || this.isDiceSettled) return;
     this.launchDicePhysics(688, 670, null, null, null, false);
   }
 
@@ -684,39 +725,35 @@ export class Stage2Board {
           velX = 0;
           velY = 0;
 
-          // Доворачиваем кубик до нужной грани лицом к игроку
-          const roundTo360 = (val, target) => {
-            const turns = Math.round(val / 360);
-            return turns * 360 + target;
+          // Углы естественного приземления кубика на стол в перспективе (35° наклон стола)
+          // Кубик лежит на столе как упал, верхняя грань показывает выпавшее число
+          const restingAngles = {
+            1: { rx: 35, ry: 0, rz: 0 },
+            2: { rx: 215, ry: 90, rz: 0 },
+            3: { rx: 305, ry: 0, rz: 0 },
+            4: { rx: 125, ry: 0, rz: 0 },
+            5: { rx: 35, ry: 90, rz: 0 },
+            6: { rx: 215, ry: 0, rz: 0 }
+          };
+          const targetAngles = restingAngles[finalValue] || { rx: 35, ry: 0, rz: 0 };
+
+          // Плавное выравнивание к ближайшему эквивалентному углу
+          const smoothAngle = (curr, target) => {
+            const diff = ((target - curr) % 360 + 540) % 360 - 180;
+            return curr + diff;
           };
 
-          const finalRx = roundTo360(rotX, targetFace.rx);
-          const finalRy = roundTo360(rotY, targetFace.ry);
-          const finalRz = Math.round(rotZ / 360) * 360;
+          const finalRx = smoothAngle(rotX, targetAngles.rx);
+          const finalRy = smoothAngle(rotY, targetAngles.ry);
+          const finalRz = smoothAngle(rotZ, targetAngles.rz);
 
-          cube.style.transition = 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          cube.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.35, 1)';
           cube.style.transform = `translate(-50%, -50%) rotateX(${finalRx}deg) rotateY(${finalRy}deg) rotateZ(${finalRz}deg)`;
 
+          // Кубик остаётся лежать на столе — игрок сам видит число!
           setTimeout(() => {
-            audio.playSuccess();
-            if (badge && resultNum) {
-              resultNum.textContent = String(finalValue);
-              badge.style.left = `${posX}px`;
-              badge.style.top = `${posY}px`;
-              badge.classList.remove('hidden');
-            }
-            if (hudDiceNum) {
-              hudDiceNum.textContent = String(finalValue);
-            }
-
-            // Пауза перед перемещением фишки
-            setTimeout(() => {
-              arena.classList.add('hidden');
-              cube.style.transition = '';
-              this.isRollingDice = false;
-              this.advancePlayer(finalValue);
-            }, 650);
-          }, 200);
+            this.onDiceSettled(finalValue);
+          }, 240);
 
           return;
         }
@@ -758,8 +795,7 @@ export class Stage2Board {
   processNextMoveStep() {
     if (this.movePath.length === 0) {
       this.isMoving = false;
-      const btnRoll = document.getElementById('btn-s2-roll');
-      if (btnRoll) btnRoll.disabled = false;
+      this.resetDiceButtonToRoll();
 
       // Прибыли на целевую клетку -> активируем событие!
       const currentCell = this.cells[this.currentCellIndex];
@@ -793,6 +829,72 @@ export class Stage2Board {
         this.processNextMoveStep();
       }
     }, 320);
+  }
+
+  /* ==========================================================================
+     Состояния кнопки и этапы броска кубика
+     1. Бросок (кубик летит и приземляется на стол)
+     2. Ожидание хода (кубик лежит, игрок видит число, кнопка "ПОХОДИТЬ")
+     3. Походить (пешка шагает, кубик убирается)
+     ========================================================================== */
+  onDiceSettled(finalValue) {
+    this.isRollingDice = false;
+    this.isDiceSettled = true;
+
+    audio.playSuccess();
+
+    // Обновляем кнопку на "ПОХОДИТЬ"
+    const btnText = document.getElementById('s2-roll-btn-text');
+    if (btnText) btnText.textContent = 'ПОХОДИТЬ';
+
+    const btnRoll = document.getElementById('btn-s2-roll');
+    if (btnRoll) {
+      btnRoll.disabled = false;
+      btnRoll.classList.add('state-step');
+      btnRoll.title = 'Сделать ход (или нажмите Пробел)';
+    }
+
+    const hudDiceNum = document.getElementById('s2-dice-num');
+    if (hudDiceNum) hudDiceNum.textContent = String(finalValue);
+
+    const hint = document.getElementById('s2-dice-hint');
+    if (hint) hint.textContent = `🎲 Выпало ${finalValue}! Нажмите "Походить" или Пробел!`;
+  }
+
+  confirmStep() {
+    if (!this.isDiceSettled || this.isMoving) return;
+    this.isDiceSettled = false;
+
+    // Прячем кубик со стола перед началом хода
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const cube = document.getElementById('s2-dice-cube');
+    if (arena) arena.classList.add('hidden');
+    if (cube) cube.style.transition = '';
+
+    // Блокируем кнопку на время хода пешки
+    const btnRoll = document.getElementById('btn-s2-roll');
+    if (btnRoll) btnRoll.disabled = true;
+
+    // Запускаем ход пешки по клеткам
+    this.advancePlayer(this.diceValue);
+  }
+
+  resetDiceButtonToRoll() {
+    this.isDiceSettled = false;
+    this.isRollingDice = false;
+
+    const btnText = document.getElementById('s2-roll-btn-text');
+    if (btnText) btnText.textContent = 'БРОСОК';
+
+    const btnRoll = document.getElementById('btn-s2-roll');
+    if (btnRoll) {
+      btnRoll.disabled = false;
+      btnRoll.classList.remove('state-step');
+      btnRoll.title = 'Бросить кубик (или нажмите Пробел)';
+    }
+
+    const hint = document.getElementById('s2-dice-hint');
+    if (hint) hint.textContent = '🖐️ Зажмите кубик или нажмите Пробел для броска!';
   }
 
   /* ==========================================================================

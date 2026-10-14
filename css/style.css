@@ -2584,12 +2584,13 @@ body {
 /* Нижняя контрольная панель с кубиком */
 .s2-control-panel {
   position: absolute;
-  bottom: 24px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
   pointer-events: auto;
   z-index: 20;
 }
@@ -2597,12 +2598,13 @@ body {
 .s2-dice-box {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: rgba(15, 12, 10, 0.85);
-  border: 2px solid #8b5a2b;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(0, 0, 0, 0.6);
-  padding: 8px 16px;
-  border-radius: 12px;
+  gap: 16px;
+  background: rgba(15, 12, 10, 0.75);
+  border: 2px solid rgba(139, 90, 43, 0.65);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+  padding: 6px 14px;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
 }
 
 .s2-dice {
@@ -2620,6 +2622,62 @@ body {
   color: #0f172a;
   transition: transform 0.1s;
   user-select: none;
+}
+
+/* Кнопка броска кубика / хода на основе ассетов Throw-btn (215x116) */
+.btn-s2-throw {
+  width: 175px;
+  height: 94px;
+  background: url('../assets/UI/Throw-btn.png') no-repeat center / contain;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  padding-bottom: 6px;
+  background-color: transparent;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  user-select: none;
+  outline: none;
+}
+
+.btn-s2-throw:hover:not(:disabled) {
+  background-image: url('../assets/UI/Throw-btn-Hover.png');
+  filter: drop-shadow(0 0 10px rgba(255, 183, 3, 0.5));
+}
+
+.btn-s2-throw:active:not(:disabled) {
+  background-image: url('../assets/UI/Throw-btn-Active.png');
+  transform: translateY(2px) scale(0.97);
+}
+
+.btn-s2-throw:disabled {
+  opacity: 0.5;
+  filter: grayscale(0.65);
+  cursor: not-allowed;
+}
+
+.btn-s2-throw-text {
+  font-family: 'Cinzel', 'Marcellus', 'Georgia', serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff8e8;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 4px #000, 0 0 10px rgba(255, 183, 3, 0.85);
+  pointer-events: none;
+}
+
+.btn-s2-throw.state-step .btn-s2-throw-text {
+  color: #c7f9cc;
+  text-shadow: 0 2px 4px #000, 0 0 12px rgba(46, 196, 182, 0.95);
+  animation: s2StepGlow 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes s2StepGlow {
+  from { filter: drop-shadow(0 0 2px rgba(46, 196, 182, 0.6)); }
+  to { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9)); }
 }
 
 .btn-s2-wood {
@@ -2651,16 +2709,6 @@ body {
   opacity: 0.55;
   cursor: not-allowed;
   filter: grayscale(0.5);
-}
-
-.btn-s2-roll {
-  background: #2ec4b6 !important;
-  border-color: #1b7a70 !important;
-  box-shadow: 0 4px 0 #12554e, 0 6px 12px rgba(0, 0, 0, 0.6) !important;
-}
-
-.btn-s2-roll:hover:not(:disabled) {
-  box-shadow: 0 6px 0 #12554e, 0 8px 16px rgba(0, 0, 0, 0.7) !important;
 }
 
 /* Модальное окно события клетки */
