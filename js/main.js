@@ -67,7 +67,7 @@ class BirDayApp {
     // - Конструктор карты настольной игры (Этап 2)
     this.stage2Editor = new Stage2Editor(this.stage2Board);
     // - Магазин карт перед боссом (Этап 3)
-    this.cardMarket = new CardMarket();
+    this.cardMarket = new CardMarket(this.videoManager);
     // - Финальная битва с Бобром (Этап 3)
     this.bossArena = new BossArena(this.videoManager);
 

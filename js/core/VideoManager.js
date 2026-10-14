@@ -148,25 +148,39 @@ export class VideoManager {
     }
 
     const src = this.videoSources[stateKey];
-    if (!src) return;
+    if (!src) {
+      if (onEnded) onEnded();
+      return;
+    }
 
-    // Снимаем предыдущий обработчик ended, если был
+    // Снимаем предыдущие обработчики ended / error, если были
     if (this._activeEndedHandler) {
       this.videoEl.removeEventListener('ended', this._activeEndedHandler);
       this._activeEndedHandler = null;
+    }
+    if (this._activeErrorHandler) {
+      this.videoEl.removeEventListener('error', this._activeErrorHandler);
+      this._activeErrorHandler = null;
     }
 
     // Проверяем, не играет ли уже то же самое видео
     const currentSrc = decodeURIComponent(this.videoEl.currentSrc || this.videoEl.src || '');
     if (!currentSrc.includes(src)) {
       this.videoEl.src = encodeURI(src);
+      try {
+        this.videoEl.load();
+      } catch (e) {}
     }
+
+    try {
+      this.videoEl.currentTime = 0;
+    } catch (e) {}
 
     // Зацикливаем только стандартные меню / тизеры / видео ожидания
     this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'IDE_WAITING_PLAYER');
 
     // Управление звуком: катсцены и босс озвучиваются, если звук включен
-    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'MARKET_START' || stateKey === 'IDE_WAITING_PLAYER' || isBossVideo) {
+    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'MARKET_START' || stateKey === 'IDE_WAITING_PLAYER' || stateKey === 'BOOSTER_OPEN' || isBossVideo) {
       this.videoEl.muted = !gameState.data.soundEnabled;
       this.videoEl.volume = audio.getMusicVolume();
     } else {
@@ -174,14 +188,29 @@ export class VideoManager {
     }
 
     if (onEnded && !this.videoEl.loop) {
-      this._activeEndedHandler = () => {
+      let isDone = false;
+      const finishPlayback = () => {
+        if (isDone) return;
+        isDone = true;
         if (this._activeEndedHandler) {
           this.videoEl.removeEventListener('ended', this._activeEndedHandler);
           this._activeEndedHandler = null;
         }
+        if (this._activeErrorHandler) {
+          this.videoEl.removeEventListener('error', this._activeErrorHandler);
+          this._activeErrorHandler = null;
+        }
         onEnded();
       };
+
+      this._activeEndedHandler = finishPlayback;
+      this._activeErrorHandler = () => {
+        console.warn(`[VideoManager] Ошибка видео "${stateKey}", завершаем сцену...`);
+        finishPlayback();
+      };
+
       this.videoEl.addEventListener('ended', this._activeEndedHandler);
+      this.videoEl.addEventListener('error', this._activeErrorHandler);
     }
 
     const playPromise = this.videoEl.play();
@@ -201,6 +230,10 @@ export class VideoManager {
     if (this._activeEndedHandler) {
       const handler = this._activeEndedHandler;
       this.videoEl.removeEventListener('ended', handler);
+      if (this._activeErrorHandler) {
+        this.videoEl.removeEventListener('error', this._activeErrorHandler);
+        this._activeErrorHandler = null;
+      }
       this._activeEndedHandler = null;
       try {
         this.videoEl.pause();

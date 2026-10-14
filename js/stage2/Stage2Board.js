@@ -428,11 +428,12 @@ export class Stage2Board {
 
     uiLayer.appendChild(this.uiContainer);
 
-    // Привязка событий UI
+    // Привязка событий UI: Кнопка "БРОСОК / ПОХОДИТЬ"
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) {
       btnRoll.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (this.isMoving || this.isRollingDice) return;
         if (this.isDiceSettled) {
           this.confirmStep();
         } else {
@@ -441,44 +442,52 @@ export class Stage2Board {
       });
     }
 
+    // Виджет кубика около кнопки: клик бросает или перебрасывает кубик в любой момент
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
-      const handleDown = (e) => {
-        if (e.target === btnRoll) return;
+      diceBox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isMoving || this.isRollingDice) return;
         if (this.isDiceSettled) {
-          this.confirmStep();
-          return;
-        }
-        this.startHoldingDice(e);
-      };
-      diceBox.addEventListener('mousedown', handleDown);
-      diceBox.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) handleDown(e.touches[0]);
-      }, { passive: false });
-    }
-
-    const arena = document.getElementById('s2-dice-3d-arena');
-    if (arena) {
-      arena.addEventListener('mousedown', (e) => {
-        if (!this.isRollingDice && !this.isDiceSettled) {
-          this.startHoldingDice(e);
+          this.rerollDice();
+        } else {
+          this.rollDice();
         }
       });
     }
 
-    // Отслеживание движения и броска мыши по всему окну
-    window.addEventListener('mousemove', (e) => this.onDiceMouseMove(e));
-    window.addEventListener('mouseup', (e) => this.onDiceMouseUp(e));
-    window.addEventListener('touchmove', (e) => {
-      if (this.isHoldingDice && e.touches && e.touches[0]) {
-        this.onDiceMouseMove(e.touches[0]);
-      }
-    }, { passive: false });
-    window.addEventListener('touchend', (e) => {
-      if (this.isHoldingDice && e.changedTouches && e.changedTouches[0]) {
-        this.onDiceMouseUp(e.changedTouches[0]);
-      }
-    });
+    // 3D Кубик на столе и бейдж результата: клик по лежащему кубику перебрасывает его!
+    const cube = document.getElementById('s2-dice-cube');
+    if (cube) {
+      cube.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isDiceSettled && !this.isMoving && !this.isRollingDice) {
+          this.rerollDice();
+        }
+      });
+    }
+
+    const badge = document.getElementById('s2-dice-result-badge');
+    if (badge) {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isDiceSettled && !this.isMoving && !this.isRollingDice) {
+          this.rerollDice();
+        }
+      });
+    }
+
+    // Клик по статусу кубиков в левом верхнем углу (X 4) тоже делает бросок/переброс
+    const diceStatusRow = document.getElementById('s2-status-dice')?.closest('.s2-status-row');
+    if (diceStatusRow) {
+      diceStatusRow.style.cursor = 'pointer';
+      diceStatusRow.title = 'Бросить / Перебросить кубик 🎲';
+      diceStatusRow.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isMoving || this.isRollingDice) return;
+        this.rollDice();
+      });
+    }
   }
 
   removeUI() {
@@ -606,17 +615,41 @@ export class Stage2Board {
     }
   }
 
+  rerollDice() {
+    if (this.isRollingDice || this.isMoving) return;
+    if (this.eventManager && this.eventManager.stats) {
+      if (typeof this.eventManager.stats.rerollDice === 'number' && this.eventManager.stats.rerollDice > 0) {
+        this.eventManager.stats.rerollDice--;
+        this.eventManager.updateHUD();
+      }
+    }
+    this.rollDice();
+  }
+
   rollDice() {
-    if (this.isRollingDice || this.isMoving || this.cells.length === 0 || this.isDiceSettled) return;
-    const diceBox = document.getElementById('s2-dice-box');
+    if (this.isRollingDice || this.isMoving) return;
+    this.isDiceSettled = false;
+
+    const badge = document.getElementById('s2-dice-result-badge');
+    if (badge) badge.classList.add('hidden');
+
     const arena = document.getElementById('s2-dice-3d-arena');
+    if (arena) {
+      arena.classList.remove('settled');
+      arena.classList.remove('hidden');
+    }
+
+    const diceBox = document.getElementById('s2-dice-box');
     const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0, width: 1366, height: 768 };
-    let startX = (arena ? arena.clientWidth : 1366) * 0.5 - 120;
-    let startY = (arena ? arena.clientHeight : 768) - 70;
+    let startX = (arena && arena.clientWidth > 0 ? arena.clientWidth : 1366) * 0.5 - 120;
+    let startY = (arena && arena.clientHeight > 0 ? arena.clientHeight : 768) - 70;
     if (diceBox) {
+      diceBox.classList.remove('can-reroll');
       const boxRect = diceBox.getBoundingClientRect();
-      startX = boxRect.left + boxRect.width / 2 - arenaRect.left;
-      startY = boxRect.top + boxRect.height / 2 - arenaRect.top;
+      if (boxRect.width > 0) {
+        startX = boxRect.left + boxRect.width / 2 - arenaRect.left;
+        startY = boxRect.top + boxRect.height / 2 - arenaRect.top;
+      }
     }
     this.launchDicePhysics(startX, startY, null, null, null, false);
   }
@@ -628,8 +661,32 @@ export class Stage2Board {
     if (this.isRollingDice) return;
     this.isRollingDice = true;
 
+    // Сбрасываем возможный зависший таймаут
+    if (this._diceSafetyTimeout) {
+      clearTimeout(this._diceSafetyTimeout);
+      this._diceSafetyTimeout = null;
+    }
+
+    // 1. Результат броска (1..6)
+    const finalValue = Math.floor(Math.random() * 6) + 1;
+    this.diceValue = finalValue;
+
+    // Страховочный таймер, если анимация физики кубика не завершится вовремя
+    this._diceSafetyTimeout = setTimeout(() => {
+      this.onDiceSettled(finalValue);
+    }, 2200);
+
     const btnRoll = document.getElementById('btn-s2-roll');
-    if (btnRoll) btnRoll.disabled = true;
+    if (btnRoll) {
+      btnRoll.disabled = true;
+      btnRoll.classList.remove('state-step');
+    }
+
+    const diceBox = document.getElementById('s2-dice-box');
+    if (diceBox) {
+      diceBox.classList.remove('can-reroll');
+      diceBox.title = 'Кубик катится... 🎲';
+    }
 
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
@@ -639,14 +696,9 @@ export class Stage2Board {
     const hudDiceNum = document.getElementById('s2-dice-num');
 
     if (!arena || !cube || !shadow) {
-      const finalVal = Math.floor(Math.random() * 6) + 1;
-      this.advancePlayer(finalVal);
+      this.advancePlayer(finalValue);
       return;
     }
-
-    // 1. Результат броска (1..6)
-    const finalValue = Math.floor(Math.random() * 6) + 1;
-    this.diceValue = finalValue;
 
     // Углы показа нужной грани
     const faceAngles = {
@@ -903,6 +955,11 @@ export class Stage2Board {
      3. Походить (пешка шагает, кубик убирается)
      ========================================================================== */
   onDiceSettled(finalValue) {
+    if (this._diceSafetyTimeout) {
+      clearTimeout(this._diceSafetyTimeout);
+      this._diceSafetyTimeout = null;
+    }
+
     this.isRollingDice = false;
     this.isDiceSettled = true;
 
@@ -926,6 +983,17 @@ export class Stage2Board {
 
     const hudDiceNum = document.getElementById('s2-dice-num');
     if (hudDiceNum) hudDiceNum.textContent = String(finalValue);
+
+    const diceBox = document.getElementById('s2-dice-box');
+    if (diceBox) {
+      diceBox.classList.add('can-reroll');
+      diceBox.title = 'Нажмите на кубик, чтобы перебросить! 🎲';
+    }
+
+    const arena = document.getElementById('s2-dice-3d-arena');
+    if (arena) {
+      arena.classList.add('settled');
+    }
   }
 
   confirmStep() {
@@ -937,6 +1005,12 @@ export class Stage2Board {
     const cube = document.getElementById('s2-dice-cube');
     if (arena) arena.classList.add('hidden');
     if (cube) cube.style.transition = '';
+
+    const diceBox = document.getElementById('s2-dice-box');
+    if (diceBox) {
+      diceBox.classList.remove('can-reroll');
+      diceBox.title = 'Нажмите или бросьте кубик мышкой!';
+    }
 
     // Блокируем кнопку на время хода пешки
     const btnRoll = document.getElementById('btn-s2-roll');
@@ -961,6 +1035,12 @@ export class Stage2Board {
       btnRoll.disabled = false;
       btnRoll.classList.remove('state-step');
       btnRoll.title = 'Бросить кубик (или нажмите Пробел)';
+    }
+
+    const diceBox = document.getElementById('s2-dice-box');
+    if (diceBox) {
+      diceBox.classList.remove('can-reroll');
+      diceBox.title = 'Нажмите или бросьте кубик мышкой!';
     }
   }
 

@@ -3489,6 +3489,22 @@ body {
   100% { transform: translate(-50%, -130%) scale(1); opacity: 1; }
 }
 
+.s2-dice-3d-arena.settled {
+  pointer-events: none !important;
+}
+
+.s2-dice-3d-arena.settled .s2-dice-cube,
+.s2-dice-3d-arena.settled .s2-dice-result-badge {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.s2-dice-3d-arena.settled .s2-dice-cube:hover,
+.s2-dice-3d-arena.settled .s2-dice-result-badge:hover {
+  filter: brightness(1.2) drop-shadow(0 0 10px rgba(255, 183, 3, 0.9));
+}
+
 /* ==========================================================================
    ЭТАП 3: АРЕНА БОССА — КАРТЫ, HUD И РЕСУРСЫ
    ========================================================================== */
@@ -3992,6 +4008,10 @@ body {
   gap: 32px;
 }
 
+.pause-section.volume-section {
+  margin-top: 24px;
+}
+
 .pause-slider-group {
   display: flex;
   flex-direction: column;
@@ -4003,16 +4023,28 @@ body {
   display: flex;
   justify-content: space-between;
   width: 266px;
-  align-items: baseline;
+  align-items: center;
 }
 
 .pause-label-title {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-pixel), monospace;
   font-size: 14px;
   font-weight: bold;
   color: #4a2810;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   letter-spacing: 0.5px;
+}
+
+.settings-title-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  margin-right: 8px;
+  vertical-align: middle;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 
 .pause-label-val {
@@ -4313,7 +4345,8 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  z-index: 60;
+  z-index: 100;
+  pointer-events: auto !important;
   user-select: none;
 }
 
@@ -4329,12 +4362,31 @@ body {
   background-repeat: no-repeat;
   image-rendering: pixelated;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(0, 0, 0, 0.35);
-  cursor: grab;
+  cursor: pointer !important;
+  pointer-events: auto !important;
   transition: transform 0.12s ease, filter 0.12s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+}
+
+.s2-dice-widget-box * {
+  pointer-events: none;
+}
+
+.s2-dice-widget-box.can-reroll {
+  animation: diceRerollPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes diceRerollPulse {
+  0%, 100% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), 0 0 6px rgba(255, 183, 3, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(255, 183, 3, 0.85);
+    filter: brightness(1.12);
+  }
 }
 
 .s2-dice-widget-box:hover {
@@ -4529,6 +4581,7 @@ body {
   background-position: center;
   image-rendering: pixelated;
   user-select: none;
+  pointer-events: auto !important;
 }
 
 #screen-market.hidden {
@@ -4926,6 +4979,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  pointer-events: auto !important;
 }
 
 .market-booster-pack-wrap {
@@ -4934,7 +4988,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: pointer !important;
+  pointer-events: auto !important;
   transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
@@ -4949,6 +5004,7 @@ body {
   image-rendering: pixelated;
   border-radius: 4px;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7));
+  pointer-events: none;
 }
 
 .market-booster-btn {
@@ -5090,11 +5146,12 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.82);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 120;
+  z-index: 200;
+  pointer-events: auto !important;
 }
 
 .market-booster-modal.hidden {
@@ -5114,6 +5171,7 @@ body {
   padding: 38px 24px 30px;
   box-sizing: border-box;
   animation: modal-pop 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  pointer-events: auto !important;
 }
 
 .booster-modal-title {
@@ -5139,14 +5197,20 @@ body {
   align-items: center;
   justify-content: center;
   width: 100%;
+  pointer-events: auto !important;
 }
 
 .booster-flip-card {
   perspective: 1000px;
   width: 156px;
   height: 235px;
-  cursor: pointer;
+  cursor: pointer !important;
+  pointer-events: auto !important;
   transition: transform 0.2s ease;
+}
+
+.booster-flip-card * {
+  pointer-events: none !important;
 }
 
 .booster-flip-card:hover:not(.is-flipped) {
@@ -5160,6 +5224,7 @@ body {
   text-align: center;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .booster-flip-card.is-flipped .booster-flip-inner {
@@ -5172,10 +5237,12 @@ body {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
   border: 2px solid #5a3825;
+  transition: opacity 0.3s ease;
 }
 
 .booster-flip-front {
@@ -5183,6 +5250,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
+  transform: rotateY(0deg);
+}
+
+.booster-flip-card.is-flipped .booster-flip-front {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s ease 0.25s, visibility 0s 0.3s;
 }
 
 .booster-shirt-img {
@@ -5218,6 +5294,11 @@ body {
   justify-content: space-between;
   box-sizing: border-box;
   padding: 6px;
+  z-index: 1;
+}
+
+.booster-flip-card.is-flipped .booster-flip-back {
+  z-index: 3;
 }
 
 .booster-revealed-img {
@@ -5246,12 +5327,18 @@ body {
   margin-bottom: 2px;
 }
 
-.booster-collect-btn.disabled {
-  filter: grayscale(0.8) opacity(0.5);
-  cursor: not-allowed;
-  pointer-events: none;
-}
+.booster-collect-btn {
+  min-width: 180px;
   padding: 10px 24px;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.booster-collect-btn.disabled,
+.booster-collect-btn:disabled {
+  filter: grayscale(0.8) opacity(0.5);
+  cursor: not-allowed !important;
+  pointer-events: none !important;
 }
 
 @keyframes card-reveal {

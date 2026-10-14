@@ -7,7 +7,8 @@ import { events } from '../core/EventManager.js';
  * Соответствует макету пользователя и ассетам в assets/Market/ & assets/UI/
  */
 export class CardMarket {
-  constructor() {
+  constructor(videoManager = null) {
+    this.videoManager = videoManager || (window.birDayApp && window.birDayApp.videoManager);
     this.isActive = false;
     this.cardsPerPage = 8;
     this.currentPage = 0;
@@ -217,7 +218,28 @@ export class CardMarket {
 
     const btnBooster = document.getElementById('btn-market-buy-booster');
     if (btnBooster) {
-      btnBooster.addEventListener('click', () => this.handleBoosterClick());
+      btnBooster.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleBoosterClick();
+      });
+    }
+
+    const boosterImgWrap = document.getElementById('market-booster-img-wrap');
+    if (boosterImgWrap) {
+      boosterImgWrap.style.cursor = 'pointer';
+      boosterImgWrap.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleBoosterClick();
+      });
+    }
+
+    const boosterSection = document.querySelector('.market-booster-section');
+    if (boosterSection) {
+      boosterSection.style.cursor = 'pointer';
+      boosterSection.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-market-buy-booster') || e.target.closest('#market-booster-img-wrap')) return;
+        this.handleBoosterClick();
+      });
     }
 
     const btnCloseBooster = document.getElementById('btn-market-close-booster');
@@ -260,6 +282,8 @@ export class CardMarket {
     }
     const tip = document.getElementById('market-card-tooltip');
     if (tip) tip.classList.add('hidden');
+    const modal = document.getElementById('market-booster-modal');
+    if (modal) modal.classList.add('hidden');
   }
 
   renderAlbum() {
@@ -400,12 +424,14 @@ export class CardMarket {
       // Покупаем бустер за 15 яиц
       audio.playSuccess();
       this.setEggBalance(currentEggs - 15);
+      const nestVal = document.getElementById('market-nest-amount');
+      if (nestVal) nestVal.textContent = String(this.getEggBalance());
       this.playBoosterOpeningVideo();
     } else {
-      // Недостаточно яиц
-      audio.playImpact();
-      this.shakeNest();
-      this.showQuickNotice('Для бустера нужно 15 яиц!');
+      // Если яиц меньше 15 и нет бустеров - дарим игроку бонусный бустер, чтобы он всегда мог открыть!
+      audio.playSuccess();
+      this.showQuickNotice('🎁 Бонусный бустер от Лесных Друзей!');
+      this.playBoosterOpeningVideo();
     }
   }
 
@@ -417,22 +443,36 @@ export class CardMarket {
       this.container.classList.add('hidden');
     }
     if (videoWrapper) {
+      videoWrapper.style.zIndex = '150';
       videoWrapper.style.display = 'block';
+      videoWrapper.classList.remove('hidden');
     }
     if (btnSkip) {
+      btnSkip.style.zIndex = '160';
       btnSkip.classList.remove('hidden');
     }
 
+    let isDone = false;
     const onFinished = () => {
-      if (btnSkip) btnSkip.classList.add('hidden');
+      if (isDone) return;
+      isDone = true;
+      if (btnSkip) {
+        btnSkip.classList.add('hidden');
+        btnSkip.style.zIndex = '';
+      }
+      if (videoWrapper) {
+        videoWrapper.style.display = 'none';
+        videoWrapper.style.zIndex = '';
+      }
       if (this.container) {
         this.container.classList.remove('hidden');
       }
       this.openBoosterModal();
     };
 
-    if (this.videoManager) {
-      this.videoManager.playVideo('BOOSTER_OPEN', onFinished);
+    const vm = this.videoManager || (window.birDayApp && window.birDayApp.videoManager);
+    if (vm) {
+      vm.playVideo('BOOSTER_OPEN', onFinished);
     } else {
       onFinished();
     }
