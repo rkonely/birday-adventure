@@ -121,6 +121,18 @@ export class BossArena {
       }
     });
 
+    window.addEventListener('keydown', (e) => {
+      if (!this.isActive) return;
+      if (e.code === 'Space') {
+        const btn = document.getElementById('btn-end-turn');
+        if (btn && !btn.disabled && !this.isResolvingTurn) {
+          e.preventDefault();
+          audio.playClick();
+          this.executeTurn();
+        }
+      }
+    });
+
     if (this.canvas) {
       this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
       this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
@@ -262,19 +274,22 @@ export class BossArena {
     this.uiContainer.className = 'boss-arena-hud';
 
     this.uiContainer.innerHTML = `
-      <!-- Верхняя панель босса -->
+      <!-- Верхняя панель: Босс Frame, сегменты HP, раунд и намерения -->
       <div class="boss-top-hud">
-        <div class="boss-banner-frame">
-          <div class="boss-avatar-box">🦫</div>
-          <div class="boss-info-col">
-            <div class="boss-name-row">
+        <div class="boss-top-row">
+          <!-- Рамка босса UI-Boss-HP-FRAME.png (1278x193) -->
+          <div class="boss-frame-container">
+            <div class="boss-frame-text-row">
               <span class="boss-name-title">${this.boss.name}</span>
-              <span class="boss-name-subtitle">${this.boss.title}</span>
-            </div>
-            <div class="boss-hp-track">
-              <div id="boss-hp-bar" class="boss-hp-bar" style="width: 100%"></div>
               <span id="boss-hp-num" class="boss-hp-num">${this.boss.hp} / ${this.boss.maxHp} HP</span>
             </div>
+            <!-- 24 сегмента полосы HP босса -->
+            <div id="boss-segments-track" class="boss-segments-track"></div>
+          </div>
+
+          <!-- Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) -->
+          <div class="boss-round-container">
+            <span id="round-counter" class="boss-round-text">Раунд ${this.player.round}</span>
           </div>
         </div>
 
@@ -287,40 +302,65 @@ export class BossArena {
 
       <!-- Центральная подсказка при выборе карты -->
       <div id="boss-card-hint" class="boss-card-hint hidden">
-        Выберите клетку на поле 5×3, чтобы выставить героя и перекрыть удар!
+        Выберите клетку на поле 5×3, чтобы выставить героя и перекрыть удар! (Макс. 3 за ход)
       </div>
 
-      <!-- Нижняя панель игрока: Защита игрока, Кнопка Хода, Рука карт -->
-      <div class="player-bottom-hud">
-        <div class="player-controls-row">
-          <!-- Здоровье / Защита игрока -->
-          <div class="player-hp-pill">
-            <span class="player-hp-icon">🛡️</span>
-            <div class="player-hp-col">
-              <span class="player-hp-label">ВАША ЗАЩИТА</span>
-              <div class="player-hp-track">
-                <div id="player-hp-bar" class="player-hp-bar" style="width: 100%"></div>
-                <span id="player-hp-num" class="player-hp-num">${this.player.hp} / ${this.player.maxHp} HP</span>
-              </div>
+      <!-- Нижняя панель игрока -->
+      <div class="boss-bottom-hud">
+        <!-- Левая колонка: 3 слота призыва + Здоровье игрока -->
+        <div class="boss-player-col">
+          <!-- 3 слота призыва с текстурами UI-Boss-default-slot.png / UI-Boss-Active-slot.png -->
+          <div class="boss-summon-slots-row">
+            <div class="boss-summon-slots-header">
+              <span>СЛОТЫ ПРИЗЫВА:</span>
+              <span id="boss-slots-count">0/3</span>
+            </div>
+            <div class="boss-summon-slots-container">
+              <div id="boss-slot-0" class="boss-summon-slot is-default" title="Слот существа 1 (Максимум 3 за ход)"></div>
+              <div id="boss-slot-1" class="boss-summon-slot is-default" title="Слот существа 2 (Максимум 3 за ход)"></div>
+              <div id="boss-slot-2" class="boss-summon-slot is-default" title="Слот существа 3 (Максимум 3 за ход)"></div>
             </div>
           </div>
 
-          <!-- Кнопка "В АТАКУ! / ЗАВЕРШИТЬ ХОД" -->
-          <button id="btn-end-turn" class="btn-boss-action btn-end-turn" title="Завершить расстановку и отразить атаку">
-            <span class="btn-action-icon">⚔️</span>
-            <span class="btn-action-title">В АТАКУ!</span>
-          </button>
-
-          <!-- Счетчик колоды и раунда -->
-          <div class="deck-discard-pill">
-            <span id="deck-counter" title="Карт в колоде">🎴 ${this.player.deck.length}</span>
-            <span id="round-counter" class="round-counter">РАУНД ${this.player.round}</span>
+          <!-- Рамка здоровья игрока UI-Hero-HP-FRAME.png (474x165) + UI-Hero-HP-BAR.png (67x63) -->
+          <div class="hero-hp-frame-container">
+            <div class="hero-hp-title-row">
+              <span class="hero-hp-label">ГЕРОЙ</span>
+              <span id="player-hp-num" class="hero-hp-val">${this.player.hp} / ${this.player.maxHp} HP</span>
+            </div>
+            <div id="hero-hearts-row" class="hero-hearts-row">
+              <div class="hero-heart-icon"></div>
+              <div class="hero-heart-icon"></div>
+              <div class="hero-heart-icon"></div>
+              <div class="hero-heart-icon"></div>
+              <div class="hero-heart-icon"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Веер карт в руке -->
+        <!-- Центральный веер карт: Рука игрока -->
         <div id="boss-hand-container" class="boss-hand-container">
           <!-- Карты генерируются динамически -->
+        </div>
+
+        <!-- Правая колонка: Колода / Сброс и Кнопка Атаки Throw-btn.png -->
+        <div class="boss-action-col">
+          <div class="boss-deck-discard-row">
+            <div class="boss-counter-badge-wrap" title="Карт в колоде">
+              <div class="boss-deck-icon"></div>
+              <span id="deck-counter" class="boss-counter-val">${this.player.deck.length}</span>
+            </div>
+            <div class="boss-counter-badge-wrap" title="Карт в сбросе">
+              <div class="boss-discard-icon"></div>
+              <span id="discard-counter" class="boss-counter-val">${this.player.discard.length}</span>
+            </div>
+          </div>
+
+          <!-- Кнопка "В АТАКУ! / Throw-btn" -->
+          <button id="btn-end-turn" class="boss-attack-btn" title="Завершить ход и атаковать босса (Пробел)">
+            <span class="boss-attack-btn-title">АТАКА</span>
+            <span class="boss-attack-btn-sub">ПРОБЕЛ</span>
+          </button>
         </div>
       </div>
     `;
@@ -339,33 +379,37 @@ export class BossArena {
     }
 
     this.renderHandDOM();
+    this.updateHUD();
   }
 
   updateHUD() {
-    const hpBar = document.getElementById('boss-hp-bar');
+    this.updateBossSegments();
+    this.updateHeroHearts();
+    this.updateSummonSlots();
+
     const hpNum = document.getElementById('boss-hp-num');
-    if (hpBar && hpNum) {
-      const pct = Math.max(0, Math.min(100, (this.boss.hp / this.boss.maxHp) * 100));
-      hpBar.style.width = `${pct}%`;
+    if (hpNum) {
       hpNum.textContent = `${Math.max(0, this.boss.hp)} / ${this.boss.maxHp} HP`;
     }
 
-    const playerBar = document.getElementById('player-hp-bar');
     const playerNum = document.getElementById('player-hp-num');
-    if (playerBar && playerNum) {
-      const pPct = Math.max(0, Math.min(100, (this.player.hp / this.player.maxHp) * 100));
-      playerBar.style.width = `${pPct}%`;
+    if (playerNum) {
       playerNum.textContent = `${Math.max(0, this.player.hp)} / ${this.player.maxHp} HP`;
     }
 
     const deckCounter = document.getElementById('deck-counter');
     if (deckCounter) {
-      deckCounter.textContent = `🎴 ${this.player.deck.length}`;
+      deckCounter.textContent = `${this.player.deck.length}`;
+    }
+
+    const discardCounter = document.getElementById('discard-counter');
+    if (discardCounter) {
+      discardCounter.textContent = `${this.player.discard.length}`;
     }
 
     const roundCounter = document.getElementById('round-counter');
     if (roundCounter) {
-      roundCounter.textContent = `РАУНД ${this.player.round}`;
+      roundCounter.textContent = `Раунд ${this.player.round}`;
     }
 
     const intentDesc = document.getElementById('boss-intent-desc');
@@ -374,8 +418,73 @@ export class BossArena {
     }
   }
 
+  updateBossSegments() {
+    const track = document.getElementById('boss-segments-track');
+    if (!track) return;
+    const totalSegments = 24;
+    const pct = Math.max(0, Math.min(1, this.boss.hp / this.boss.maxHp));
+    const fullCount = Math.round(pct * totalSegments);
+
+    if (track.children.length !== totalSegments) {
+      track.innerHTML = '';
+      for (let i = 0; i < totalSegments; i++) {
+        const seg = document.createElement('div');
+        seg.className = `boss-hp-segment ${i < fullCount ? 'is-full' : 'is-empty'}`;
+        track.appendChild(seg);
+      }
+    } else {
+      for (let i = 0; i < totalSegments; i++) {
+        const seg = track.children[i];
+        if (seg) {
+          if (i < fullCount) {
+            seg.className = 'boss-hp-segment is-full';
+          } else {
+            seg.className = 'boss-hp-segment is-empty';
+          }
+        }
+      }
+    }
+  }
+
+  updateHeroHearts() {
+    const row = document.getElementById('hero-hearts-row');
+    if (!row) return;
+    const totalHearts = 5;
+    const heartsFull = Math.ceil((Math.max(0, this.player.hp) / this.player.maxHp) * totalHearts);
+    for (let i = 0; i < totalHearts; i++) {
+      const heart = row.children[i];
+      if (heart) {
+        if (i < heartsFull) {
+          heart.className = 'hero-heart-icon';
+        } else {
+          heart.className = 'hero-heart-icon is-empty';
+        }
+      }
+    }
+  }
+
+  updateSummonSlots() {
+    const placedCount = Object.keys(this.gridUnits).length;
+    const countEl = document.getElementById('boss-slots-count');
+    if (countEl) {
+      countEl.textContent = `${placedCount}/3`;
+      countEl.style.color = placedCount >= 3 ? '#ff4d4d' : '#ffd166';
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById(`boss-slot-${i}`);
+      if (slot) {
+        if (i < placedCount) {
+          slot.className = 'boss-summon-slot is-active';
+        } else {
+          slot.className = 'boss-summon-slot is-default';
+        }
+      }
+    }
+  }
+
   /* ==========================================================================
-     Рендер руки карт (без затрат семян — свободный выбор)
+     Рендер руки карт (полные нативные текстуры без нарисованных поверх рамок)
      ========================================================================== */
   renderHandDOM() {
     const container = document.getElementById('boss-hand-container');
@@ -386,7 +495,7 @@ export class BossArena {
 
     this.player.hand.forEach((card, index) => {
       const cardEl = document.createElement('div');
-      cardEl.className = `boss-hand-card rarity-${card.rarity}`;
+      cardEl.className = 'boss-hand-card';
       if (this.player.selectedCardIndex === index) {
         cardEl.classList.add('selected');
       }
@@ -397,21 +506,12 @@ export class BossArena {
       const translateY = Math.abs(centerOffset) * 6;
       cardEl.style.transform = `rotate(${rotateDeg}deg) translateY(${translateY}px)`;
 
+      const isDamaged = card.currentHp !== undefined && card.currentHp < card.hp;
+      const displayHp = isDamaged ? card.currentHp : card.hp;
+
       cardEl.innerHTML = `
-        <div class="card-art-box">
-          <img src="${card.image}" alt="${card.name}" draggable="false" />
-        </div>
-        <div class="card-header-bar">
-          <span class="card-title">${card.name}</span>
-        </div>
-        <div class="card-stats-row">
-          <span class="card-stat-atk" title="Атака">⚔️ ${card.atk}</span>
-          <span class="card-stat-hp" title="Здоровье">🛡️ ${card.hp}</span>
-        </div>
-        <div class="card-ability-box">
-          <span class="ability-name">${card.abilityName}</span>
-          <p class="ability-desc">${card.abilityDesc}</p>
-        </div>
+        <img src="${card.image}" alt="${card.name}" class="boss-card-full-img" draggable="false" />
+        ${isDamaged ? `<div class="card-damaged-hp-badge" title="Текущее здоровье: ${displayHp}/${card.hp}">❤️ ${displayHp}</div>` : ''}
       `;
 
       cardEl.addEventListener('mouseenter', () => {
@@ -482,6 +582,13 @@ export class BossArena {
     const card = this.player.hand[this.player.selectedCardIndex];
     if (!card) return;
 
+    // Ограничение новой механики: МАКСИМУМ 3 существа за ход!
+    if (Object.keys(this.gridUnits).length >= 3) {
+      this.addFloatingText(this.arenaWidth / 2, 400, 'Лимит: максимум 3 существа за ход! ⚠️', '#ff4d4d', 1.6);
+      if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
+      return;
+    }
+
     if (this.gridUnits[tileKey]) {
       this.addFloatingText(this.arenaWidth / 2, 400, 'Клетка уже занята птицей! 🪶', '#ff4d4d', 1.2);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
@@ -492,10 +599,11 @@ export class BossArena {
     this.player.hand.splice(this.player.selectedCardIndex, 1);
     this.player.selectedCardIndex = -1;
 
-    // Выставляем боевую единицу
+    // Выставляем боевую единицу с сохранением поврежденного здоровья (если карта уже была в бою)
+    const initialHp = (card.currentHp !== undefined) ? card.currentHp : card.hp;
     this.gridUnits[tileKey] = {
       ...card,
-      currentHp: card.hp,
+      currentHp: initialHp,
       maxHp: card.hp,
       currentAtk: card.atk,
       tileKey: tileKey,
@@ -726,7 +834,7 @@ export class BossArena {
           unit.currentHp -= cellDamage;
           unit.hitAnim = 0.5;
           if (unit.currentHp <= 0) {
-            delete this.gridUnits[key];
+            unit.currentHp = 0;
             this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! Но ${unit.name} повержен! 🪶`, '#ffd166', 1.8);
           } else {
             this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! -${cellDamage} HP 🛡️`, '#55efc4', 1.5);
@@ -759,7 +867,64 @@ export class BossArena {
       return;
     }
 
-    // Шаг 4: Завершение раунда, добор 2 карт и подготовка следующей атаки
+    // Шаг 4: Возвращение выживших карт в руку с новыми HP, а поверженных - в сброс!
+    const survivingCards = [];
+    const deadCards = [];
+
+    for (const [key, unit] of Object.entries(this.gridUnits)) {
+      if (unit.isDecoy) continue; // Приманки вроде иллюзии павлина не возвращаются
+      if (unit.currentHp > 0) {
+        survivingCards.push({
+          id: unit.id,
+          name: unit.name,
+          role: unit.role,
+          rarity: unit.rarity,
+          image: unit.image,
+          atk: unit.atk,
+          hp: unit.hp,
+          currentHp: unit.currentHp,
+          abilityName: unit.abilityName,
+          abilityDesc: unit.abilityDesc,
+          price: unit.price
+        });
+      } else {
+        deadCards.push({
+          id: unit.id,
+          name: unit.name,
+          role: unit.role,
+          rarity: unit.rarity,
+          image: unit.image,
+          atk: unit.atk,
+          hp: unit.hp,
+          currentHp: 0,
+          abilityName: unit.abilityName,
+          abilityDesc: unit.abilityDesc,
+          price: unit.price
+        });
+      }
+    }
+
+    // Поверженные отправляются в сброс
+    for (const dead of deadCards) {
+      this.player.discard.push(dead);
+    }
+
+    // Выжившие возвращаются в руку
+    if (survivingCards.length > 0) {
+      this.addFloatingText(this.arenaWidth / 2, 380, 'Птицы возвращаются в руку! 🕊️', '#2ec4b6', 2.0);
+      for (const card of survivingCards) {
+        this.player.hand.push(card);
+      }
+    }
+
+    // Сбрасываем сетку на новый ход (освобождаем 3 слота призыва)
+    this.gridUnits = {};
+    this.renderHandDOM();
+    this.updateHUD();
+
+    await this.sleep(400);
+
+    // Шаг 5: Завершение раунда, добор 2 карт и подготовка следующей атаки
     this.player.round++;
     this.drawCards(2);
     this.generateBossIntents();
@@ -1077,18 +1242,24 @@ export class BossArena {
       this.ctx.fill();
 
       // Отрисовка портрета героя
+      // Отрисовка карты героя (полная текстура карты 264x373)
       const img = this.getCardImage(unit.image);
-      const iconSize = 64 * spawnScale;
-      const iconX = cx - iconSize / 2;
-      const iconY = cy - iconSize / 2 - 8 + bob;
+      const cardW = 58 * spawnScale;
+      const cardH = 82 * spawnScale;
+      const cardX = cx - cardW / 2;
+      const cardY = cy - cardH / 2 - 10 + bob;
 
       if (img && img.complete && img.naturalWidth > 0) {
         this.ctx.save();
         // Вспышка при получении удара
         if (unit.hitAnim > 0) {
-          this.ctx.filter = 'brightness(2.0) saturate(0.2)';
+          this.ctx.filter = 'brightness(2.2) saturate(0.2)';
         }
-        this.ctx.drawImage(img, iconX, iconY, iconSize, iconSize);
+        // Тень вокруг карты
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        this.ctx.shadowBlur = 6;
+        this.ctx.shadowOffsetY = 4;
+        this.ctx.drawImage(img, cardX, cardY, cardW, cardH);
         this.ctx.restore();
       } else {
         // Запасная круглая иконка
@@ -1104,7 +1275,7 @@ export class BossArena {
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1.5;
         this.ctx.beginPath();
-        this.ctx.arc(cx - 26, cy + 22, 12, 0, Math.PI * 2);
+        this.ctx.arc(cx - 24, cy + 24, 11, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
 
@@ -1112,15 +1283,16 @@ export class BossArena {
         this.ctx.font = 'bold 11px "8bitoperator", monospace';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(`${unit.currentAtk}`, cx - 26, cy + 23);
+        this.ctx.fillText(`${unit.currentAtk}`, cx - 24, cy + 25);
       }
 
-      // Бейдж HP (Щит справа внизу)
-      this.ctx.fillStyle = '#0077b6';
+      // Бейдж HP (Щит справа внизу: зеленый если цел, красный если ранен)
+      const isDamaged = unit.currentHp < unit.maxHp;
+      this.ctx.fillStyle = isDamaged ? '#d90429' : '#0077b6';
       this.ctx.strokeStyle = '#ffffff';
       this.ctx.lineWidth = 1.5;
       this.ctx.beginPath();
-      this.ctx.arc(cx + 26, cy + 22, 12, 0, Math.PI * 2);
+      this.ctx.arc(cx + 24, cy + 24, 11, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
@@ -1128,7 +1300,7 @@ export class BossArena {
       this.ctx.font = 'bold 11px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(`${unit.currentHp}`, cx + 26, cy + 23);
+      this.ctx.fillText(`${unit.currentHp}`, cx + 24, cy + 25);
 
       this.ctx.restore();
     }

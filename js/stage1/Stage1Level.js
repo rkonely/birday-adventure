@@ -1240,6 +1240,7 @@ export class Stage1Level {
           // УСПЕШНОЕ ПОПАДАНИЕ В ГНЕЗДО!
           nest.filled = true;
           this.nestsCompleted++;
+          this.stats.eggsLaid = this.nestsCompleted;
           egg.isBroken = true;
           egg.shatter();
 
@@ -1541,7 +1542,7 @@ export class Stage1Level {
     if (this.isVictory) return;
     this.isVictory = true;
     this.stats.levelTime = this.levelTime;
-    this.stats.eggsLaid = Math.max(this.stats.eggsLaid, this.eggManager ? this.eggManager.eggsThrown : 0);
+    this.stats.eggsLaid = this.nestsCompleted;
     this.stats.fallsCount = Math.max(this.stats.fallsCount, this.bird ? this.bird.crashCount : 0);
 
     audio.playLevelComplete();

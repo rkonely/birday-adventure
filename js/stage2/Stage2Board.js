@@ -309,6 +309,29 @@ export class Stage2Board {
     audio.playMusic('BOARD_LEVEL2');
   }
 
+  setInitialEggs(eggs) {
+    const finalEggs = typeof eggs === 'number' ? Math.max(0, eggs) : 0;
+    this.eventManager.stats.eggs = finalEggs;
+    this.eventManager.saveStats();
+    this.eventManager.updateHUD();
+    console.log(`🥚 [Stage2Board] Игроку перенесено яиц из 1 этапа: ${finalEggs}`);
+  }
+
+  resetProgress(initialEggs = 0) {
+    this.currentCellIndex = 0;
+    this.isMoving = false;
+    this.movePath = [];
+    this.isDiceSettled = false;
+    this.isRollingDice = false;
+    if (this.cells && this.cells.length > 0) {
+      const startCell = this.cells[0];
+      const center = this.getCellCenter(startCell);
+      this.playerVisualPos = { x: center.x, y: center.y - 25 };
+      this.targetVisualPos = { x: center.x, y: center.y - 25 };
+    }
+    this.eventManager.resetStats(initialEggs);
+  }
+
   stop() {
     this.isActive = false;
     this.isDiceSettled = false;
@@ -419,7 +442,7 @@ export class Stage2Board {
         </button>
         <div class="s2-last-turn-wrap">
           <div class="s2-last-turn-bubble">
-            <span id="s2-last-turn-num">${this.eventManager.stats.lastRoll || '5'}</span>
+            <span id="s2-last-turn-num">${(this.eventManager.stats.lastRoll !== null && this.eventManager.stats.lastRoll !== undefined) ? this.eventManager.stats.lastRoll : '-'}</span>
           </div>
           <span class="s2-last-turn-label">Последний бросок</span>
         </div>

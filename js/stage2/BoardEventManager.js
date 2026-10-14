@@ -13,11 +13,11 @@ export class BoardEventManager {
 
     // Характеристики и инвентарь игрока
     this.stats = {
-      eggs: 35,              // Текущие яйца (35 по умолчанию как на макете)
+      eggs: 0,               // Текущие яйца (переносятся из 1 этапа)
       lostEggsCount: 0,      // Всего потеряно яиц на этой карте
-      rerollDice: 4,         // Кубики на переброс (4 по умолчанию)
+      rerollDice: 0,         // Кубики на переброс (0 бросков на старте)
       boosterPacks: 0,       // Бустеры карт (0 по умолчанию)
-      lastRoll: 5,           // Последний бросок (5 по умолчанию)
+      lastRoll: null,        // Последний бросок
       poisonTurns: 0,        // Оставшиеся ходы яда
       isImmune: false,       // Щит иммунитета
       eggMultiplier: 1,      // Множитель яиц
@@ -38,6 +38,23 @@ export class BoardEventManager {
         this.stats = { ...this.stats, ...parsed };
       } catch (e) {}
     }
+  }
+
+  resetStats(eggs = 0) {
+    this.stats = {
+      eggs: typeof eggs === 'number' ? eggs : 0,
+      lostEggsCount: 0,
+      rerollDice: 0,
+      boosterPacks: 0,
+      lastRoll: null,
+      poisonTurns: 0,
+      isImmune: false,
+      eggMultiplier: 1,
+      reverseNextMove: false,
+      bossHpPenalty: 0,
+      mysteriousBuff: null
+    };
+    this.saveStats();
   }
 
   saveStats() {

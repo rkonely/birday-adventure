@@ -262,6 +262,9 @@ export class UIManager {
   }
 
   startLaunchTransition(name) {
+    // 0. Сброс всего игрового прогресса (карты, броски, инвентарь) для прохождения с 0
+    events.emit('game:reset_progress');
+
     // Плавно скрываем окно регистрации
     this.screenForm.classList.remove('active');
     setTimeout(() => {

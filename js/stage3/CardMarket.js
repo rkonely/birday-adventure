@@ -24,28 +24,26 @@ export class CardMarket {
   }
 
   initPlayerCards() {
+    this.ownedCardIds = new Set();
     try {
       const saved = localStorage.getItem('birday_player_cards');
       if (saved) {
         const arr = JSON.parse(saved);
         if (Array.isArray(arr) && arr.length > 0) {
           arr.forEach(id => this.ownedCardIds.add(id));
-          return;
         }
       }
     } catch (e) {}
+  }
 
-    // Стартовая коллекция из 13 карт (как на скриншоте 13/29)
-    // 7 обычных + 4 необычных + 2 редких
-    const commons = CARDS_DATABASE.filter(c => c.rarity === 'common');
-    const uncommons = CARDS_DATABASE.filter(c => c.rarity === 'uncommon');
-    const rares = CARDS_DATABASE.filter(c => c.rarity === 'rare');
-
-    commons.forEach(c => this.ownedCardIds.add(c.id));
-    uncommons.slice(0, 4).forEach(c => this.ownedCardIds.add(c.id));
-    rares.slice(0, 2).forEach(c => this.ownedCardIds.add(c.id));
-
-    this.savePlayerCards();
+  resetCards() {
+    this.ownedCardIds = new Set();
+    try {
+      localStorage.removeItem('birday_player_cards');
+    } catch (e) {}
+    if (this.container && !this.container.classList.contains('hidden')) {
+      this.renderAlbum();
+    }
   }
 
   savePlayerCards() {
@@ -353,18 +351,15 @@ export class CardMarket {
         <div class="market-card-item ${isOwned ? 'owned' : 'unowned'}" data-card-id="${card.id}">
           <div class="market-card-img-wrap">
             <img src="${card.image}" alt="${card.name}" class="market-card-img" />
-            <!-- Название способности прямо на карте -->
-            <div class="market-card-ability-badge" title="${card.abilityName}">
-              <span class="ability-badge-text">«${card.abilityName}»</span>
-            </div>
           </div>
 
-          <!-- Кнопка покупки Price-Buy-Btn -->
+          <!-- Кнопка покупки Price-Buy-Btn / Price-Sold-Btn -->
           <div class="market-buy-btn-wrap">
             <button class="market-buy-btn ${isOwned ? 'is-bought' : (canAfford ? '' : 'cant-afford')}" 
                     data-buy-id="${card.id}" 
-                    title="${isOwned ? 'Карта уже в вашей колоде' : `Купить за ${price} яиц`}">
-              <span class="market-buy-price-val">${isOwned ? '✔' : price}</span>
+                    title="${isOwned ? 'Карта уже в вашей колоде' : `Купить за ${price} яиц`}"
+                    ${isOwned ? 'disabled' : ''}>
+              ${isOwned ? '' : `<span class="market-buy-price-val">${price}</span>`}
             </button>
           </div>
         </div>

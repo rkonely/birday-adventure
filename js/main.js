@@ -139,6 +139,11 @@ class BirDayApp {
       this.handleStage1Victory(stats);
     });
 
+    // Сброс прогресса для чистого прохождения с 0
+    events.on('game:reset_progress', () => {
+      this.resetAllProgress();
+    });
+
     // 10. Кнопка пропуска видео
     if (this.btnSkipVideo) {
       this.btnSkipVideo.addEventListener('click', () => {
@@ -184,7 +189,8 @@ class BirDayApp {
       this.btnLevel2Continue.addEventListener('click', () => {
         audio.playClick();
         this.hideLevel2StartScreen();
-        this.startStage2Board();
+        const eggsFromStage1 = this.lastStage1Stats ? (this.lastStage1Stats.eggsLaid ?? this.lastStage1Stats.nestsCompleted ?? 0) : 0;
+        this.startStage2Board(eggsFromStage1);
       });
     }
 
@@ -561,6 +567,9 @@ class BirDayApp {
   handleStage1Victory(stats) {
     console.log('🏆 [BirDayApp] Финиш 1 уровня! Запуск видео "End First Level"...', stats);
 
+    // Сохраняем статистику 1 этапа (включая принесенные яйца)
+    this.lastStage1Stats = stats;
+
     // 0. Останавливаем фоновую музыку на время катсцены прилёта
     audio.stopMusic();
 
@@ -748,7 +757,7 @@ class BirDayApp {
     if (btnDev) btnDev.classList.remove('active');
   }
 
-  startStage2Board() {
+  startStage2Board(initialEggs = null) {
     // Останавливаем все другие сцены
     if (this.stage1Flight) this.stage1Flight.stop();
     if (this.stage1Level) this.stage1Level.stop();
@@ -759,6 +768,9 @@ class BirDayApp {
 
     // Запускаем Настольную игру и саундтрек Gameboard Level2
     if (this.stage2Board) {
+      if (initialEggs !== null && initialEggs !== undefined) {
+        this.stage2Board.setInitialEggs(initialEggs);
+      }
       this.stage2Board.start();
     }
     audio.playMusic('BOARD_LEVEL2');
@@ -866,6 +878,32 @@ class BirDayApp {
 
     const btnBoss = document.getElementById('btn-boss-arena');
     if (btnBoss) btnBoss.classList.remove('active');
+  }
+
+  /* ==========================================================================
+     Полный сброс игрового прогресса (Новая игра с 0)
+     ========================================================================== */
+  resetAllProgress() {
+    console.log('🔄 [BirDayApp] Сброс всего прогресса игрока для нового прохождения с 0...');
+    this.lastStage1Stats = null;
+
+    try {
+      localStorage.removeItem('birday_player_cards');
+    } catch (e) {}
+    if (this.cardMarket) {
+      this.cardMarket.resetCards();
+    }
+
+    try {
+      localStorage.removeItem('birday_board_stats');
+    } catch (e) {}
+    if (this.stage2Board) {
+      this.stage2Board.resetProgress(0);
+    }
+
+    if (this.stage1Level) {
+      this.stage1Level.restartLevelFromBeginning();
+    }
   }
 
   update(dt) {
