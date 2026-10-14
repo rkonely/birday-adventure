@@ -177,7 +177,7 @@ export class BoardEventManager {
       this.updateHUD();
       if (meta && meta.startBoss) {
         audio.playClick();
-        events.emit('stage:switch_to_boss_arena');
+        events.emit('stage:switch_to_market_intro');
         return;
       }
       if (onComplete) onComplete(meta);

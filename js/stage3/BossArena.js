@@ -146,7 +146,7 @@ export class BossArena {
   /* ==========================================================================
      Запуск и Остановка Арены
      ========================================================================== */
-  start() {
+  start(customDeck = null) {
     console.log('🦫 [BossArena] Вход на Финальную Арену Босса!');
     this.isActive = true;
 
@@ -178,7 +178,28 @@ export class BossArena {
     this.player.round = 1;
     this.player.maxSeeds = 4;
     this.player.currentSeeds = 4;
-    this.player.deck = getRandomStarterDeck(14);
+
+    if (customDeck && customDeck.length > 0) {
+      this.player.deck = [...customDeck].sort(() => 0.5 - Math.random());
+    } else {
+      try {
+        const savedDeckJson = localStorage.getItem('birday_player_cards');
+        if (savedDeckJson) {
+          const cardIds = JSON.parse(savedDeckJson);
+          const loadedCards = cardIds.map(id => CARDS_DATABASE.find(c => c.id === id)).filter(Boolean);
+          if (loadedCards.length >= 6) {
+            this.player.deck = [...loadedCards].sort(() => 0.5 - Math.random());
+          } else {
+            this.player.deck = getRandomStarterDeck(14);
+          }
+        } else {
+          this.player.deck = getRandomStarterDeck(14);
+        }
+      } catch (e) {
+        this.player.deck = getRandomStarterDeck(14);
+      }
+    }
+
     this.player.hand = [];
     this.player.discard = [];
     this.player.selectedCardIndex = -1;

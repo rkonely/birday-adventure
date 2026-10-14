@@ -27,10 +27,13 @@
     <div id="ui-layer">
 
       <!-- Верхняя панель (Звук, Полноэкранный режим) -->
-      <header id="top-bar">
-          <button id="btn-boss-arena" class="icon-btn boss-arena-btn" title="Этап 3: Битва с Бобром (F6)" aria-label="Босс">
+          <button id="btn-boss-arena" class="icon-btn boss-arena-btn" title="Этап 3: Битва с Бобром (F7)" aria-label="Босс">
             <span class="icon">🦫</span>
             <span class="dev-flight-text">БОСС</span>
+          </button>
+          <button id="btn-stage-market" class="icon-btn stage-market-btn" title="Этап 3: Магазин Карт (F6)" aria-label="Магазин">
+            <span class="icon">🃏</span>
+            <span class="dev-flight-text">МАГАЗИН</span>
           </button>
           <button id="btn-stage2-board" class="icon-btn stage2-board-btn" title="Этап 2: Настольная игра (F4)" aria-label="Настолка">
             <span class="icon">🎲</span>
@@ -281,6 +284,23 @@
           </div>
         </button>
       </section>
+
+      <!-- Экран 5: Переход к Магазину Карт (Зацикленное видео IDE-Waiting player.mp4) -->
+      <section id="screen-market-intro" class="screen hidden">
+        <!-- Кнопка "ПРОДОЛЖИТЬ ПРИКЛЮЧЕНИЕ!" в центре снизу (как на начальном экране) -->
+        <button id="btn-market-intro-continue" class="btn-start-adventure" aria-label="Продолжить приключение">
+          <div class="btn-text-wrapper">
+            <span class="btn-line">ПРОДОЛЖИТЬ</span>
+            <div class="btn-line-with-arrow">
+              <span class="btn-line">ПРИКЛЮЧЕНИЕ!</span>
+              <span class="btn-arrow">▶</span>
+            </div>
+          </div>
+        </button>
+      </section>
+
+      <!-- Экран 6: Магазин Карт (Blank.jpg) -->
+      <section id="screen-market" class="screen hidden"></section>
 
       <!-- Модальное окно Паузы / Настроек (Big Frame.png) -->
       <div id="modal-pause" class="pause-modal-backdrop hidden">

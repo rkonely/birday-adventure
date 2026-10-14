@@ -10,6 +10,7 @@ import { Stage1Editor } from './stage1/Stage1Editor.js';
 import { Stage2Board } from './stage2/Stage2Board.js';
 import { Stage2Editor } from './stage2/Stage2Editor.js';
 import { BossArena } from './stage3/BossArena.js';
+import { CardMarket } from './stage3/CardMarket.js';
 
 /**
  * Главная точка входа приложения BirDay Adventure
@@ -24,6 +25,7 @@ class BirDayApp {
     this.stage1Editor = null; // Конструктор / Редактор уровней
     this.stage2Board = null;  // Настольная игра (Этап 2)
     this.stage2Editor = null; // Конструктор карты настольной игры (Этап 2)
+    this.cardMarket = null;   // Магазин карт / Альбом перед боссом (Этап 3)
     this.bossArena = null;    // Финальная битва с Бобром (Этап 3)
 
     this.screenLevel2Start = document.getElementById('screen-level2-start');
@@ -31,6 +33,10 @@ class BirDayApp {
     this.level2Backdrop = document.getElementById('level2-backdrop');
     this.btnLevel2Continue = document.getElementById('btn-level2-continue');
     this.btnSkipVideo = document.getElementById('btn-skip-video');
+
+    this.screenMarketIntro = document.getElementById('screen-market-intro');
+    this.btnMarketIntroContinue = document.getElementById('btn-market-intro-continue');
+    this.screenMarket = document.getElementById('screen-market');
 
     this.init();
   }
@@ -55,6 +61,8 @@ class BirDayApp {
     this.stage2Board = new Stage2Board(this.videoManager);
     // - Конструктор карты настольной игры (Этап 2)
     this.stage2Editor = new Stage2Editor(this.stage2Board);
+    // - Магазин карт перед боссом (Этап 3)
+    this.cardMarket = new CardMarket();
     // - Финальная битва с Бобром (Этап 3)
     this.bossArena = new BossArena(this.videoManager);
 
@@ -97,8 +105,19 @@ class BirDayApp {
       this.startStage2Editor();
     });
 
-    events.on('stage:switch_to_boss_arena', () => {
-      this.startBossArena();
+    // Переход после настолки в экран ожидания IDE-Waiting player
+    events.on('stage:switch_to_market_intro', () => {
+      this.startMarketIntro();
+    });
+
+    // Переход непосредственно в магазин карт
+    events.on('stage:switch_to_market', () => {
+      this.startMarketScreen();
+    });
+
+    // Переход на арену босса
+    events.on('stage:switch_to_boss_arena', (deck) => {
+      this.startBossArena(deck);
     });
 
     // 8. Возврат в Главное меню
@@ -115,7 +134,29 @@ class BirDayApp {
     if (this.btnSkipVideo) {
       this.btnSkipVideo.addEventListener('click', () => {
         audio.playClick();
+        const current = this.videoManager.currentState;
         this.videoManager.skipVideo();
+        if (current === 'MARKET_START') {
+          this.btnSkipVideo.classList.add('hidden');
+          this.startMarketScreen();
+        }
+      });
+    }
+
+    // Обработчик кнопки "ПРОДОЛЖИТЬ ПРИКЛЮЧЕНИЕ!" после зацикленного IDE-Waiting player
+    if (this.btnMarketIntroContinue) {
+      this.btnMarketIntroContinue.addEventListener('click', () => {
+        audio.playClick();
+        this.hideMarketIntro();
+        if (this.btnSkipVideo) {
+          this.btnSkipVideo.classList.remove('hidden');
+        }
+        const videoWrapper = document.getElementById('video-wrapper');
+        if (videoWrapper) videoWrapper.style.display = 'block';
+        this.videoManager.playVideo('MARKET_START', () => {
+          if (this.btnSkipVideo) this.btnSkipVideo.classList.add('hidden');
+          this.startMarketScreen();
+        });
       });
     }
 
@@ -164,6 +205,17 @@ class BirDayApp {
           this.exitToTitle();
         } else {
           this.startBossArena();
+        }
+      });
+    }
+
+    const btnStageMarket = document.getElementById('btn-stage-market');
+    if (btnStageMarket) {
+      btnStageMarket.addEventListener('click', () => {
+        if (this.cardMarket && this.cardMarket.isActive) {
+          this.exitToTitle();
+        } else {
+          this.startMarketScreen();
         }
       });
     }
@@ -273,6 +325,13 @@ class BirDayApp {
         }
       } else if (e.code === 'F6') {
         e.preventDefault();
+        if (this.cardMarket && this.cardMarket.isActive) {
+          this.exitToTitle();
+        } else {
+          this.startMarketScreen();
+        }
+      } else if (e.code === 'F7') {
+        e.preventDefault();
         if (this.bossArena.isActive) {
           this.exitToTitle();
         } else {
@@ -286,11 +345,13 @@ class BirDayApp {
       }
     });
 
-    console.log('✨ [BirDay Adventure] Готово к старту! [🦫 БОСС F6] [🎲 НАСТОЛКА F4] [🗺️ РЕДАКТОР 2 F5] [🛠️ РЕДАКТОР 1 F3] [🌲 УРОВЕНЬ 1 F1] [🪶 ПОЛЁТ F2].');
+    console.log('✨ [BirDay Adventure] Готово к старту! [🦫 БОСС F7] [🃏 МАГАЗИН F6] [🎲 НАСТОЛКА F4] [🗺️ РЕДАКТОР 2 F5] [🛠️ РЕДАКТОР 1 F3] [🌲 УРОВЕНЬ 1 F1] [🪶 ПОЛЁТ F2].');
   }
 
   hideMenuScreens() {
     this.hideLevel2StartScreen();
+    this.hideMarketIntro();
+    if (this.cardMarket) this.cardMarket.stop();
 
     const videoWrapper = document.getElementById('video-wrapper');
     if (videoWrapper) videoWrapper.style.display = 'none';
@@ -306,6 +367,109 @@ class BirDayApp {
       screenForm.classList.remove('active');
       screenForm.classList.add('hidden');
     }
+  }
+
+  /* ==========================================================================
+     Переход к Магазину Карт (IDE-Waiting player.mp4 -> Market-Start.mp4)
+     ========================================================================== */
+  startMarketIntro() {
+    if (this.stage1Flight) this.stage1Flight.stop();
+    if (this.stage1Level) this.stage1Level.stop();
+    if (this.stage1Editor) this.stage1Editor.stop();
+    if (this.stage2Board) this.stage2Board.stop();
+    if (this.stage2Editor) this.stage2Editor.stop();
+    if (this.cardMarket) this.cardMarket.stop();
+    if (this.bossArena) this.bossArena.stop();
+
+    this.hideMenuScreens();
+
+    // Зацикленное видео IDE-Waiting player.mp4
+    const videoWrapper = document.getElementById('video-wrapper');
+    if (videoWrapper) videoWrapper.style.display = 'block';
+    this.videoManager.playVideo('IDE_WAITING_PLAYER');
+
+    if (this.screenMarketIntro) {
+      this.screenMarketIntro.classList.remove('hidden');
+      this.screenMarketIntro.classList.add('active');
+    }
+  }
+
+  hideMarketIntro() {
+    if (this.screenMarketIntro) {
+      this.screenMarketIntro.classList.remove('active');
+      this.screenMarketIntro.classList.add('hidden');
+    }
+  }
+
+  startMarketScreen() {
+    if (this.stage1Flight) this.stage1Flight.stop();
+    if (this.stage1Level) this.stage1Level.stop();
+    if (this.stage1Editor) this.stage1Editor.stop();
+    if (this.stage2Board) this.stage2Board.stop();
+    if (this.stage2Editor) this.stage2Editor.stop();
+    if (this.bossArena) this.bossArena.stop();
+
+    this.hideMenuScreens();
+    this.hideMarketIntro();
+
+    const videoWrapper = document.getElementById('video-wrapper');
+    if (videoWrapper) videoWrapper.style.display = 'none';
+
+    if (this.btnSkipVideo) this.btnSkipVideo.classList.add('hidden');
+
+    if (this.cardMarket) {
+      this.cardMarket.start();
+    }
+
+    const btnMkt = document.getElementById('btn-stage-market');
+    if (btnMkt) btnMkt.classList.add('active');
+
+    const btnBoss = document.getElementById('btn-boss-arena');
+    if (btnBoss) btnBoss.classList.remove('active');
+    const btnBoard = document.getElementById('btn-stage2-board');
+    if (btnBoard) btnBoard.classList.remove('active');
+    const btnEd2 = document.getElementById('btn-stage2-editor');
+    if (btnEd2) btnEd2.classList.remove('active');
+    const btnLvl = document.getElementById('btn-stage1-forest');
+    if (btnLvl) btnLvl.classList.remove('active');
+    const btnEd = document.getElementById('btn-stage1-editor');
+    if (btnEd) btnEd.classList.remove('active');
+    const btnDev = document.getElementById('btn-dev-flight');
+    if (btnDev) btnDev.classList.remove('active');
+  }
+
+  startBossArena(customDeck = null) {
+    // Останавливаем все другие сцены
+    if (this.stage1Flight) this.stage1Flight.stop();
+    if (this.stage1Level) this.stage1Level.stop();
+    if (this.stage1Editor) this.stage1Editor.stop();
+    if (this.stage2Board) this.stage2Board.stop();
+    if (this.stage2Editor) this.stage2Editor.stop();
+    if (this.cardMarket) this.cardMarket.stop();
+
+    this.hideMenuScreens();
+    this.hideMarketIntro();
+
+    // Запускаем Арену Босса
+    if (this.bossArena) {
+      this.bossArena.start(customDeck);
+    }
+
+    const btnBoss = document.getElementById('btn-boss-arena');
+    if (btnBoss) btnBoss.classList.add('active');
+
+    const btnMkt = document.getElementById('btn-stage-market');
+    if (btnMkt) btnMkt.classList.remove('active');
+    const btnBoard = document.getElementById('btn-stage2-board');
+    if (btnBoard) btnBoard.classList.remove('active');
+    const btnEd2 = document.getElementById('btn-stage2-editor');
+    if (btnEd2) btnEd2.classList.remove('active');
+    const btnLvl = document.getElementById('btn-stage1-forest');
+    if (btnLvl) btnLvl.classList.remove('active');
+    const btnEd = document.getElementById('btn-stage1-editor');
+    if (btnEd) btnEd.classList.remove('active');
+    const btnDev = document.getElementById('btn-dev-flight');
+    if (btnDev) btnDev.classList.remove('active');
   }
 
   /* ==========================================================================
@@ -560,42 +724,9 @@ class BirDayApp {
     if (btnDev) btnDev.classList.remove('active');
   }
 
-  startBossArena() {
-    // Останавливаем все другие сцены
-    if (this.stage1Flight) this.stage1Flight.stop();
-    if (this.stage1Level) this.stage1Level.stop();
-    if (this.stage1Editor) this.stage1Editor.stop();
-    if (this.stage2Board) this.stage2Board.stop();
-    if (this.stage2Editor) this.stage2Editor.stop();
-
-    this.hideMenuScreens();
-
-    // Запускаем Арену Босса
-    if (this.bossArena) {
-      this.bossArena.start();
-    }
-
-    const btnBoss = document.getElementById('btn-boss-arena');
-    if (btnBoss) btnBoss.classList.add('active');
-
-    const btnBoard = document.getElementById('btn-stage2-board');
-    if (btnBoard) btnBoard.classList.remove('active');
-
-    const btnEd2 = document.getElementById('btn-stage2-editor');
-    if (btnEd2) btnEd2.classList.remove('active');
-
-    const btnLvl = document.getElementById('btn-stage1-forest');
-    if (btnLvl) btnLvl.classList.remove('active');
-
-    const btnEd = document.getElementById('btn-stage1-editor');
-    if (btnEd) btnEd.classList.remove('active');
-
-    const btnDev = document.getElementById('btn-dev-flight');
-    if (btnDev) btnDev.classList.remove('active');
-  }
-
   exitToTitle() {
     this.hideLevel2StartScreen();
+    this.hideMarketIntro();
 
     // Останавливаем все сцены
     if (this.stage1Flight) this.stage1Flight.stop();
@@ -603,6 +734,7 @@ class BirDayApp {
     if (this.stage1Editor) this.stage1Editor.stop();
     if (this.stage2Board) this.stage2Board.stop();
     if (this.stage2Editor) this.stage2Editor.stop();
+    if (this.cardMarket) this.cardMarket.stop();
     if (this.bossArena) this.bossArena.stop();
 
     // Возвращаем фоновое видео ожидания
@@ -642,6 +774,9 @@ class BirDayApp {
 
     const btnEd2 = document.getElementById('btn-stage2-editor');
     if (btnEd2) btnEd2.classList.remove('active');
+
+    const btnMkt = document.getElementById('btn-stage-market');
+    if (btnMkt) btnMkt.classList.remove('active');
 
     const btnBoss = document.getElementById('btn-boss-arena');
     if (btnBoss) btnBoss.classList.remove('active');

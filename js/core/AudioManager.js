@@ -399,6 +399,29 @@ export class AudioManager {
     } catch (e) {}
   }
 
+  // Звук перелистывания страницы альбома карт
+  playPageFlip() {
+    if (!this.ctx || !gameState.data.soundEnabled) return;
+    this.ensureContext();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(95, this.ctx.currentTime + 0.12);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(650, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.getSfxDestination());
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
+    } catch (e) {}
+  }
+
   // Звук сокрушительного удара / взрыва атаки босса
   playImpact() {
     if (!this.ctx || !gameState.data.soundEnabled) return;

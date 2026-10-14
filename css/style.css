@@ -4445,6 +4445,725 @@ body {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   ЭКРАН ПЕРЕХОДА К МАГАЗИНУ (IDE-Waiting player.mp4)
+   ========================================================================== */
+#screen-market-intro {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 50px;
+  z-index: 25;
+  pointer-events: auto;
+}
+
+#screen-market-intro.hidden {
+  display: none !important;
+}
+
+#btn-market-intro-continue {
+  position: relative;
+  z-index: 30;
+  animation: pulse-grow 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   ЭКРАН МАГАЗИНА КАРТ (Blank.jpg 1376x768)
+   ========================================================================== */
+#screen-market {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 25;
+  background-image: url('../assets/Market/Market/Blank.jpg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+#screen-market.hidden {
+  display: none !important;
+}
+
+.market-stage-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Верхний баннер "ФИНАЛ!" и кнопка боя */
+.market-top-banner {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 20;
+}
+
+.market-title-stone-wrap {
+  position: relative;
+  width: 250px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.market-title-stone-wrap:hover {
+  transform: scale(1.04);
+}
+
+.market-title-stone-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+}
+
+.market-title-stone-text {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-pixel), monospace;
+  font-size: 24px;
+  font-weight: bold;
+  color: #f8f9fa;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+.btn-market-boss-fight {
+  background: url('../assets/UI/Leaf Green Button.png') center/100% 100% no-repeat;
+  border: none;
+  outline: none;
+  padding: 10px 24px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+
+.btn-market-boss-fight:hover {
+  background-image: url('../assets/UI/Leaf Green Button - Hover.png');
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 12px rgba(255, 183, 3, 0.4));
+}
+
+.btn-market-boss-fight:active {
+  background-image: url('../assets/UI/Leaf Green Button - Active.png');
+  transform: scale(0.98);
+}
+
+.boss-fight-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #1b4332;
+}
+
+/* Стрелки перелистывания страниц */
+.market-page-arrow {
+  position: absolute;
+  top: 22.4%;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 15;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  width: 5.8%;
+  height: 5.5%;
+}
+
+.market-page-arrow img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.market-page-arrow:hover:not(.disabled) {
+  transform: scale(1.08);
+  filter: brightness(1.2);
+}
+
+.market-page-arrow:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.market-page-arrow.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.market-arrow-left {
+  left: 2.76%;
+}
+
+.market-arrow-right {
+  left: 80.67%;
+}
+
+/* Страницы альбома (сетки 2x2) */
+.market-album-page {
+  position: absolute;
+  top: 18.5%;
+  height: 71.3%;
+  width: 30.7%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1.5%;
+  padding: 0.5%;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.market-album-left {
+  left: 12.35%;
+}
+
+.market-album-right {
+  left: 48.18%;
+}
+
+/* Отдельный кармашек карты */
+.market-card-slot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.market-card-empty-sleeve {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.market-card-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.market-card-item:hover {
+  transform: translateY(-4px);
+}
+
+.market-card-img-wrap {
+  width: 75%;
+  height: 76%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.market-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+  transition: filter 0.15s ease;
+}
+
+.market-card-item:hover .market-card-img {
+  filter: drop-shadow(0 6px 12px rgba(255, 183, 3, 0.5)) brightness(1.05);
+}
+
+.market-card-item.unowned .market-card-img {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7)) brightness(0.92);
+}
+
+/* Кнопка с ценой (Price-Buy-Btn.png) */
+.market-buy-btn-wrap {
+  position: absolute;
+  bottom: 0%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+.market-buy-btn {
+  width: 110px;
+  height: 64px;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
+}
+
+.market-buy-btn:hover:not(.is-bought) {
+  transform: scale(1.06);
+  filter: drop-shadow(0 4px 8px rgba(255, 183, 3, 0.4));
+}
+
+.market-buy-btn:active:not(.is-bought) {
+  transform: scale(0.96);
+}
+
+.market-buy-tab {
+  height: 24px;
+  background: #f1dfbf;
+  border: 2px solid #3c2415;
+  border-bottom: 1px solid #7c5835;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.market-buy-egg-icon {
+  width: 15px;
+  height: 16px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.market-buy-price-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: 15px;
+  font-weight: bold;
+  color: #3c2415;
+  letter-spacing: 0.5px;
+}
+
+.market-buy-green-bar {
+  height: 36px;
+  background: linear-gradient(180deg, #48ca38 0%, #2b8c22 100%);
+  border: 2px solid #1a5614;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.market-buy-green-bar span {
+  font-family: var(--font-pixel), monospace;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 #133c0e;
+}
+
+.market-buy-btn:hover:not(.is-bought) .market-buy-green-bar {
+  background: linear-gradient(180deg, #5ae847 0%, #35ab2b 100%);
+}
+
+.market-buy-btn.is-bought {
+  cursor: default;
+  filter: grayscale(0.2);
+}
+
+.market-buy-btn.is-bought .market-buy-tab {
+  background: #d8c8af;
+}
+
+.market-buy-btn.is-bought .market-buy-green-bar {
+  background: linear-gradient(180deg, #6c757d 0%, #495057 100%);
+  border-color: #343a40;
+}
+
+.market-buy-btn.is-bought .market-buy-green-bar span {
+  text-shadow: 1px 1px 0 #212529;
+  color: #e9ecef;
+}
+
+.market-buy-btn.cant-afford {
+  filter: grayscale(0.5);
+}
+
+/* Левая сторона стола: Колода и Счетчики */
+.market-desk-left {
+  position: absolute;
+  left: 2.2%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.market-deck-icon-wrap {
+  width: 52px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.market-deck-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+}
+
+.market-deck-counter {
+  font-family: var(--font-pixel), monospace;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffb703;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #180f08, -1px -1px 0 #180f08, 1px -1px 0 #180f08, -1px 1px 0 #180f08;
+}
+
+.market-page-counter {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #cbd5e1;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Правая сторона стола: Гнездо с суммой яиц и Бустер-пак */
+.market-desk-right {
+  position: absolute;
+  left: 87.5%;
+  top: 27%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+}
+
+.market-nest-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.market-nest-egg-amount {
+  font-family: var(--font-pixel), monospace;
+  font-size: 26px;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #180f08, -1px -1px 0 #180f08, 1px -1px 0 #180f08, -1px 1px 0 #180f08, 0 3px 8px rgba(0,0,0,0.8);
+}
+
+.market-nest-img-wrap {
+  width: 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.market-nest-img {
+  width: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+
+/* Бустер-пак */
+.market-booster-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.market-booster-pack-wrap {
+  width: 98px;
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.market-booster-pack-wrap:hover {
+  transform: translateY(-4px) scale(1.05);
+}
+
+.market-booster-pack-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 4px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7));
+}
+
+.market-booster-btn {
+  width: 98px;
+  height: 56px;
+}
+
+.market-booster-btn .market-buy-tab {
+  height: 22px;
+}
+
+.market-booster-btn .market-buy-green-bar {
+  height: 32px;
+}
+
+.market-booster-btn .market-buy-green-bar span {
+  font-size: 13px;
+}
+
+/* Всплывающая подсказка карты (Tooltip) */
+.market-card-tooltip {
+  position: absolute;
+  width: 250px;
+  background: rgba(18, 14, 28, 0.96);
+  border: 3px solid #ffb703;
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.market-card-tooltip.hidden {
+  display: none !important;
+}
+
+.market-tip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 4px;
+}
+
+.market-tip-name {
+  font-family: var(--font-pixel), monospace;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.market-tip-rarity {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+}
+
+.market-tip-role {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.market-tip-stats {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.tip-stat {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.tip-atk { color: #e63946; }
+.tip-hp { color: #2ec4b6; }
+.tip-cost { color: #ffb703; }
+
+.market-tip-ability {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #ffb703;
+}
+
+.tip-ability-name {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffb703;
+  margin-bottom: 2px;
+}
+
+.tip-ability-desc {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  color: #f8f9fa;
+  line-height: 1.3;
+}
+
+/* Всплывающее быстрое сообщение */
+.market-quick-notice {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 15, 8, 0.95);
+  border: 2px solid #ffb703;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #f8f9fa;
+  text-shadow: 1px 1px 0 #000;
+  z-index: 110;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.market-quick-notice.fade-out {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+.market-quick-notice.hidden {
+  display: none !important;
+}
+
+/* Модальное окно открытия бустера */
+.market-booster-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+}
+
+.market-booster-modal.hidden {
+  display: none !important;
+}
+
+.market-booster-modal-content {
+  background: url('../assets/UI/Big Frame.png') center/100% 100% no-repeat;
+  width: 680px;
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 30px 35px;
+  box-sizing: border-box;
+  animation: modal-pop 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.booster-modal-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffb703;
+  text-shadow: 2px 2px 0 #180f08;
+  letter-spacing: 1px;
+}
+
+.market-booster-cards-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+.booster-revealed-card {
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: card-reveal 0.45s ease forwards;
+}
+
+.booster-card-img {
+  width: 100%;
+  height: 195px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 14px rgba(255, 183, 3, 0.45));
+}
+
+.booster-card-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #f8f9fa;
+  text-align: center;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.booster-collect-btn {
+  padding: 10px 24px;
+}
+
+@keyframes card-reveal {
+  0% { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes shake-side {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.shake-anim {
+  animation: shake-side 0.4s ease;
+}
+
+
 
 
 

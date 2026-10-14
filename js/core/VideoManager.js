@@ -26,7 +26,9 @@ export class VideoManager {
       BOARD_BEAVER: 'assets/videos/BoardGame - Center-beaver.mp4',
       BOARD_BEAVER_SPAWN: 'assets/videos/BoardGame - Center-beaver.mp4',
       BOARD_BEAVER_IDLE1: 'assets/videos/BoardGame-Center-IDE1.mp4',
-      BOARD_BEAVER_IDLE2: 'assets/videos/BoardGame-Center-IDE2.mp4'
+      BOARD_BEAVER_IDLE2: 'assets/videos/BoardGame-Center-IDE2.mp4',
+      IDE_WAITING_PLAYER: 'assets/videos/IDE-Waiting player.mp4',
+      MARKET_START: 'assets/videos/Market-Start.mp4'
     };
 
     this.currentState = 'WAITING';
@@ -44,6 +46,8 @@ export class VideoManager {
         const isCutscene = this.currentState === 'END_FIRST_LEVEL' ||
                            this.currentState === 'START' ||
                            this.currentState === 'SECOND_LEVEL_IDE' ||
+                           this.currentState === 'IDE_WAITING_PLAYER' ||
+                           this.currentState === 'MARKET_START' ||
                            this.isBoardGameMode;
         if (isCutscene) {
           this.videoEl.muted = !enabled;
@@ -156,11 +160,11 @@ export class VideoManager {
       this.videoEl.src = encodeURI(src);
     }
 
-    // Зацикливаем только стандартные меню / тизеры
-    this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING' || stateKey === 'SECOND_LEVEL_IDE');
+    // Зацикливаем только стандартные меню / тизеры / видео ожидания
+    this.videoEl.loop = (stateKey === 'WAITING' || stateKey === 'TYPING' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'IDE_WAITING_PLAYER');
 
     // Управление звуком: катсцены и босс озвучиваются, если звук включен
-    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || isBossVideo) {
+    if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || stateKey === 'MARKET_START' || stateKey === 'IDE_WAITING_PLAYER' || isBossVideo) {
       this.videoEl.muted = !gameState.data.soundEnabled;
       this.videoEl.volume = audio.getMusicVolume();
     } else {
