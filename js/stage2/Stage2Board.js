@@ -87,8 +87,11 @@ export class Stage2Board {
 
   async loadBoardData() {
     try {
-      const resp = await fetch('/api/load-board');
-      if (resp.ok) {
+      let resp = await fetch('/api/load-board').catch(() => null);
+      if (!resp || !resp.ok) {
+        resp = await fetch('data/board_level.json').catch(() => null);
+      }
+      if (resp && resp.ok) {
         const data = await resp.json();
         if (data && Array.isArray(data.cells)) {
           this.cells = data.cells;

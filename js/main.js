@@ -383,11 +383,10 @@ class BirDayApp {
     this.isAdmin = hasAdminParam || hasAdminHash || savedAdmin;
     this.updateAdminVisibility();
 
-    // Секретная комбинация клавиш: Ctrl + Shift + A или Shift + ~ (Тильда)
+    // Секретная комбинация клавиш для автора: ТОЛЬКО явная связка Ctrl + Shift + A
     window.addEventListener('keydown', (e) => {
       const isCtrlShiftA = e.ctrlKey && e.shiftKey && (e.code === 'KeyA' || e.key === 'A' || e.key === 'a' || e.key === 'Ф' || e.key === 'ф');
-      const isTilde = e.shiftKey && (e.code === 'Backquote' || e.key === '~' || e.key === '`');
-      if (isCtrlShiftA || isTilde) {
+      if (isCtrlShiftA) {
         e.preventDefault();
         this.toggleAdminMode();
       }

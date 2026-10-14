@@ -231,10 +231,13 @@ export class Stage1Level {
   }
 
   async loadCustomLevelData() {
-    // 1. Проверяем API /api/load-level (серверное сохранение в data/stage1_level.json)
+    // 1. Проверяем API /api/load-level или статический файл data/stage1_level.json (для GitHub Pages)
     try {
-      const resp = await fetch('/api/load-level');
-      if (resp.ok) {
+      let resp = await fetch('/api/load-level').catch(() => null);
+      if (!resp || !resp.ok) {
+        resp = await fetch('data/stage1_level.json').catch(() => null);
+      }
+      if (resp && resp.ok) {
         const data = await resp.json();
         if (data && (data.worldWidth || data.nests || data.feeders || data.scenery)) {
           this.applyLevelData(data);
