@@ -161,6 +161,7 @@ class BirDayApp {
     if (this.btnMarketIntroContinue) {
       this.btnMarketIntroContinue.addEventListener('click', () => {
         audio.playClick();
+        audio.playDialog('DIALOG3');
         this.hideMarketIntro();
         if (this.btnSkipVideo) {
           this.btnSkipVideo.classList.remove('hidden');
