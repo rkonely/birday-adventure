@@ -59,10 +59,10 @@ export class BossArena {
 
     // Состояние босса
     this.boss = {
-      name: 'Бобёр-Дровосек',
+      name: 'БОБЁР-РАЗРУШИТЕЛЬ',
       title: 'Хранитель Лесной Плотины',
-      maxHp: 320,
-      hp: 320,
+      maxHp: 300,
+      hp: 280,
       armor: 0,
       isEnraged: false,
       hitFlashTimer: 0,
@@ -181,8 +181,9 @@ export class BossArena {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 
     // 4. Сброс состояния матча
-    this.boss.maxHp = 240;
-    this.boss.hp = 240;
+    this.boss.name = 'БОБЁР-РАЗРУШИТЕЛЬ';
+    this.boss.maxHp = 300;
+    this.boss.hp = 280;
     this.boss.armor = 0;
     this.boss.isEnraged = false;
     this.boss.hitFlashTimer = 0;
@@ -274,93 +275,75 @@ export class BossArena {
     this.uiContainer.className = 'boss-arena-hud';
 
     this.uiContainer.innerHTML = `
-      <!-- Верхняя панель: Босс Frame, сегменты HP, раунд и намерения -->
-      <div class="boss-top-hud">
-        <div class="boss-top-row">
-          <!-- Рамка босса UI-Boss-HP-FRAME.png (1278x193) -->
-          <div class="boss-frame-container">
-            <div class="boss-frame-text-row">
-              <span class="boss-name-title">${this.boss.name}</span>
-              <span id="boss-hp-num" class="boss-hp-num">${this.boss.hp} / ${this.boss.maxHp} HP</span>
-            </div>
-            <!-- 24 сегмента полосы HP босса -->
-            <div id="boss-segments-track" class="boss-segments-track"></div>
-          </div>
-
-          <!-- Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) -->
-          <div class="boss-round-container">
-            <span id="round-counter" class="boss-round-text">Раунд ${this.player.round}</span>
-          </div>
+      <!-- Верхняя панель: Рамка босса UI-Boss-HP-FRAME.png (1278x193) -->
+      <div class="boss-frame-container">
+        <div class="boss-frame-name-banner">
+          <span class="boss-name-title">${this.boss.name}</span>
         </div>
-
-        <!-- Намерение атаки босса (Телеграф) -->
-        <div id="boss-intent-badge" class="boss-intent-badge">
-          <span class="intent-icon">⚠️</span>
-          <span id="boss-intent-desc" class="intent-desc">Готовит атаку...</span>
+        <div class="boss-frame-inner-row">
+          <div id="boss-segments-track" class="boss-segments-track"></div>
+          <span id="boss-hp-num" class="boss-hp-num">HP ${this.boss.hp}/${this.boss.maxHp}</span>
         </div>
+      </div>
+
+      <!-- Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) в правом верхнем углу -->
+      <div class="boss-round-container">
+        <span id="round-counter" class="boss-round-text">Раунд ${this.player.round}</span>
+      </div>
+
+      <!-- Намерение атаки босса (Телеграф) -->
+      <div id="boss-intent-badge" class="boss-intent-badge">
+        <span class="intent-icon">⚠️</span>
+        <span id="boss-intent-desc" class="intent-desc">Готовит атаку...</span>
       </div>
 
       <!-- Центральная подсказка при выборе карты -->
       <div id="boss-card-hint" class="boss-card-hint hidden">
-        Выберите клетку на поле 5×3, чтобы выставить героя и перекрыть удар! (Макс. 3 за ход)
+        Выберите клетку на поле 5×3, чтобы выставить героя и перекрыть удар!
       </div>
 
-      <!-- Нижняя панель игрока -->
-      <div class="boss-bottom-hud">
-        <!-- Левая колонка: 3 слота призыва + Здоровье игрока -->
-        <div class="boss-player-col">
-          <!-- 3 слота призыва с текстурами UI-Boss-default-slot.png / UI-Boss-Active-slot.png -->
-          <div class="boss-summon-slots-row">
-            <div class="boss-summon-slots-header">
-              <span>СЛОТЫ ПРИЗЫВА:</span>
-              <span id="boss-slots-count">0/3</span>
-            </div>
-            <div class="boss-summon-slots-container">
-              <div id="boss-slot-0" class="boss-summon-slot is-default" title="Слот существа 1 (Максимум 3 за ход)"></div>
-              <div id="boss-slot-1" class="boss-summon-slot is-default" title="Слот существа 2 (Максимум 3 за ход)"></div>
-              <div id="boss-slot-2" class="boss-summon-slot is-default" title="Слот существа 3 (Максимум 3 за ход)"></div>
-            </div>
-          </div>
-
-          <!-- Рамка здоровья игрока UI-Hero-HP-FRAME.png (474x165) + UI-Hero-HP-BAR.png (67x63) -->
-          <div class="hero-hp-frame-container">
-            <div class="hero-hp-title-row">
-              <span class="hero-hp-label">ГЕРОЙ</span>
-              <span id="player-hp-num" class="hero-hp-val">${this.player.hp} / ${this.player.maxHp} HP</span>
-            </div>
-            <div id="hero-hearts-row" class="hero-hearts-row">
-              <div class="hero-heart-icon"></div>
-              <div class="hero-heart-icon"></div>
-              <div class="hero-heart-icon"></div>
-              <div class="hero-heart-icon"></div>
-              <div class="hero-heart-icon"></div>
-            </div>
-          </div>
+      <!-- Левая колонка: 3 слота призыва + Здоровье игрока -->
+      <div class="boss-player-col">
+        <div class="boss-summon-slots-container">
+          <div id="boss-slot-0" class="boss-summon-slot is-default" title="Слот существа 1 (Максимум 3 за ход)"></div>
+          <div id="boss-slot-1" class="boss-summon-slot is-default" title="Слот существа 2 (Максимум 3 за ход)"></div>
+          <div id="boss-slot-2" class="boss-summon-slot is-default" title="Слот существа 3 (Максимум 3 за ход)"></div>
         </div>
 
-        <!-- Центральный веер карт: Рука игрока -->
-        <div id="boss-hand-container" class="boss-hand-container">
-          <!-- Карты генерируются динамически -->
+        <div class="hero-hp-frame-container">
+          <div id="hero-hearts-row" class="hero-hearts-row">
+            <div class="hero-heart-icon"></div>
+            <div class="hero-heart-icon"></div>
+            <div class="hero-heart-icon"></div>
+            <div class="hero-heart-icon"></div>
+            <div class="hero-heart-icon"></div>
+          </div>
+          <div class="hero-hp-plate">
+            <span id="player-hp-num" class="hero-hp-val">Игрок: ${this.player.hp}/${this.player.maxHp} HP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Центральный ряд карт: Рука игрока -->
+      <div id="boss-hand-container" class="boss-hand-container">
+        <!-- Карты генерируются динамически -->
+      </div>
+
+      <!-- Правая колонка: Кнопка Атаки, Колода и Сброс -->
+      <div class="boss-action-col">
+        <button id="btn-end-turn" class="boss-attack-btn" title="Завершить ход и атаковать босса (Пробел)">
+          <span class="boss-attack-btn-title">АТАКА</span>
+          <span class="boss-attack-btn-sub">Пробел</span>
+        </button>
+
+        <div class="boss-deck-card-wrap" title="Карт в колоде">
+          <div class="boss-deck-icon"></div>
+          <span id="deck-counter" class="boss-counter-badge">${this.player.deck.length}</span>
         </div>
 
-        <!-- Правая колонка: Колода / Сброс и Кнопка Атаки Throw-btn.png -->
-        <div class="boss-action-col">
-          <div class="boss-deck-discard-row">
-            <div class="boss-counter-badge-wrap" title="Карт в колоде">
-              <div class="boss-deck-icon"></div>
-              <span id="deck-counter" class="boss-counter-val">${this.player.deck.length}</span>
-            </div>
-            <div class="boss-counter-badge-wrap" title="Карт в сбросе">
-              <div class="boss-discard-icon"></div>
-              <span id="discard-counter" class="boss-counter-val">${this.player.discard.length}</span>
-            </div>
-          </div>
-
-          <!-- Кнопка "В АТАКУ! / Throw-btn" -->
-          <button id="btn-end-turn" class="boss-attack-btn" title="Завершить ход и атаковать босса (Пробел)">
-            <span class="boss-attack-btn-title">АТАКА</span>
-            <span class="boss-attack-btn-sub">ПРОБЕЛ</span>
-          </button>
+        <div class="boss-discard-card-wrap" title="Карт в сбросе">
+          <div class="boss-discard-icon"></div>
+          <span id="discard-counter" class="boss-counter-badge">${this.player.discard.length}</span>
         </div>
       </div>
     `;
@@ -389,12 +372,12 @@ export class BossArena {
 
     const hpNum = document.getElementById('boss-hp-num');
     if (hpNum) {
-      hpNum.textContent = `${Math.max(0, this.boss.hp)} / ${this.boss.maxHp} HP`;
+      hpNum.textContent = `HP ${Math.max(0, this.boss.hp)}/${this.boss.maxHp}`;
     }
 
     const playerNum = document.getElementById('player-hp-num');
     if (playerNum) {
-      playerNum.textContent = `${Math.max(0, this.player.hp)} / ${this.player.maxHp} HP`;
+      playerNum.textContent = `Игрок: ${Math.max(0, this.player.hp)}/${this.player.maxHp} HP`;
     }
 
     const deckCounter = document.getElementById('deck-counter');
@@ -465,12 +448,6 @@ export class BossArena {
 
   updateSummonSlots() {
     const placedCount = Object.keys(this.gridUnits).length;
-    const countEl = document.getElementById('boss-slots-count');
-    if (countEl) {
-      countEl.textContent = `${placedCount}/3`;
-      countEl.style.color = placedCount >= 3 ? '#ff4d4d' : '#ffd166';
-    }
-
     for (let i = 0; i < 3; i++) {
       const slot = document.getElementById(`boss-slot-${i}`);
       if (slot) {
@@ -500,11 +477,8 @@ export class BossArena {
         cardEl.classList.add('selected');
       }
 
-      // Небольшой веерный наклон карт
-      const centerOffset = index - (totalCards - 1) / 2;
-      const rotateDeg = centerOffset * 3.5;
-      const translateY = Math.abs(centerOffset) * 6;
-      cardEl.style.transform = `rotate(${rotateDeg}deg) translateY(${translateY}px)`;
+      // Прямой аккуратный ряд карт по нижнему краю
+      cardEl.style.transform = 'none';
 
       const isDamaged = card.currentHp !== undefined && card.currentHp < card.hp;
       const displayHp = isDamaged ? card.currentHp : card.hp;
@@ -1244,10 +1218,10 @@ export class BossArena {
       // Отрисовка портрета героя
       // Отрисовка карты героя (полная текстура карты 264x373)
       const img = this.getCardImage(unit.image);
-      const cardW = 58 * spawnScale;
-      const cardH = 82 * spawnScale;
+      const cardW = 48 * spawnScale;
+      const cardH = 68 * spawnScale;
       const cardX = cx - cardW / 2;
-      const cardY = cy - cardH / 2 - 10 + bob;
+      const cardY = cy - cardH / 2 - 6 + bob;
 
       if (img && img.complete && img.naturalWidth > 0) {
         this.ctx.save();
@@ -1265,7 +1239,7 @@ export class BossArena {
         // Запасная круглая иконка
         this.ctx.fillStyle = '#ffb703';
         this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 8 + bob, 24, 0, Math.PI * 2);
+        this.ctx.arc(cx, cy - 8 + bob, 22, 0, Math.PI * 2);
         this.ctx.fill();
       }
 
@@ -1275,15 +1249,15 @@ export class BossArena {
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1.5;
         this.ctx.beginPath();
-        this.ctx.arc(cx - 24, cy + 24, 11, 0, Math.PI * 2);
+        this.ctx.arc(cx - 20, cy + 22, 10, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 11px "8bitoperator", monospace';
+        this.ctx.font = 'bold 10px "8bitoperator", monospace';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(`${unit.currentAtk}`, cx - 24, cy + 25);
+        this.ctx.fillText(`${unit.currentAtk}`, cx - 20, cy + 23);
       }
 
       // Бейдж HP (Щит справа внизу: зеленый если цел, красный если ранен)
@@ -1292,15 +1266,15 @@ export class BossArena {
       this.ctx.strokeStyle = '#ffffff';
       this.ctx.lineWidth = 1.5;
       this.ctx.beginPath();
-      this.ctx.arc(cx + 24, cy + 24, 11, 0, Math.PI * 2);
+      this.ctx.arc(cx + 20, cy + 22, 10, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 11px "8bitoperator", monospace';
+      this.ctx.font = 'bold 10px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(`${unit.currentHp}`, cx + 24, cy + 25);
+      this.ctx.fillText(`${unit.currentHp}`, cx + 20, cy + 23);
 
       this.ctx.restore();
     }

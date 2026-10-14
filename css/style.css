@@ -3515,147 +3515,143 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   z-index: 15;
   box-sizing: border-box;
-  padding: 8px 18px 10px;
 }
 
-/* 1. Верхняя панель: Босс Frame, сегменты HP, раунд и телеграф */
-.boss-top-hud {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  pointer-events: auto;
-  position: relative;
-  width: 100%;
-}
-
-.boss-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  width: 100%;
-  max-width: 1100px;
-}
-
-/* Рамка босса UI-Boss-HP-FRAME.png (1278x193) */
+/* 1. Верхняя панель: Рамка UI-Boss-HP-FRAME.png (1278x193) */
 .boss-frame-container {
-  position: relative;
-  width: min(840px, 66vw);
-  aspect-ratio: 1278 / 193;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 460px;
+  height: 70px;
   background-image: url('../assets/UI/UI-Boss-HP-FRAME.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.8));
+  pointer-events: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
 }
 
-.boss-frame-text-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 78%;
-  margin-top: -4px;
-  margin-bottom: 2px;
+.boss-frame-name-banner {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
 }
 
 .boss-name-title {
-  font-size: 13px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 11.5px;
   font-weight: bold;
   color: #ffecd1;
-  text-shadow: 1px 1px 0px #000, 0 0 6px rgba(255, 183, 3, 0.6);
-  letter-spacing: 1px;
-}
-
-.boss-hp-num {
-  font-size: 12px;
-  font-weight: bold;
-  color: #ff4d6d;
   text-shadow: 1px 1px 0px #000;
   letter-spacing: 0.5px;
 }
 
-/* Трек сегментов HP босса (UI-Boss-HP-BAR-FULL.png & EMPTY.png) */
+.boss-frame-inner-row {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 410px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
 .boss-segments-track {
   display: flex;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
-  justify-content: center;
-  width: 80%;
-  height: 24px;
-  box-sizing: border-box;
+  width: 305px;
+  height: 20px;
 }
 
 .boss-hp-segment {
   flex: 1;
-  max-width: 18px;
-  height: 22px;
+  height: 19px;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
   image-rendering: pixelated;
-  transition: filter 0.2s ease;
 }
 
 .boss-hp-segment.is-full {
   background-image: url('../assets/UI/UI-Boss-HP-BAR-FULL.png');
-  filter: drop-shadow(0 0 3px rgba(230, 57, 70, 0.7));
+  filter: drop-shadow(0 0 2px rgba(230, 57, 70, 0.8));
 }
 
 .boss-hp-segment.is-empty {
   background-image: url('../assets/UI/UI-Boss-HP-BAR-EMPTY.png');
-  opacity: 0.45;
+  opacity: 0.35;
 }
 
-/* Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) */
+.boss-hp-num {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11.5px;
+  font-weight: bold;
+  color: #ff9f1c;
+  text-shadow: 1px 1px 0px #000;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+}
+
+/* Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) в правом верхнем углу */
 .boss-round-container {
   position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: min(150px, 14vw);
-  aspect-ratio: 338 / 147;
+  top: 10px;
+  right: 20px;
+  width: 176px;
+  height: 76px;
   background-image: url('../assets/UI/UI boss-ROUND-COUNTER.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
+  pointer-events: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
 }
 
 .boss-round-text {
-  font-size: 14px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 19px;
   font-weight: bold;
-  color: #ffeaa7;
-  text-shadow: 1px 2px 0px #3c2415;
-  letter-spacing: 1px;
+  color: #382112;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  margin-top: -2px;
 }
 
-/* Намерение атаки босса */
+/* Намерение атаки босса (Телеграф) */
 .boss-intent-badge {
+  position: absolute;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background: rgba(20, 14, 12, 0.9);
   color: #fff;
-  padding: 4px 16px;
-  border-radius: 20px;
+  padding: 3px 14px;
+  border-radius: 16px;
   font-size: 11px;
   font-weight: bold;
   letter-spacing: 0.5px;
   border: 1.5px solid #e63946;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(230, 57, 70, 0.4);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 8px rgba(230, 57, 70, 0.4);
+  pointer-events: auto;
   animation: intentPulse 1.8s infinite ease-in-out;
 }
 
@@ -3666,15 +3662,18 @@ body {
 
 /* Центральная подсказка выбора клетки */
 .boss-card-hint {
-  align-self: center;
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(14, 10, 8, 0.92);
   color: #ffd166;
   border: 2px solid #ffd166;
-  padding: 6px 20px;
-  border-radius: 20px;
-  font-size: 12px;
+  padding: 5px 18px;
+  border-radius: 16px;
+  font-size: 11.5px;
   letter-spacing: 0.5px;
-  box-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
+  box-shadow: 0 0 16px rgba(255, 209, 102, 0.4);
   pointer-events: none;
   animation: hintBlink 1.4s infinite alternate;
 }
@@ -3684,61 +3683,32 @@ body {
   to { opacity: 1; transform: scale(1.02); }
 }
 
-/* 2. Нижняя панель боя: Игрок (слева) - Рука (по центру) - Действие & Колода (справа) */
-.boss-bottom-hud {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  width: 100%;
-  pointer-events: none;
-  gap: 12px;
-}
-
-/* Левая колонка: 3 слота призыва + Здоровье игрока */
+/* 2. Левая нижняя колонка: 3 слота призыва + Здоровье игрока */
 .boss-player-col {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
   pointer-events: auto;
-}
-
-/* 3 квадратика слотов призыва: UI-Boss-default-slot.png / UI-Boss-Active-slot.png */
-.boss-summon-slots-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.boss-summon-slots-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: bold;
-  color: #ffd166;
-  text-shadow: 1px 1px 0px #000;
-  letter-spacing: 0.5px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 209, 102, 0.3);
 }
 
 .boss-summon-slots-container {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  margin-left: 10px;
 }
 
 .boss-summon-slot {
   width: 44px;
-  height: 48px;
+  height: 46px;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
   image-rendering: pixelated;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
-  position: relative;
 }
 
 .boss-summon-slot.is-default {
@@ -3748,56 +3718,35 @@ body {
 
 .boss-summon-slot.is-active {
   background-image: url('../assets/UI/UI-Boss-Active-slot.png');
-  filter: drop-shadow(0 0 10px rgba(255, 183, 3, 0.9));
-  transform: scale(1.08);
+  filter: drop-shadow(0 0 10px rgba(78, 222, 128, 0.9));
+  transform: scale(1.06);
 }
 
-/* Рамка здоровья игрока UI-Hero-HP-FRAME.png (474x165) + UI-Hero-HP-BAR.png (67x63) */
+/* Рамка здоровья игрока UI-Hero-HP-FRAME.png (474x165) */
 .hero-hp-frame-container {
-  width: 240px;
-  aspect-ratio: 474 / 165;
+  position: relative;
+  width: 280px;
+  height: 98px;
   background-image: url('../assets/UI/UI-Hero-HP-FRAME.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 6px 14px 6px 18px;
-  box-sizing: border-box;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8));
 }
 
-.hero-hp-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.hero-hp-label {
-  font-size: 10px;
-  font-weight: bold;
-  color: #ffecd1;
-  text-shadow: 1px 1px 0px #000;
-}
-
-.hero-hp-val {
-  font-size: 11px;
-  font-weight: bold;
-  color: #2ec4b6;
-  text-shadow: 1px 1px 0px #000;
-}
-
 .hero-hearts-row {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
 }
 
 .hero-heart-icon {
-  width: 22px;
-  height: 21px;
+  width: 26px;
+  height: 24px;
   background-image: url('../assets/UI/UI-Hero-HP-BAR.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -3807,32 +3756,51 @@ body {
 }
 
 .hero-heart-icon.is-empty {
-  filter: grayscale(1) brightness(0.5);
+  filter: grayscale(1) brightness(0.4);
   opacity: 0.3;
 }
 
-/* Центральный веер карт: Рука игрока с полными текстурами */
+.hero-hp-plate {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 85%;
+  text-align: center;
+}
+
+.hero-hp-val {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
+  letter-spacing: 0.5px;
+}
+
+/* 3. Центральный ряд карт: Рука игрока */
 .boss-hand-container {
+  position: absolute;
+  bottom: 6px;
+  left: calc(50% - 25px);
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  min-height: 160px;
-  padding-bottom: 2px;
-  perspective: 1000px;
   pointer-events: auto;
-  flex: 1;
+  z-index: 20;
 }
 
 .boss-hand-card {
   position: relative;
-  width: 108px;
-  height: 153px;
-  margin: 0 -10px;
+  width: 90px;
+  height: 127px;
+  margin: 0 -3px;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
+  transition: transform 0.16s ease, filter 0.16s ease;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .boss-card-full-img {
@@ -3840,99 +3808,54 @@ body {
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-  border-radius: 6px;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
+  border-radius: 4px;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.85));
   pointer-events: none;
 }
 
 .boss-hand-card:hover {
-  transform: translateY(-28px) scale(1.18) !important;
+  transform: translateY(-22px) scale(1.15) !important;
   z-index: 50 !important;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 12px rgba(255, 183, 3, 0.7));
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 10px rgba(255, 183, 3, 0.7));
 }
 
 .boss-hand-card.selected {
-  transform: translateY(-40px) scale(1.22) !important;
+  transform: translateY(-32px) scale(1.18) !important;
   z-index: 60 !important;
-  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 18px #ffd166);
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 16px #ffd166);
 }
 
-/* Бейдж поврежденного HP на карте в руке */
 .card-damaged-hp-badge {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
-  background: rgba(18, 10, 10, 0.92);
+  bottom: 4px;
+  right: 4px;
+  background: rgba(18, 10, 10, 0.94);
   border: 1.5px solid #ff4d6d;
   color: #ffccd5;
   font-size: 10px;
   font-weight: bold;
-  padding: 1px 6px;
-  border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  padding: 1px 5px;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
   pointer-events: none;
   z-index: 5;
 }
 
-/* Правая колонка: Колода/Сброс + Кнопка Атаки Throw-btn */
+/* 4. Правая колонка: Кнопка Атаки + Колода + Сброс */
 .boss-action-col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  pointer-events: auto;
-}
-
-.boss-deck-discard-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.boss-counter-badge-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: help;
-}
-
-.boss-deck-icon {
-  width: 44px;
-  height: 59px;
-  background-image: url('../assets/UI/UI-DrawCard.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
-}
-
-.boss-discard-icon {
-  width: 44px;
-  height: 53px;
-  background-image: url('../assets/UI/UI-Discard-Counter.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
-}
-
-.boss-counter-val {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: #1c140e;
-  border: 1px solid #ffd166;
-  color: #ffeaa7;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 1px 5px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  bottom: 12px;
+  right: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  pointer-events: auto;
 }
 
 /* Кнопка Атаки Throw-btn.png (215x116) */
 .boss-attack-btn {
-  width: 154px;
-  height: 83px;
+  width: 116px;
+  height: 62px;
   background-image: url('../assets/UI/Throw-btn.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -3944,15 +3867,15 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75));
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.75));
   transition: transform 0.12s ease, filter 0.12s ease;
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .boss-attack-btn:hover:not(:disabled) {
   background-image: url('../assets/UI/Throw-btn-Hover.png');
   transform: scale(1.05);
-  filter: drop-shadow(0 8px 16px rgba(255, 183, 3, 0.5));
+  filter: drop-shadow(0 6px 14px rgba(255, 183, 3, 0.6));
 }
 
 .boss-attack-btn:active:not(:disabled) {
@@ -3961,25 +3884,80 @@ body {
 }
 
 .boss-attack-btn:disabled {
-  filter: grayscale(0.85) opacity(0.65);
+  filter: grayscale(0.85) opacity(0.6);
   cursor: not-allowed;
 }
 
 .boss-attack-btn-title {
-  font-size: 17px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 15px;
   font-weight: 900;
   color: #ffecd1;
-  text-shadow: 1px 2px 0px #000;
+  text-shadow: 1px 1px 0px #000;
   letter-spacing: 1px;
 }
 
 .boss-attack-btn-sub {
+  font-family: var(--font-pixel), monospace;
   font-size: 9px;
   font-weight: bold;
   color: #cbd5e1;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   margin-top: 1px;
+}
+
+/* Колода UI-DrawCard.png (144x193) */
+.boss-deck-card-wrap {
+  position: relative;
+  width: 78px;
+  height: 104px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
+  cursor: help;
+}
+
+.boss-deck-icon {
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/UI/UI-DrawCard.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+/* Сброс UI-Discard-Counter.png (145x176) */
+.boss-discard-card-wrap {
+  position: relative;
+  width: 84px;
+  height: 100px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
+  cursor: help;
+}
+
+.boss-discard-icon {
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/UI/UI-Discard-Counter.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.boss-counter-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(22, 16, 14, 0.95);
+  border: 2px solid #5a4234;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
 }
 
 /* ==========================================================================
