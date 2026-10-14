@@ -1,6 +1,7 @@
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
 import { gameState } from '../core/GameState.js';
+import { BoardEventManager } from './BoardEventManager.js';
 
 /**
  * Stage2Board — Игровой уровень Настольной Игры (Этап 2).
@@ -9,13 +10,16 @@ import { gameState } from '../core/GameState.js';
  * - Слой 0 (фон): Зацикленное видео босса в центре (BoardGame - Center-beaver.mp4)
  * - Слой 1 (карта): Холст с Board.png (прозрачный центр открывает видео босса)
  * - Слой 2 (геймплей): Клетки поля, соединительные пути, фишка игрока, эффекты свечения
- * - Слой 3 (UI): Бросок кубика, модальные карточки событий (Good/Bad Frame)
+ * - Слой 3 (UI): Бросок кубика, модальные квесты с Cut-Scene-Boardgame.png и Big Frame.png
  */
 export class Stage2Board {
   constructor(videoManager) {
     this.videoManager = videoManager;
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+
+    // Менеджер событий, инвентаря и квестов
+    this.eventManager = new BoardEventManager(this);
 
     // Виртуальное разрешение игрового стола (соответствует Board.png 1376x768)
     this.boardWidth = 1376;
@@ -299,6 +303,7 @@ export class Stage2Board {
 
     // 4. Создаем UI слой настолки (Кубик, статус, кнопки)
     this.createUI();
+    this.eventManager.updateHUD();
 
     // Музыка / фанфары
     audio.playSuccess();
@@ -314,6 +319,9 @@ export class Stage2Board {
     }
     if (this.videoManager) {
       this.videoManager.stopBoardGameBossSequence();
+    }
+    if (this.eventManager && this.eventManager.modal) {
+      this.eventManager.modal.close();
     }
     this.removeUI();
   }
@@ -335,14 +343,35 @@ export class Stage2Board {
       <!-- Верхний статус игрока (используем Status Frame) -->
       <div class="s2-status-card">
         <div class="s2-status-content">
-          <div class="s2-player-info">
-            <span class="s2-pilot-badge">ПИЛОТ:</span>
-            <span class="s2-pilot-name">${gameState.data.playerName || 'Именинник'}</span>
+          <div class="s2-status-top-row">
+            <div class="s2-player-info">
+              <span class="s2-pilot-badge">ПИЛОТ:</span>
+              <span class="s2-pilot-name">${gameState.data.playerName || 'Именинник'}</span>
+            </div>
+            <div class="s2-cell-status">
+              <span class="s2-cell-label">КЛЕТКА:</span>
+              <span id="s2-current-step" class="s2-cell-val">${this.currentCellIndex + 1} / ${this.cells.length}</span>
+            </div>
           </div>
-          <div class="s2-cell-status">
-            <span class="s2-cell-label">КЛЕТКА:</span>
-            <span id="s2-current-step" class="s2-cell-val">${this.currentCellIndex + 1} / ${this.cells.length}</span>
+
+          <!-- Инвентарь и характеристики настольной игры -->
+          <div class="s2-inventory-row">
+            <div class="s2-inv-item" title="Собранные яйца именинника">
+              <span class="s2-inv-icon">🪺</span>
+              <span id="s2-eggs-count" class="s2-inv-val">${this.eventManager.stats.eggs}</span>
+            </div>
+            <div class="s2-inv-item" title="Кубики на переброс хода">
+              <span class="s2-inv-icon">🎲</span>
+              <span id="s2-reroll-count" class="s2-inv-val">${this.eventManager.stats.rerollDice}</span>
+            </div>
+            <div class="s2-inv-item" title="Бустеры карт для битвы с Бобром">
+              <span class="s2-inv-icon">🎴</span>
+              <span id="s2-boosters-count" class="s2-inv-val">${this.eventManager.stats.boosterPacks}</span>
+            </div>
           </div>
+
+          <!-- Активные эффекты и статусы (Яд, Щит, Магнит, Реверс) -->
+          <div id="s2-status-badges" class="s2-status-badges"></div>
         </div>
       </div>
 
@@ -389,27 +418,11 @@ export class Stage2Board {
           <button id="btn-s2-roll" class="btn-s2-throw" title="Бросить кубик (или нажмите Пробел)">
             <span id="s2-roll-btn-text" class="btn-s2-throw-text">БРОСОК</span>
           </button>
+          <button id="btn-s2-reroll" class="btn-s2-reroll hidden" title="Перебросить кубик (тратит 1 кубик переброса)">
+            <span id="s2-reroll-btn-text">ПЕРЕБРОС 🎲</span>
+          </button>
         </div>
         <div class="s2-dice-hint" id="s2-dice-hint">🖐️ Зажмите кубик или нажмите Пробел для броска!</div>
-      </div>
-
-      <!-- Всплывающая карточка события клетки -->
-      <div id="s2-event-modal" class="s2-event-modal hidden">
-        <div class="s2-modal-frame" id="s2-modal-frame">
-          <div class="s2-modal-header">
-            <span id="s2-modal-icon" class="s2-modal-icon">🎁</span>
-            <h3 id="s2-modal-title" class="s2-modal-title">Событие</h3>
-            <button id="btn-s2-close-modal" class="s2-modal-close" title="Закрыть">✕</button>
-          </div>
-          <div class="s2-modal-body">
-            <p id="s2-modal-desc" class="s2-modal-desc">Описание события на клетке.</p>
-          </div>
-          <div class="s2-modal-actions">
-            <button id="btn-s2-modal-action" class="btn-leaf-green">
-              <span id="s2-modal-btn-text" class="btn-leaf-green-text">ПРИНЯТЬ</span>
-            </button>
-          </div>
-        </div>
       </div>
     `;
 
@@ -428,10 +441,23 @@ export class Stage2Board {
       });
     }
 
+    const btnReroll = document.getElementById('btn-s2-reroll');
+    if (btnReroll) {
+      btnReroll.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.eventManager.stats.rerollDice > 0 && !this.isMoving) {
+          this.eventManager.stats.rerollDice--;
+          this.eventManager.saveStats();
+          btnReroll.classList.add('hidden');
+          this.rollDice();
+        }
+      });
+    }
+
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
       diceBox.addEventListener('mousedown', (e) => {
-        if (e.target === btnRoll) return;
+        if (e.target === btnRoll || e.target === btnReroll) return;
         this.startHoldingDice(e);
       });
     }
@@ -448,16 +474,6 @@ export class Stage2Board {
     // Отслеживание движения и броска мыши по всему окну
     window.addEventListener('mousemove', (e) => this.onDiceMouseMove(e));
     window.addEventListener('mouseup', (e) => this.onDiceMouseUp(e));
-
-    const btnCloseModal = document.getElementById('btn-s2-close-modal');
-    if (btnCloseModal) {
-      btnCloseModal.addEventListener('click', () => this.closeEventModal());
-    }
-
-    const btnAction = document.getElementById('btn-s2-modal-action');
-    if (btnAction) {
-      btnAction.addEventListener('click', () => this.handleEventAction());
-    }
   }
 
   removeUI() {
@@ -780,14 +796,35 @@ export class Stage2Board {
   advancePlayer(steps) {
     if (this.cells.length === 0) return;
 
-    const targetIndex = Math.min(this.cells.length - 1, this.currentCellIndex + steps);
+    // Проверяем реверс хода (сбитый ориентир в тумане Cell 10)
+    const isReverse = this.eventManager.stats.reverseNextMove;
+    let targetIndex;
     this.movePath = [];
 
-    // Строим пошаговый маршрут
-    for (let i = this.currentCellIndex + 1; i <= targetIndex; i++) {
-      this.movePath.push(i);
+    if (isReverse) {
+      targetIndex = Math.max(0, this.currentCellIndex - steps);
+      for (let i = this.currentCellIndex - 1; i >= targetIndex; i--) {
+        this.movePath.push(i);
+      }
+      this.eventManager.setReverseNextMove(false);
+    } else {
+      targetIndex = Math.min(this.cells.length - 1, this.currentCellIndex + steps);
+      for (let i = this.currentCellIndex + 1; i <= targetIndex; i++) {
+        this.movePath.push(i);
+      }
     }
 
+    this.isMoving = true;
+    this.processNextMoveStep();
+  }
+
+  stepBackward(count = 1) {
+    if (this.cells.length === 0) return;
+    const targetIndex = Math.max(0, this.currentCellIndex - count);
+    this.movePath = [];
+    for (let i = this.currentCellIndex - 1; i >= targetIndex; i--) {
+      this.movePath.push(i);
+    }
     this.isMoving = true;
     this.processNextMoveStep();
   }
@@ -797,7 +834,7 @@ export class Stage2Board {
       this.isMoving = false;
       this.resetDiceButtonToRoll();
 
-      // Прибыли на целевую клетку -> активируем событие!
+      // Прибыли на целевую клетку -> активируем квест/кат-сцену!
       const currentCell = this.cells[this.currentCellIndex];
       if (currentCell) {
         this.triggerCellEvent(currentCell);
@@ -854,6 +891,14 @@ export class Stage2Board {
       btnRoll.title = 'Сделать ход (или нажмите Пробел)';
     }
 
+    // Если есть кубики переброса — показываем кнопку переброса
+    const btnReroll = document.getElementById('btn-s2-reroll');
+    if (btnReroll && this.eventManager.stats.rerollDice > 0) {
+      btnReroll.classList.remove('hidden');
+      const textSpan = btnReroll.querySelector('span');
+      if (textSpan) textSpan.textContent = `ПЕРЕБРОС 🎲 (${this.eventManager.stats.rerollDice})`;
+    }
+
     const hudDiceNum = document.getElementById('s2-dice-num');
     if (hudDiceNum) hudDiceNum.textContent = String(finalValue);
 
@@ -865,15 +910,21 @@ export class Stage2Board {
     if (!this.isDiceSettled || this.isMoving) return;
     this.isDiceSettled = false;
 
-    // Прячем кубик со стола перед началом хода
+    // Прячем кубик со стола и кнопку переброса перед началом хода
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
     if (arena) arena.classList.add('hidden');
     if (cube) cube.style.transition = '';
 
+    const btnReroll = document.getElementById('btn-s2-reroll');
+    if (btnReroll) btnReroll.classList.add('hidden');
+
     // Блокируем кнопку на время хода пешки
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) btnRoll.disabled = true;
+
+    // Эффекты начала хода (например, яд снимает яйцо)
+    this.eventManager.onTurnStart();
 
     // Запускаем ход пешки по клеткам
     this.advancePlayer(this.diceValue);
@@ -893,80 +944,22 @@ export class Stage2Board {
       btnRoll.title = 'Бросить кубик (или нажмите Пробел)';
     }
 
+    const btnReroll = document.getElementById('btn-s2-reroll');
+    if (btnReroll) btnReroll.classList.add('hidden');
+
     const hint = document.getElementById('s2-dice-hint');
     if (hint) hint.textContent = '🖐️ Зажмите кубик или нажмите Пробел для броска!';
   }
 
   /* ==========================================================================
-     События клеток (Good Frame / Bad Frame)
+     События клеток (Квесты в Big Frame и Видео в Cut-Scene-Boardgame)
      ========================================================================== */
   triggerCellEvent(cell) {
     audio.playSuccess();
-    this.showCellInfoCard(cell, true);
-  }
-
-  showCellInfoCard(cell, isLanding = false) {
-    const modal = document.getElementById('s2-event-modal');
-    const modalFrame = document.getElementById('s2-modal-frame');
-    const modalIcon = document.getElementById('s2-modal-icon');
-    const modalTitle = document.getElementById('s2-modal-title');
-    const modalDesc = document.getElementById('s2-modal-desc');
-    const btnActionText = document.getElementById('s2-modal-btn-text');
-
-    if (!modal || !cell) return;
-
-    modalIcon.textContent = cell.icon || '🎁';
-    modalTitle.textContent = cell.title || `Клетка #${cell.index || 1}`;
-    modalDesc.textContent = cell.description || 'Вы стоите на этой клетке поля.';
-
-    if (cell.type === 'GOOD') {
-      modalFrame.className = 's2-modal-frame frame-good';
-      btnActionText.textContent = 'ЗАБРАТЬ ПРИЗ! ✨';
-    } else if (cell.type === 'BAD') {
-      modalFrame.className = 's2-modal-frame frame-bad';
-      btnActionText.textContent = 'ОТСТУПИТЬ ⚠️';
-    } else if (cell.type === 'BOSS') {
-      modalFrame.className = 's2-modal-frame frame-boss';
-      btnActionText.textContent = 'БРОСИТЬ ВЫЗОВ БОБРУ! 🦫';
-    } else if (cell.type === 'FINISH') {
-      modalFrame.className = 's2-modal-frame frame-good';
-      btnActionText.textContent = 'ПРАЗДНОВАТЬ ПОБЕДУ! 👑';
-    } else {
-      modalFrame.className = 's2-modal-frame frame-normal';
-      btnActionText.textContent = 'ПРОДОЛЖИТЬ ▶';
-    }
-
-    modal.classList.remove('hidden');
-    this.activeEventModal = cell;
-  }
-
-  closeEventModal() {
-    const modal = document.getElementById('s2-event-modal');
-    if (modal) {
-      modal.classList.add('hidden');
-    }
-    this.activeEventModal = null;
-  }
-
-  handleEventAction() {
-    if (!this.activeEventModal) {
-      this.closeEventModal();
-      return;
-    }
-
-    const cell = this.activeEventModal;
-    this.closeEventModal();
-
-    if (cell.type === 'DICE_BONUS') {
-      // Бонус: дополнительный бросок
-      setTimeout(() => this.rollDice(), 300);
-    } else if (cell.type === 'BOSS') {
-      audio.playClick();
-      events.emit('stage:switch_to_boss_arena');
-    } else if (cell.type === 'FINISH') {
-      audio.playSuccess();
-      alert('🎉 ПОЗДРАВЛЯЕМ! Вы прошли карту Настольной Игры!');
-    }
+    const stepNumber = (cell && typeof cell.index === 'number') ? cell.index : (this.currentCellIndex + 1);
+    this.eventManager.triggerEventForCell(stepNumber, () => {
+      this.resetDiceButtonToRoll();
+    });
   }
 
   /* ==========================================================================
