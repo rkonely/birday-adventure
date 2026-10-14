@@ -21,7 +21,7 @@ export class VideoManager {
       WAITING: 'assets/videos/MainMenu - Waiting.mp4',
       TYPING: 'assets/videos/MainMenu - Typing.mp4',
       START: 'assets/videos/MainMenu - Start .mp4',
-      END_FIRST_LEVEL: 'assets/videos/End First Level .mp4',
+      END_FIRST_LEVEL: 'assets/videos/End First Level.mp4',
       SECOND_LEVEL_IDE: 'assets/videos/Sesond Level IDE.mp4',
       BOARD_BEAVER: 'assets/videos/BoardGame - Center-beaver.mp4',
       BOARD_BEAVER_SPAWN: 'assets/videos/BoardGame - Center-beaver.mp4',

@@ -176,6 +176,17 @@ export class UIManager {
   }
 
   startRegistrationFlow() {
+    // 1. Сразу переключаем музыку на Start Menu Btn-Presed.mp3
+    audio.playMusic('START_MENU');
+
+    // 2. Спустя 1 секунду параллельно запускаем диалог Dialog1.mp3 (1 раз без цикличности и повтора)
+    if (this.startMenuDialogTimeout) {
+      clearTimeout(this.startMenuDialogTimeout);
+    }
+    this.startMenuDialogTimeout = setTimeout(() => {
+      audio.playDialog('DIALOG1');
+    }, 1000);
+
     // Скрываем титульный экран
     this.screenTitle.classList.remove('active');
     setTimeout(() => {

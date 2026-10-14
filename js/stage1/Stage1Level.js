@@ -609,6 +609,11 @@ export class Stage1Level {
         }
         this.triggerDefeatModal();
       }
+
+      // V: Быстрый тест победы / завершения 1 уровня (видео End First Level)
+      if (e.code === 'KeyV') {
+        this.triggerVictory();
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -740,6 +745,9 @@ export class Stage1Level {
     this.score = 0;
     this.levelTime = 0;
     this.nestsCompleted = 0;
+
+    // Фоновая музыка 1 уровня (Ambient Lofi Level1.mp3)
+    audio.playMusic('LEVEL1');
 
     // Сброс статистики
     this.stats = {
@@ -1172,8 +1180,7 @@ export class Stage1Level {
           feeder.visited = true;
           this.stats.feedersEaten++;
           this.checkpoint = { x: feeder.x, y: feeder.y - 30, name: feeder.name };
-          audio.playPeckSeed();
-          audio.playSuccess();
+          audio.playEatFeeder();
 
           // Пополнение 25% энергии
           this.stamina = Math.min(this.maxStamina, this.stamina + 25);
@@ -1239,7 +1246,7 @@ export class Stage1Level {
           const bonus = egg.typeKey === 'Gold' ? 1000 : 500;
           this.score += bonus;
 
-          audio.playNestScored();
+          audio.playNestHit();
           this.spawnCelebrationParticles(cupX, cupY, '#facc15');
           this.showToast(`✨ Попадание в ${nest.title || nest.name || 'Гнездо'}! (+${bonus} Очков)`);
           break;
@@ -1522,6 +1529,9 @@ export class Stage1Level {
     this.feeders.forEach(f => { f.visited = false; });
     // Очистка снарядов
     this.projectiles = [];
+
+    // Гарантируем саундтрек 1 уровня
+    audio.playMusic('LEVEL1');
 
     this.updateHUD();
     this.showToast('🚀 Начинаем с самого начала! Соберись с силами!');

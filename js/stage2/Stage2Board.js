@@ -305,8 +305,8 @@ export class Stage2Board {
     this.createUI();
     this.eventManager.updateHUD();
 
-    // Музыка / фанфары
-    audio.playSuccess();
+    // Музыка для всей настольной игры (Gameboard Level2.mp3)
+    audio.playMusic('BOARD_LEVEL2');
   }
 
   stop() {

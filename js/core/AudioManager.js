@@ -24,16 +24,222 @@ export class AudioManager {
       if (savedSfx !== null) this.sfxVolume = parseFloat(savedSfx);
     } catch (e) {}
 
+    // 1. Саундтреки (Soundtrack/)
+    this.musicSources = {
+      WAITING: 'assets/Sound/Soundtrack/Ambient Waiting Start btn.mp3',
+      START_MENU: 'assets/Sound/Soundtrack/Start Menu Btn-Presed.mp3',
+      LEVEL1: 'assets/Sound/Soundtrack/Ambient Lofi Level1.mp3',
+      BOARD_LEVEL2: 'assets/Sound/Soundtrack/Gameboard Level2.mp3',
+      CARD_MARKET: 'assets/Sound/Soundtrack/Card Market Level 3.mp3'
+    };
+
+    // 2. Диалоги (Dialog/)
+    this.dialogSources = {
+      DIALOG1: 'assets/Sound/Dialog/Dialog1.mp3',
+      DIALOG2: 'assets/Sound/Dialog/Dialog2.mp3',
+      DIALOG3: 'assets/Sound/Dialog/Dialog3.mp3'
+    };
+
+    // 3. Звуковые эффекты (VFX/)
+    this.vfxSources = {
+      eatFeeder: 'assets/Sound/VFX/eat feeder.mp3',
+      hitNest: 'assets/Sound/VFX/hit the nest.mp3',
+      throwEgg: 'assets/Sound/VFX/throw egg.mp3',
+      dropDamage: 'assets/Sound/VFX/Drop-damage taken.mp3'
+    };
+
+    this.currentMusic = null;
+    this.currentMusicKey = null;
+    this.pendingMusicKey = null;
+
+    this.currentDialog = null;
+    this.currentDialogKey = null;
+
     events.on('sound:toggled', (enabled) => {
-      if (this.masterGain && this.ctx) {
-        this.masterGain.gain.setValueAtTime(enabled ? 1.0 : 0.0, this.ctx.currentTime);
-      }
-      if (!enabled && this.ambientGain && this.ctx) {
-        this.ambientGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      } else if (enabled && this.ambientGain && this.ctx) {
-        this.ambientGain.gain.setValueAtTime(0.04 * this.musicVolume, this.ctx.currentTime);
-      }
+      this.updateAllVolumes();
     });
+
+    this.setupAutoplayUnlock();
+  }
+
+  setupAutoplayUnlock() {
+    const unlock = () => {
+      this.ensureContext();
+      if (this.pendingMusicKey) {
+        const key = this.pendingMusicKey;
+        this.pendingMusicKey = null;
+        this.playMusic(key);
+      } else if (this.currentMusic && this.currentMusic.paused && gameState.data.soundEnabled) {
+        this.currentMusic.play().catch(() => {});
+      }
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true });
+  }
+
+  playMusic(key, loop = true) {
+    const src = this.musicSources[key];
+    if (!src) {
+      console.warn(`[AudioManager] Неизвестный трек музыки: ${key}`);
+      return;
+    }
+
+    if (this.currentMusicKey === key && this.currentMusic && !this.currentMusic.paused) {
+      return;
+    }
+
+    this.currentMusicKey = key;
+
+    if (!this.initialized && !this.ctx) {
+      this.pendingMusicKey = key;
+    }
+
+    if (this.currentMusic) {
+      try {
+        this.currentMusic.pause();
+        this.currentMusic.currentTime = 0;
+      } catch (e) {}
+      this.currentMusic = null;
+    }
+
+    try {
+      const audio = new Audio(encodeURI(src));
+      audio.loop = loop;
+      audio.volume = gameState.data.soundEnabled ? this.musicVolume : 0;
+      audio.muted = !gameState.data.soundEnabled;
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          this.pendingMusicKey = key;
+        });
+      }
+      this.currentMusic = audio;
+    } catch (e) {
+      console.warn('[AudioManager] Ошибка воспроизведения музыки:', e);
+    }
+  }
+
+  stopMusic() {
+    if (this.currentMusic) {
+      try {
+        this.currentMusic.pause();
+        this.currentMusic.currentTime = 0;
+      } catch (e) {}
+      this.currentMusic = null;
+      this.currentMusicKey = null;
+    }
+    this.pendingMusicKey = null;
+  }
+
+  pauseMusic() {
+    if (this.currentMusic) {
+      try {
+        this.currentMusic.pause();
+      } catch (e) {}
+    }
+  }
+
+  resumeMusic() {
+    if (this.currentMusic && gameState.data.soundEnabled) {
+      this.currentMusic.play().catch(() => {});
+    }
+  }
+
+  playDialog(key, onEnded = null) {
+    const src = this.dialogSources[key] || key;
+    if (!src) return;
+
+    this.stopDialog();
+
+    this.currentDialogKey = key;
+
+    try {
+      const dialog = new Audio(encodeURI(src));
+      dialog.loop = false; // Диалоги всегда проигрываются 1 раз без повтора
+      dialog.volume = gameState.data.soundEnabled ? this.sfxVolume : 0;
+      dialog.muted = !gameState.data.soundEnabled;
+
+      const finishHandler = () => {
+        this.currentDialog = null;
+        this.currentDialogKey = null;
+        if (onEnded) onEnded();
+      };
+
+      dialog.addEventListener('ended', finishHandler, { once: true });
+      dialog.addEventListener('error', finishHandler, { once: true });
+
+      const playPromise = dialog.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('[AudioManager] Автовоспроизведение диалога заблокировано:', err);
+          finishHandler();
+        });
+      }
+
+      this.currentDialog = dialog;
+    } catch (e) {
+      console.warn('[AudioManager] Ошибка запуска диалога:', e);
+      if (onEnded) onEnded();
+    }
+  }
+
+  stopDialog() {
+    if (this.currentDialog) {
+      try {
+        this.currentDialog.pause();
+        this.currentDialog.currentTime = 0;
+      } catch (e) {}
+      this.currentDialog = null;
+      this.currentDialogKey = null;
+    }
+  }
+
+  playVfxFile(vfxKey, fallback = null) {
+    if (!gameState.data.soundEnabled) return;
+    const src = this.vfxSources[vfxKey];
+    if (!src) {
+      if (fallback) fallback();
+      return;
+    }
+
+    try {
+      const audio = new Audio(encodeURI(src));
+      audio.volume = this.sfxVolume;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          if (fallback) fallback();
+        });
+      }
+    } catch (e) {
+      if (fallback) fallback();
+    }
+  }
+
+  updateAllVolumes() {
+    const enabled = gameState.data.soundEnabled;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(enabled ? 1.0 : 0.0, this.ctx.currentTime);
+    }
+    if (this.currentMusic) {
+      this.currentMusic.muted = !enabled;
+      this.currentMusic.volume = enabled ? this.musicVolume : 0;
+      if (enabled && this.currentMusic.paused && this.currentMusicKey) {
+        this.currentMusic.play().catch(() => {});
+      }
+    }
+    if (this.currentDialog) {
+      this.currentDialog.muted = !enabled;
+      this.currentDialog.volume = enabled ? this.sfxVolume : 0;
+    }
   }
 
   init() {
@@ -51,7 +257,6 @@ export class AudioManager {
         this.sfxGain.connect(this.masterGain);
 
         this.initialized = true;
-        this.startCabinAmbient();
       }
     } catch (e) {
       console.warn('[AudioManager] Web Audio API недоступен:', e);
@@ -66,8 +271,8 @@ export class AudioManager {
     this.musicVolume = Math.max(0, Math.min(1, vol));
     try { localStorage.setItem('birday_music_volume', this.musicVolume.toString()); } catch (e) {}
     events.emit('music:volume_changed', this.musicVolume);
-    if (this.ambientGain && this.ctx && gameState.data.soundEnabled) {
-      this.ambientGain.gain.setValueAtTime(0.04 * this.musicVolume, this.ctx.currentTime);
+    if (this.currentMusic) {
+      this.currentMusic.volume = gameState.data.soundEnabled ? this.musicVolume : 0;
     }
   }
 
@@ -80,6 +285,9 @@ export class AudioManager {
     try { localStorage.setItem('birday_sfx_volume', this.sfxVolume.toString()); } catch (e) {}
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+    }
+    if (this.currentDialog) {
+      this.currentDialog.volume = gameState.data.soundEnabled ? this.sfxVolume : 0;
     }
   }
 
@@ -336,8 +544,16 @@ export class AudioManager {
     } catch (e) {}
   }
 
-  // Звук удара о землю / оглушения
+  // Звук удара о землю / оглушения (Drop-damage taken.mp3)
+  playDropDamage() {
+    this.playVfxFile('dropDamage', () => this.playBonkSynth());
+  }
+
   playBonk() {
+    this.playDropDamage();
+  }
+
+  playBonkSynth() {
     if (!this.ctx || !gameState.data.soundEnabled) return;
     this.ensureContext();
     try {
@@ -472,8 +688,12 @@ export class AudioManager {
     } catch (e) {}
   }
 
-  // Звук броска яйца (выстрел/щелчок)
+  // Звук броска яйца (throw egg.mp3)
   playEggThrow() {
+    this.playVfxFile('throwEgg', () => this.playEggThrowSynth());
+  }
+
+  playEggThrowSynth() {
     if (!this.ctx || !gameState.data.soundEnabled) return;
     this.ensureContext();
     try {
@@ -538,8 +758,16 @@ export class AudioManager {
     } catch (e) {}
   }
 
-  // Клевание зерен в кормушке (хруст / поклев)
+  // Клевание зерен в кормушке (eat feeder.mp3)
+  playEatFeeder() {
+    this.playVfxFile('eatFeeder', () => this.playPeckSeedSynth());
+  }
+
   playPeckSeed() {
+    this.playEatFeeder();
+  }
+
+  playPeckSeedSynth() {
     if (!this.ctx || !gameState.data.soundEnabled) return;
     this.ensureContext();
     try {
@@ -562,8 +790,16 @@ export class AudioManager {
     } catch (e) {}
   }
 
-  // Успешная кладка яйца в гнездо (праздничный аккорд)
+  // Успешная кладка / попадание яйцом в гнездо (hit the nest.mp3)
+  playNestHit() {
+    this.playVfxFile('hitNest', () => this.playNestScoredSynth());
+  }
+
   playNestScored() {
+    this.playNestHit();
+  }
+
+  playNestScoredSynth() {
     if (!this.ctx || !gameState.data.soundEnabled) return;
     this.ensureContext();
     try {

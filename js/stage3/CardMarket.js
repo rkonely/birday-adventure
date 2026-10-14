@@ -268,8 +268,8 @@ export class CardMarket {
       this.container.classList.add('active');
     }
 
-    // Звук успешного входа в магазин
-    audio.playSuccess();
+    // Фоновая музыка магазина карт (Card Market Level 3.mp3)
+    audio.playMusic('CARD_MARKET');
 
     this.renderAlbum();
   }

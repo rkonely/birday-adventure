@@ -69,6 +69,24 @@
       "isZoneOnly": true,
       "visited": false,
       "scale": 0.41
+    },
+    {
+      "key": "zone_feeder",
+      "name": "Кормушка 7",
+      "x": 6554,
+      "y": 287,
+      "radius": 52,
+      "isZoneOnly": true,
+      "visited": false
+    },
+    {
+      "key": "zone_feeder",
+      "name": "Кормушка 8",
+      "x": 12644,
+      "y": 440,
+      "radius": 52,
+      "isZoneOnly": true,
+      "visited": false
     }
   ],
   "nests": [

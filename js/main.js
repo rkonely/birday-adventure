@@ -78,8 +78,9 @@ class BirDayApp {
     );
     this.gameLoop.start();
 
-    // 5. Запуск видео ожидания
+    // 5. Запуск видео ожидания и саундтрека главного экрана
     this.videoManager.playVideo('WAITING');
+    audio.playMusic('WAITING');
 
     // 6. Подписка на переход к Этапу I после видео старта (сюжетный запуск)
     events.on('stage:ready', (stage) => {
@@ -468,6 +469,9 @@ class BirDayApp {
     if (this.btnMarketIntroContinue) {
       this.btnMarketIntroContinue.classList.remove('hidden');
     }
+
+    // Фоновая музыка магазина карт
+    audio.playMusic('CARD_MARKET');
   }
 
   hideMarketIntro() {
@@ -496,6 +500,9 @@ class BirDayApp {
     if (this.cardMarket) {
       this.cardMarket.start();
     }
+
+    // Фоновая музыка магазина карт
+    audio.playMusic('CARD_MARKET');
 
     const btnMkt = document.getElementById('btn-stage-market');
     if (btnMkt) btnMkt.classList.add('active');
@@ -553,6 +560,9 @@ class BirDayApp {
      ========================================================================== */
   handleStage1Victory(stats) {
     console.log('🏆 [BirDayApp] Финиш 1 уровня! Запуск видео "End First Level"...', stats);
+
+    // 0. Останавливаем фоновую музыку на время катсцены прилёта
+    audio.stopMusic();
 
     // 1. Останавливаем игровой процесс и скрываем холст
     if (this.stage1Level) {
@@ -679,8 +689,9 @@ class BirDayApp {
 
     this.hideMenuScreens();
 
-    // Запускаем игровой Уровень 1
+    // Запускаем игровой Уровень 1 и саундтрек Ambient Lofi Level1
     this.stage1Level.start();
+    audio.playMusic('LEVEL1');
 
     // Обновляем состояние кнопок верхнего бара
     const btnLvl = document.getElementById('btn-stage1-forest');
@@ -746,10 +757,11 @@ class BirDayApp {
 
     this.hideMenuScreens();
 
-    // Запускаем Настольную игру
+    // Запускаем Настольную игру и саундтрек Gameboard Level2
     if (this.stage2Board) {
       this.stage2Board.start();
     }
+    audio.playMusic('BOARD_LEVEL2');
 
     const btnBoard = document.getElementById('btn-stage2-board');
     if (btnBoard) btnBoard.classList.add('active');
@@ -810,10 +822,11 @@ class BirDayApp {
     if (this.cardMarket) this.cardMarket.stop();
     if (this.bossArena) this.bossArena.stop();
 
-    // Возвращаем фоновое видео ожидания
+    // Возвращаем фоновое видео ожидания и саундтрек
     const videoWrapper = document.getElementById('video-wrapper');
     if (videoWrapper) videoWrapper.style.display = 'block';
     this.videoManager.playVideo('WAITING');
+    audio.playMusic('WAITING');
 
     // Возвращаем титульный экран
     const screenTitle = document.getElementById('screen-title');
