@@ -2590,14 +2590,39 @@ body {
 
 .board-quest-window {
   position: relative;
-  width: min(1200px, 95vw);
-  aspect-ratio: 1039 / 678;
-  max-height: 94vh;
-  background: url('../assets/UI/Big Frame.png') no-repeat center / 100% 100%;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
   image-rendering: pixelated;
   filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
   box-sizing: border-box;
   animation: s2Pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: width 0.2s ease, aspect-ratio 0.2s ease;
+}
+
+/* 1. Большое окно для диалогов и выбора (Big Frame: 1039 x 678) */
+.board-quest-window,
+.board-quest-window.frame-big {
+  width: min(1200px, 95vw);
+  aspect-ratio: 1039 / 678;
+  max-height: 94vh;
+  background-image: url('../assets/UI/Big Frame.png');
+}
+
+/* 2. Компактное окно для положительных событий и наград (Good Frame: 471 x 302) */
+.board-quest-window.frame-good {
+  width: min(780px, 88vw);
+  aspect-ratio: 471 / 302;
+  max-height: 85vh;
+  background-image: url('../assets/UI/Good Frame.png');
+}
+
+/* 3. Компактное окно для отрицательных событий и ловушек (Bad Frame: 473 x 304) */
+.board-quest-window.frame-bad {
+  width: min(780px, 88vw);
+  aspect-ratio: 473 / 304;
+  max-height: 85vh;
+  background-image: url('../assets/UI/Bad Frame.png');
 }
 
 /* Заголовок в верхней деревянной плашке */
@@ -2614,6 +2639,13 @@ body {
   pointer-events: none;
 }
 
+.board-quest-window.frame-good .board-quest-title-header,
+.board-quest-window.frame-bad .board-quest-title-header {
+  top: 5.5%;
+  height: 12%;
+  width: 78%;
+}
+
 .board-quest-title-text {
   font-family: var(--font-pixel), monospace !important;
   font-size: 26px;
@@ -2626,6 +2658,16 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 95%;
+}
+
+.board-quest-window.frame-good .board-quest-title-text {
+  color: #eaffea;
+  text-shadow: 2px 2px 0 #1b4d1b, -1px -1px 0 #1b4d1b, 0 3px 6px rgba(0, 0, 0, 0.9);
+}
+
+.board-quest-window.frame-bad .board-quest-title-text {
+  color: #ffdede;
+  text-shadow: 2px 2px 0 #6b1414, -1px -1px 0 #6b1414, 0 3px 6px rgba(0, 0, 0, 0.9);
 }
 
 .btn-quest-close {
@@ -2641,37 +2683,63 @@ body {
   height: 78%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 12px 24px 24px;
+  gap: 20px;
+  padding: 16px 24px;
   box-sizing: border-box;
   overflow-y: auto;
 }
 
-/* Видео Катсцена в Cut-Scene-Boardgame.png (без сторонних рамок и фонов) */
-.board-cutscene-container {
+.board-quest-window.frame-good .board-quest-content,
+.board-quest-window.frame-bad .board-quest-content {
+  top: 18%;
+  left: 10%;
+  width: 80%;
+  height: 70%;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   ПОЛНОЭКРАННАЯ КАТСЦЕНА НАСТОЛКИ (Cut-Scene-Boardgame.png)
+   ========================================================================== */
+.board-fullscreen-cutscene {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: s2FadeIn 0.25s ease-out;
+  cursor: pointer;
+}
+
+.board-cutscene-fullscreen-box {
   position: relative;
-  width: min(720px, 80vw);
+  width: min(1080px, 92vw);
   aspect-ratio: 615 / 410;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 10px;
   background: transparent !important;
-  border-radius: 0 !important;
-  border: none !important;
   box-shadow: none !important;
+  border: none !important;
   overflow: visible !important;
+  animation: s2Pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.board-cutscene-video {
+.board-cutscene-fullscreen-video {
   width: 93%;
   height: 90%;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.board-cutscene-frame {
+.board-cutscene-fullscreen-frame {
   position: absolute;
   top: 0;
   left: 0;
@@ -2681,6 +2749,7 @@ body {
   pointer-events: none;
   image-rendering: pixelated;
   z-index: 2;
+  filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
 }
 
 .btn-skip-cutscene {
@@ -2754,7 +2823,7 @@ body {
 
 .board-speaker-name {
   font-family: var(--font-pixel), monospace !important;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
   color: #6b2e0b;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7);
@@ -2763,7 +2832,7 @@ body {
 
 .board-quest-desc {
   font-family: var(--font-pixel), monospace !important;
-  font-size: 20px;
+  font-size: 21px;
   color: #381a07;
   line-height: 1.5;
   font-weight: bold;
@@ -2777,7 +2846,7 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .board-answers-grid {
@@ -2785,45 +2854,72 @@ body {
   flex-wrap: wrap;
   gap: 16px;
   justify-content: center;
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .btn-board-answer {
   position: relative;
-  width: 280px;
-  height: 68px;
+  width: 320px;
+  height: 86px;
   background: url('../assets/UI/Boardgame-UI-Answer.png') no-repeat center / 100% 100%;
   background-color: transparent;
   border: none;
   outline: none;
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  padding: 6px 16px;
+  justify-content: flex-start;
+  padding: 0;
   box-sizing: border-box;
   image-rendering: pixelated;
-  transition: transform 0.1s ease, filter 0.12s ease;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+  transition: transform 0.12s ease, filter 0.15s ease;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
 }
 
 .btn-board-answer:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
-  filter: drop-shadow(0 0 10px rgba(255, 183, 3, 0.8)) brightness(1.1);
+  transform: translateY(-3px) scale(1.03);
+  filter: drop-shadow(0 0 14px rgba(255, 183, 3, 0.85)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.75)) brightness(1.1);
 }
 
 .btn-board-answer:active:not(:disabled) {
-  transform: translateY(2px) scale(0.98);
+  transform: translateY(2px) scale(0.97);
 }
 
-.btn-board-answer-text {
+/* Слева на темном фоне — светлая буква A, B, C, D */
+.btn-board-answer-letter {
+  width: 74px;
+  min-width: 74px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-pixel), monospace !important;
-  font-size: 16px;
+  font-size: 26px;
   font-weight: bold;
-  color: #ffecd1;
-  text-shadow: 1px 1px 0 #3e240c, -1px -1px 0 #3e240c, 0 2px 4px #000;
+  color: #fff6e0;
+  text-shadow: 2px 2px 0 #3a1c06, -1px -1px 0 #3a1c06, 1px -1px 0 #3a1c06, -1px 1px 0 #3a1c06, 0 3px 6px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  box-sizing: border-box;
+  padding-left: 4px;
+}
+
+/* Справа на светлом фоне — темный текст выбора */
+.btn-board-answer-text {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel), monospace !important;
+  font-size: 17px;
+  font-weight: bold;
+  color: #2b1202;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85), 0 -1px 0 rgba(255, 255, 255, 0.4);
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
+  padding: 0 16px 0 6px;
+  box-sizing: border-box;
   pointer-events: none;
 }
 

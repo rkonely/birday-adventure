@@ -173,11 +173,12 @@ export const BOARD_EVENTS = {
  icon: '',
  type: 'choice_video',
  video: 'assets/videos/Event-10.mp4',
- speaker: 'Таинственный туман',
+ playVideoAfterChoice: true,
+    speaker: 'Таинственный туман',
  text: 'Кто-то сбил стрелки компаса и затянул тропу густым белым паром. Какую тропу выбрать, чтобы не повернуть вспять?',
  options: [
- { text: 'Тропа налево ⬅️', choiceKey: 'left' },
- { text: 'Тропа направо ️', choiceKey: 'right' }
+ { text: 'Тропа налево', choiceKey: 'left' },
+ { text: 'Тропа направо', choiceKey: 'right' }
  ]
  },
 
@@ -187,7 +188,8 @@ export const BOARD_EVENTS = {
  icon: '',
  type: 'choice_video',
  video: 'assets/videos/Event-11.mp4',
- speaker: 'Дух Монумента',
+ playVideoAfterChoice: true,
+    speaker: 'Дух Монумента',
  text: 'Древний каменный монолит ждёт подношения. Если пожертвуете 2 яйца — получите священный Щит Несчастья (полный иммунитет к яду и потере яиц на 1 раз).',
  options: [
  { text: 'Пожертвовать 2 яиц', choiceKey: 'sacrifice_2' },
@@ -246,7 +248,8 @@ export const BOARD_EVENTS = {
  title: 'Таинственный Подвал',
  icon: '️',
  type: 'choice',
- speaker: 'Скрипучий люк',
+ playVideoAfterChoice: true,
+    speaker: 'Скрипучий люк',
  text: 'В земле приоткрыт деревянный люк, откуда доносится приглушённое кудахтанье. Спуститься в сырую прохладу или обойти стороной?',
  options: [
  { text: 'Спуститься в подвал ', choiceKey: 'enter_basement' },
@@ -259,7 +262,8 @@ export const BOARD_EVENTS = {
  title: 'Коробка с Сюрпризом',
  icon: '',
  type: 'mystery_boxes',
- speaker: 'Шкатулка Фокусника',
+ playVideoAfterChoice: true,
+    speaker: 'Шкатулка Фокусника',
  text: 'Перед вами 4 запечатанных кубика-коробочки. В одном — боксёрская перчатка (-4 яиц), во втором — бустер карт, в третьем — кубик переброса (+1 кубика), а в четвёртом — Золотое Яйцо (+10 яиц)! Какой откроете?'
  },
 
@@ -270,7 +274,7 @@ export const BOARD_EVENTS = {
  type: 'reward',
  speaker: 'Флакон Алхимика',
  text: 'Густое янтарное зелье пахнет смолой и мёдом. Сделав глоток, ваше тело окутывает мерцающий щит: защищает от следующей потери яиц или яда!',
- actions: [{ text: 'ВЫПИТЬ ЩИТ (ИММУНИТЕТ ️)', result: { isImmune: true } }]
+ actions: [{ text: 'ВЫПИТЬ ЩИТ (ИММУНИТЕТ)', result: { isImmune: true } }]
  },
 
  19: {
@@ -279,7 +283,8 @@ export const BOARD_EVENTS = {
  icon: '',
  type: 'strongman',
  video: 'assets/videos/Event-19.mp4',
- speaker: 'Аттракцион Силомер',
+ playVideoAfterChoice: true,
+    speaker: 'Аттракцион Силомер',
  text: 'Ударьте огромным молотом по наковальне! Зажмите [ПРОБЕЛ] или кнопку, следите за индикатором мощности и отпустите ровно в КРАСНОЙ зоне, чтобы выбить джекпот (+10 яиц)!'
  },
 
@@ -344,7 +349,8 @@ export const BOARD_EVENTS = {
  title: 'Коробка с Сюрпризом II',
  icon: '',
  type: 'mystery_boxes',
- speaker: 'Шкатулка Удачи',
+ playVideoAfterChoice: true,
+    speaker: 'Шкатулка Удачи',
  text: 'Снова 4 заветных кубика! Что выпадет на этот раз — боксёрский тумак (-4 яиц), карта-бустер, дополнительный кубик броска или Золотое Яйцо (+10 яиц)?'
  },
 
@@ -397,7 +403,8 @@ export const BOARD_EVENTS = {
  icon: '',
  type: 'wheel_video',
  video: 'assets/videos/Event-30.mp4',
- speaker: 'Колесо Азарта',
+ playVideoAfterChoice: true,
+    speaker: 'Колесо Азарта',
  text: 'Гигантское колесо фортуны сияет огнями! Стрелка со свистом пролетает мимо джекпота в 100 яиц и останавливается на щедрых +10 яйцах!',
  actions: [{ text: 'КРУТИТЬ КОЛЕСО! (+10 яиц)', result: { eggs: 10 } }]
  },
@@ -418,7 +425,8 @@ export const BOARD_EVENTS = {
  icon: '',
  type: 'bingo',
  video: 'assets/videos/Event-32.mp4',
- speaker: 'Крупье в смокинге',
+ playVideoAfterChoice: true,
+    speaker: 'Крупье в смокинге',
  text: 'Вытяните один из 4 лотерейных билетиков! Затем барабан с шарами закружится — если выпадет ваш номер, сорвёте куш в +30 яиц!'
  },
 
