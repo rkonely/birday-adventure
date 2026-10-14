@@ -55,6 +55,12 @@ export class SettingsModal {
     // Скины кубика
     this.currentDiceTexture = localStorage.getItem('birday_dice_texture') || 'dice_texture.png';
 
+    // Ретро ТВ (CRT сканлайны)
+    this.crtOverlay = document.getElementById('crt-overlay') || document.querySelector('.crt-overlay');
+    this.btnToggleCrt = document.getElementById('btn-toggle-crt');
+    this.crtSwitchText = this.btnToggleCrt ? this.btnToggleCrt.querySelector('.crt-switch-text') : null;
+    this.crtEnabled = localStorage.getItem('birday_crt_enabled') !== 'false';
+
     this.init();
   }
 
@@ -91,10 +97,21 @@ export class SettingsModal {
       });
     }
 
-    // 3. Выбор скинов кубика
+    // 3. Настройка переключения CRT ТВ-эффекта
+    this.applyCrtState(this.crtEnabled);
+    if (this.btnToggleCrt) {
+      this.btnToggleCrt.addEventListener('click', () => {
+        audio.playClick();
+        this.crtEnabled = !this.crtEnabled;
+        localStorage.setItem('birday_crt_enabled', this.crtEnabled ? 'true' : 'false');
+        this.applyCrtState(this.crtEnabled);
+      });
+    }
+
+    // 4. Выбор скинов кубика
     this.setupDiceSkinSelectors();
 
-    // 4. Кнопки управления окном
+    // 5. Кнопки управления окном
     if (this.btnResume) {
       this.btnResume.addEventListener('click', () => {
         audio.playClick();
@@ -166,10 +183,37 @@ export class SettingsModal {
     console.log(`🎲 [SettingsModal] Скин кубика изменён: ${textureFilename}`);
   }
 
+  applyCrtState(enabled) {
+    if (!this.crtOverlay) {
+      this.crtOverlay = document.getElementById('crt-overlay') || document.querySelector('.crt-overlay');
+    }
+    if (this.crtOverlay) {
+      if (enabled) {
+        this.crtOverlay.classList.remove('hidden');
+      } else {
+        this.crtOverlay.classList.add('hidden');
+      }
+    }
+    if (this.btnToggleCrt) {
+      if (enabled) {
+        this.btnToggleCrt.classList.add('active');
+        this.btnToggleCrt.setAttribute('aria-pressed', 'true');
+        if (this.crtSwitchText) this.crtSwitchText.textContent = 'ВКЛ';
+      } else {
+        this.btnToggleCrt.classList.remove('active');
+        this.btnToggleCrt.setAttribute('aria-pressed', 'false');
+        if (this.crtSwitchText) this.crtSwitchText.textContent = 'ВЫКЛ';
+      }
+    }
+  }
+
   open() {
     if (!this.modalEl) return;
     this.isOpen = true;
     this.modalEl.classList.remove('hidden');
+
+    // Синхронизируем CRT тумблер
+    this.applyCrtState(this.crtEnabled);
 
     // Синхронизируем слайдеры при открытии
     if (this.sliderMusic) {

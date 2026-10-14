@@ -139,6 +139,11 @@ body {
   z-index: 99999;
 }
 
+.crt-overlay.hidden,
+.crt-overlay.disabled {
+  display: none !important;
+}
+
 /* ==========================================================================
    Игровой Canvas
    ========================================================================== */
@@ -4179,7 +4184,89 @@ body {
   border: none;
 }
 
-/* 2. Секция выбора кубика */
+/* 2. Секция переключения Ретро ТВ (CRT сканлайны) */
+.crt-toggle-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.pause-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  width: 266px;
+  align-items: center;
+}
+
+.settings-title-icon-emoji {
+  font-size: 18px;
+  margin-right: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+.crt-switch-btn {
+  position: relative;
+  width: 76px;
+  height: 28px;
+  background: #3a2012;
+  border: 2px solid #8d6b4f;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.crt-switch-btn:hover {
+  filter: brightness(1.1);
+  border-color: #ffb703;
+}
+
+.crt-switch-btn.active {
+  background: #1e4526;
+  border-color: #2ec4b6;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 10px rgba(46, 196, 182, 0.45);
+}
+
+.crt-switch-btn .crt-switch-handle {
+  width: 22px;
+  height: 22px;
+  background: url('../assets/UI/UI-Switch-Controll.png') no-repeat center;
+  background-size: contain;
+  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateX(0);
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+}
+
+.crt-switch-btn.active .crt-switch-handle {
+  transform: translateX(44px);
+}
+
+.crt-switch-btn .crt-switch-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #ba8c70;
+  position: absolute;
+  right: 10px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.crt-switch-btn.active .crt-switch-text {
+  left: 10px;
+  right: auto;
+  color: #70e000;
+  text-shadow: 0 0 6px rgba(112, 224, 0, 0.7);
+}
+
+/* 3. Секция выбора кубика */
 .dice-skin-section {
   flex-direction: column;
   align-items: center;

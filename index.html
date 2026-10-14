@@ -345,7 +345,21 @@
               </div>
             </div>
 
-            <!-- 2. Выбор скина кубика для настольной игры (4 варианта) -->
+            <!-- 2. Настройка эффекта старого ТВ (CRT сканлайны) -->
+            <div class="pause-section crt-toggle-section">
+              <div class="pause-toggle-row">
+                <span class="pause-label-title">
+                  <span class="settings-title-icon-emoji">📺</span>
+                  РЕТРО ТВ (CRT)
+                </span>
+                <button id="btn-toggle-crt" class="crt-switch-btn active" type="button" title="Переключить ретро-сканлайны ТВ">
+                  <span class="crt-switch-handle"></span>
+                  <span class="crt-switch-text">ВКЛ</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Выбор скина кубика для настольной игры (4 варианта) -->
             <div class="pause-section dice-skin-section">
               <span class="dice-section-title">🎲 СТИЛЬ КУБИКА (НАСТОЛКА)</span>
               <div class="dice-skins-grid">
@@ -388,7 +402,7 @@
     </div>
 
     <!-- Ретро ТВ / CRT сканлайн-эффект на все режимы поверх всех кнопок и элементов UI -->
-    <div class="crt-overlay" aria-hidden="true"></div>
+    <div id="crt-overlay" class="crt-overlay" aria-hidden="true"></div>
   </div>
 
   <!-- Главный скрипт модулей ES6 -->
