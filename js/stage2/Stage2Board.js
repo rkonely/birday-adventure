@@ -303,7 +303,7 @@ export class Stage2Board {
 
       <!-- Нижняя контрольная панель с кубиком -->
       <div class="s2-control-panel">
-        <div class="s2-dice-box" id="s2-dice-box">
+        <div class="s2-dice-box" id="s2-dice-box" title="Зажмите и резко швырните кубик мышкой!">
           <div class="s2-dice" id="s2-dice-face">
             <span id="s2-dice-num">🎲</span>
           </div>
@@ -311,6 +311,7 @@ export class Stage2Board {
             <span>БРОСИТЬ КУБИК</span>
           </button>
         </div>
+        <div class="s2-dice-hint">🖐️ Зажмите кубик и резко швырните мышкой!</div>
       </div>
 
       <!-- Всплывающая карточка события клетки -->
@@ -338,8 +339,32 @@ export class Stage2Board {
     // Привязка событий UI
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) {
-      btnRoll.addEventListener('click', () => this.rollDice());
+      btnRoll.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.rollDice();
+      });
     }
+
+    const diceBox = document.getElementById('s2-dice-box');
+    if (diceBox) {
+      diceBox.addEventListener('mousedown', (e) => {
+        if (e.target === btnRoll) return;
+        this.startHoldingDice(e);
+      });
+    }
+
+    const arena = document.getElementById('s2-dice-3d-arena');
+    if (arena) {
+      arena.addEventListener('mousedown', (e) => {
+        if (!this.isRollingDice) {
+          this.startHoldingDice(e);
+        }
+      });
+    }
+
+    // Отслеживание движения и броска мыши по всему окну
+    window.addEventListener('mousemove', (e) => this.onDiceMouseMove(e));
+    window.addEventListener('mouseup', (e) => this.onDiceMouseUp(e));
 
     const btnCloseModal = document.getElementById('btn-s2-close-modal');
     if (btnCloseModal) {
@@ -360,12 +385,125 @@ export class Stage2Board {
   }
 
   /* ==========================================================================
-     Реалистичный 3D Бросок Кубика с падением на изометрическую карту
+     Интерактивный бросок кубика мышкой (Drag & Flick Physics)
      ========================================================================== */
-  rollDice() {
+  startHoldingDice(e) {
     if (this.isRollingDice || this.isMoving || this.cells.length === 0) return;
 
+    this.isHoldingDice = true;
+    this.mouseHistory = [];
+
+    const coords = this.getCanvasCoords(e);
+    this.mouseHistory.push({ x: coords.x, y: coords.y, time: performance.now() });
+
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const cube = document.getElementById('s2-dice-cube');
+    const shadow = document.getElementById('s2-dice-shadow');
+    const badge = document.getElementById('s2-dice-result-badge');
+    const diceBox = document.getElementById('s2-dice-box');
+
+    if (arena) arena.classList.remove('hidden');
+    if (arena) arena.classList.add('grabbing');
+    if (diceBox) diceBox.classList.add('holding');
+    if (badge) badge.classList.add('hidden');
+
+    // Поднимаем кубик в воздух под курсор
+    if (cube && shadow) {
+      cube.style.transition = 'none';
+      cube.style.left = `${coords.x}px`;
+      cube.style.top = `${coords.y - 40}px`;
+      cube.style.transform = `translate(-50%, -50%) rotateX(25deg) rotateY(-20deg) scale(1.15)`;
+
+      shadow.style.left = `${coords.x}px`;
+      shadow.style.top = `${coords.y}px`;
+      shadow.style.transform = `translate(-50%, -50%) scale(0.85)`;
+      shadow.style.opacity = '0.55';
+      shadow.style.filter = 'blur(6px)';
+    }
+
+    audio.playClick();
+  }
+
+  onDiceMouseMove(e) {
+    if (!this.isActive || !this.isHoldingDice) return;
+
+    const coords = this.getCanvasCoords(e);
+    const now = performance.now();
+    this.mouseHistory.push({ x: coords.x, y: coords.y, time: now });
+    if (this.mouseHistory.length > 6) this.mouseHistory.shift();
+
+    const cube = document.getElementById('s2-dice-cube');
+    const shadow = document.getElementById('s2-dice-shadow');
+
+    if (cube && shadow) {
+      // Покачивание кубика при движении руки
+      const speedX = this.mouseHistory.length > 1
+        ? (coords.x - this.mouseHistory[0].x) * 0.25 : 0;
+      const speedY = this.mouseHistory.length > 1
+        ? (coords.y - this.mouseHistory[0].y) * 0.25 : 0;
+
+      cube.style.left = `${coords.x}px`;
+      cube.style.top = `${coords.y - 45}px`;
+      cube.style.transform = `translate(-50%, -50%) rotateX(${25 - speedY}deg) rotateY(${-20 + speedX}deg) rotateZ(${speedX * 0.5}deg) scale(1.15)`;
+
+      shadow.style.left = `${coords.x}px`;
+      shadow.style.top = `${coords.y}px`;
+    }
+  }
+
+  onDiceMouseUp(e) {
+    if (!this.isActive || !this.isHoldingDice) return;
+
+    this.isHoldingDice = false;
+    const arena = document.getElementById('s2-dice-3d-arena');
+    const diceBox = document.getElementById('s2-dice-box');
+    if (arena) arena.classList.remove('grabbing');
+    if (diceBox) diceBox.classList.remove('holding');
+
+    const coords = this.getCanvasCoords(e);
+    const now = performance.now();
+
+    // Вычисляем скорость броска (flick velocity)
+    let vx = 0;
+    let vy = 0;
+    if (this.mouseHistory.length >= 2) {
+      const oldest = this.mouseHistory[0];
+      const dt = Math.max(0.016, (now - oldest.time) / 1000);
+      vx = (coords.x - oldest.x) / dt;
+      vy = (coords.y - oldest.y) / dt;
+    }
+
+    const flingSpeed = Math.hypot(vx, vy);
+
+    if (flingSpeed > 220) {
+      // Игрок дернул мышкой (швырнул со всего маху!)
+      // Ограничиваем скорость в разумных пределах
+      const clampedSpeed = Math.min(2200, Math.max(350, flingSpeed));
+      const factor = clampedSpeed / flingSpeed;
+      const launchVx = vx * factor * 0.85;
+      const launchVy = vy * factor * 0.85;
+      // Сила броска вверх зависит от размаха
+      const launchVz = Math.min(1350, 480 + clampedSpeed * 0.45);
+
+      this.launchDicePhysics(coords.x, coords.y, launchVx, launchVy, launchVz, true);
+    } else {
+      // Игрок просто отпустил мышь или нажал без замаха -> красивый авто-бросок на середину стола
+      this.launchDicePhysics(coords.x, coords.y, null, null, null, false);
+    }
+  }
+
+  rollDice() {
+    if (this.isRollingDice || this.isMoving || this.cells.length === 0) return;
+    this.launchDicePhysics(688, 670, null, null, null, false);
+  }
+
+  /* ==========================================================================
+     Ядро физической симуляции 3D кубика (Полет, отскоки о стол и стены, финал)
+     ========================================================================== */
+  launchDicePhysics(startX, startY, customVx = null, customVy = null, customVz = null, isFlick = false) {
+    if (this.isRollingDice) return;
     this.isRollingDice = true;
+
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) btnRoll.disabled = true;
 
@@ -377,23 +515,16 @@ export class Stage2Board {
     const hudDiceNum = document.getElementById('s2-dice-num');
 
     if (!arena || !cube || !shadow) {
-      // Фолбэк, если элементы недоступны
       const finalVal = Math.floor(Math.random() * 6) + 1;
       this.advancePlayer(finalVal);
       return;
     }
 
-    // 1. Заранее определяем выпавшее число от 1 до 6
+    // 1. Результат броска (1..6)
     const finalValue = Math.floor(Math.random() * 6) + 1;
     this.diceValue = finalValue;
 
-    // Точные углы Эйлера (в градусах), чтобы верхняя грань кубика показала нужное число:
-    // 1: front (rx: 0, ry: 0)
-    // 2: right (rx: 0, ry: -90)
-    // 3: top (rx: -90, ry: 0)
-    // 4: bottom (rx: 90, ry: 0)
-    // 5: left (rx: 0, ry: 90)
-    // 6: back (rx: 0, ry: 180)
+    // Углы показа нужной грани
     const faceAngles = {
       1: { rx: 0, ry: 0 },
       2: { rx: 0, ry: -90 },
@@ -404,46 +535,57 @@ export class Stage2Board {
     };
     const targetFace = faceAngles[finalValue] || { rx: 0, ry: 0 };
 
+    arena.classList.remove('hidden');
+    if (badge) badge.classList.add('hidden');
+    cube.style.transition = '';
+
     // Звук замаха и броска
     audio.playDiceThrow();
 
-    // 2. Начальные физические параметры броска
-    arena.classList.remove('hidden');
-    if (badge) badge.classList.add('hidden');
+    // Начальные физические координаты
+    let posX = Math.max(180, Math.min(1200, startX));
+    let posY = Math.max(160, Math.min(680, startY));
+    let posZ = 30;
 
-    // Старт броска: снизу от контрольной панели
-    const startX = 688;
-    const startY = 670;
-    // Случайная точка приземления на деревянной карте
-    const targetLandingX = 620 + (Math.random() - 0.5) * 220;
-    const targetLandingY = 460 + (Math.random() - 0.5) * 110;
+    let velX, velY, velZ;
 
-    let posX = startX;
-    let posY = startY;
-    let posZ = 0; // высота над поверхностью стола (в пикселях)
+    if (isFlick && customVx !== null) {
+      velX = customVx;
+      velY = customVy;
+      velZ = customVz || 700;
+    } else {
+      // Авто-бросок в центр игрового стола
+      const targetLandingX = 640 + (Math.random() - 0.5) * 200;
+      const targetLandingY = 460 + (Math.random() - 0.5) * 100;
+      const flightDuration = 0.55;
+      velX = (targetLandingX - posX) / flightDuration;
+      velY = (targetLandingY - posY) / flightDuration;
+      velZ = 760 + Math.random() * 100;
+    }
 
-    const flightDuration = 0.55; // секунд первого полета до первого удара
-    let velX = (targetLandingX - startX) / flightDuration;
-    let velY = (targetLandingY - startY) / flightDuration;
-    let velZ = 750 + Math.random() * 120; // вертикальный импульс вверх
-    const gravity = -2400; // гравитация
+    const gravity = -2500;
 
-    // Вращение в 3D
+    // Скорость вращения в 3D
+    const speed = Math.hypot(velX, velY);
     let rotX = Math.random() * 360;
     let rotY = Math.random() * 360;
     let rotZ = Math.random() * 360;
-    let rotVelX = 1400 + Math.random() * 400;
-    let rotVelY = 1600 + Math.random() * 500;
-    let rotVelZ = 900 + Math.random() * 400;
+    let rotVelX = (velY * 1.5) + (Math.random() - 0.5) * 800;
+    let rotVelY = (-velX * 1.5) + (Math.random() - 0.5) * 800;
+    let rotVelZ = (speed * 1.1) + 400;
 
     let bounces = 0;
     let lastTime = performance.now();
+
+    // Границы игрового стола, от которых кубик отскакивает (бортики)
+    const minBoundX = 140, maxBoundX = 1230;
+    const minBoundY = 120, maxBoundY = 680;
 
     const animatePhysics = (now) => {
       const dt = Math.min(0.035, (now - lastTime) / 1000);
       lastTime = now;
 
-      // Применяем гравитацию и скорости
+      // Гравитация и перемещение
       velZ += gravity * dt;
       posX += velX * dt;
       posY += velY * dt;
@@ -453,31 +595,54 @@ export class Stage2Board {
       rotY += rotVelY * dt;
       rotZ += rotVelZ * dt;
 
-      // Удар о деревянный стол настолки
+      // Отскок от бортиков стола
+      if (posX <= minBoundX) {
+        posX = minBoundX;
+        velX = -velX * 0.6;
+        rotVelY = -rotVelY * 0.6;
+        audio.playDiceBounce(0.45);
+      } else if (posX >= maxBoundX) {
+        posX = maxBoundX;
+        velX = -velX * 0.6;
+        rotVelY = -rotVelY * 0.6;
+        audio.playDiceBounce(0.45);
+      }
+
+      if (posY <= minBoundY) {
+        posY = minBoundY;
+        velY = -velY * 0.6;
+        rotVelX = -rotVelX * 0.6;
+        audio.playDiceBounce(0.45);
+      } else if (posY >= maxBoundY) {
+        posY = maxBoundY;
+        velY = -velY * 0.6;
+        rotVelX = -rotVelX * 0.6;
+        audio.playDiceBounce(0.45);
+      }
+
+      // Удар о деревянный стол карты
       if (posZ <= 0) {
         posZ = 0;
         bounces++;
 
-        // Звук удара по доске
-        const bounceIntensity = bounces === 1 ? 1.0 : (bounces === 2 ? 0.55 : 0.25);
-        audio.playDiceBounce(bounceIntensity);
+        const bounceVolume = bounces === 1 ? 1.0 : (bounces === 2 ? 0.6 : 0.3);
+        audio.playDiceBounce(bounceVolume);
 
-        if (bounces < 3) {
-          // Отскок кубика с коэффициентом упругости
-          velZ = -velZ * 0.42;
-          velX *= 0.55;
-          velY *= 0.55;
-          rotVelX *= 0.45;
-          rotVelY *= 0.45;
-          rotVelZ *= 0.45;
+        if (bounces < 3 || Math.abs(velZ) > 160) {
+          // Отскок вверх и затухание
+          velZ = -velZ * 0.44;
+          velX *= 0.62;
+          velY *= 0.62;
+          rotVelX *= 0.5;
+          rotVelY *= 0.5;
+          rotVelZ *= 0.5;
         } else {
-          // Кубик успокаивается на столе!
+          // Кубик полностью остановился!
           velZ = 0;
           velX = 0;
           velY = 0;
 
-          // Финальное выравнивание под нужное выпавшее число
-          // Округляем до ближайших кратных 360 градусов + целевой угол грани
+          // Доворачиваем кубик до нужной грани лицом к игроку
           const roundTo360 = (val, target) => {
             const turns = Math.round(val / 360);
             return turns * 360 + target;
@@ -487,10 +652,9 @@ export class Stage2Board {
           const finalRy = roundTo360(rotY, targetFace.ry);
           const finalRz = Math.round(rotZ / 360) * 360;
 
-          cube.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+          cube.style.transition = 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
           cube.style.transform = `translate(-50%, -50%) rotateX(${finalRx}deg) rotateY(${finalRy}deg) rotateZ(${finalRz}deg)`;
 
-          // Звук успеха и показ бейджа
           setTimeout(() => {
             audio.playSuccess();
             if (badge && resultNum) {
@@ -503,26 +667,26 @@ export class Stage2Board {
               hudDiceNum.textContent = String(finalValue);
             }
 
-            // Через 600мс плавно скрываем 3D кубик и передвигаем фишку по сетке
+            // Пауза перед перемещением фишки
             setTimeout(() => {
               arena.classList.add('hidden');
               cube.style.transition = '';
               this.isRollingDice = false;
               this.advancePlayer(finalValue);
             }, 650);
-          }, 180);
+          }, 200);
 
           return;
         }
       }
 
-      // Обновляем визуальную позицию тени и 3D кубика
+      // Обновление положения тени и 3D кубика
       shadow.style.left = `${posX}px`;
       shadow.style.top = `${posY}px`;
-      const shadowScale = Math.max(0.4, 1 - (posZ / 380));
+      const shadowScale = Math.max(0.35, 1 - (posZ / 400));
       shadow.style.transform = `translate(-50%, -50%) scale(${shadowScale})`;
-      shadow.style.opacity = String(Math.max(0.18, 0.85 - (posZ / 320)));
-      shadow.style.filter = `blur(${Math.min(12, 2 + posZ / 25)}px)`;
+      shadow.style.opacity = String(Math.max(0.15, 0.85 - (posZ / 340)));
+      shadow.style.filter = `blur(${Math.min(14, 2 + posZ / 22)}px)`;
 
       cube.style.left = `${posX}px`;
       cube.style.top = `${posY - posZ}px`;

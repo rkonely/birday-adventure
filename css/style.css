@@ -3112,57 +3112,63 @@ body {
   will-change: transform;
 }
 
-/* Грани кубика */
+/* Грани кубика с поддержкой развёртки dice_texture.png */
 .dice-face {
   position: absolute;
   width: 62px;
   height: 62px;
-  background: linear-gradient(135deg, #fffdf8 0%, #f7f1e6 55%, #dfceb7 100%);
-  border: 2px solid #a88d6b;
+  background-color: #fffdf8;
+  background-image: url('../assets/Second Level/Dice/dice_texture.png');
+  background-size: 400% 300%;
+  background-repeat: no-repeat;
   border-radius: 12px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.95);
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  padding: 8px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
+  display: block;
   box-sizing: border-box;
   backface-visibility: hidden;
 }
 
-/* Точки (Pips) */
-.pip {
-  width: 10px;
-  height: 10px;
-  background: radial-gradient(circle at 35% 35%, #2b1f1d 0%, #110908 75%);
-  border-radius: 50%;
-  margin: auto;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 1px rgba(255, 255, 255, 0.6);
+/* Привязка 6 граней кубика к развёртке 4x3:
+   Строка 0: [пусто] [Top 3] [пусто] [пусто]
+   Строка 1: [Left 5] [Front 1] [Right 2] [Back 6]
+   Строка 2: [пусто] [Bottom 4] [пусто] [пусто]
+*/
+.face-front  { transform: rotateY(0deg) translateZ(31px); background-position: 33.333% 50%; }
+.face-back   { transform: rotateY(180deg) translateZ(31px); background-position: 100% 50%; }
+.face-right  { transform: rotateY(90deg) translateZ(31px); background-position: 66.666% 50%; }
+.face-left   { transform: rotateY(-90deg) translateZ(31px); background-position: 0% 50%; }
+.face-top    { transform: rotateX(90deg) translateZ(31px); background-position: 33.333% 0%; }
+.face-bottom { transform: rotateX(-90deg) translateZ(31px); background-position: 33.333% 100%; }
+
+.dice-face .pip {
+  display: none; /* скрываем дефолтные HTML-точки, когда активна текстура */
 }
 
-/* Рубиновая центральная точка на грани 1 */
-.face-front .pip-center {
-  width: 14px;
-  height: 14px;
-  background: radial-gradient(circle at 35% 35%, #e63946 0%, #9e1b27 80%);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(230, 57, 70, 0.6);
+/* Курсоры захвата кубика */
+.s2-dice-box {
+  cursor: grab;
+  user-select: none;
 }
 
-/* Позиционирование точек 3х3 */
-.pip-tl { grid-column: 1; grid-row: 1; }
-.pip-tr { grid-column: 3; grid-row: 1; }
-.pip-ml { grid-column: 1; grid-row: 2; }
-.pip-mr { grid-column: 3; grid-row: 2; }
-.pip-bl { grid-column: 1; grid-row: 3; }
-.pip-br { grid-column: 3; grid-row: 3; }
-.pip-center { grid-column: 2; grid-row: 2; }
+.s2-dice-box.holding,
+.s2-dice-3d-arena.grabbing {
+  cursor: grabbing !important;
+}
 
-/* 3D грани кубика (сторона 62px -> смещение по Z = 31px) */
-.face-front  { transform: rotateY(0deg) translateZ(31px); }
-.face-back   { transform: rotateY(180deg) translateZ(31px); }
-.face-right  { transform: rotateY(90deg) translateZ(31px); }
-.face-left   { transform: rotateY(-90deg) translateZ(31px); }
-.face-top    { transform: rotateX(90deg) translateZ(31px); }
-.face-bottom { transform: rotateX(-90deg) translateZ(31px); }
+.s2-dice-hint {
+  font-size: 10px;
+  color: #ffb703;
+  text-shadow: 1px 1px 0 #000;
+  letter-spacing: 0.5px;
+  text-align: center;
+  animation: s2PulseHint 2s infinite ease-in-out;
+  margin-top: 4px;
+}
+
+@keyframes s2PulseHint {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
 
 /* Бейдж результата над приземлившимся кубиком */
 .s2-dice-result-badge {
