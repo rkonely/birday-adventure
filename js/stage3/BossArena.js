@@ -950,7 +950,7 @@ export class BossArena {
         this.ctx.strokeRect(drawX + 2, drawY + 2, coords.w - 4, coords.h - 4);
 
         // Иконка опасности в углу клетки
-        this.ctx.font = 'bold 16px sans-serif';
+        this.ctx.font = 'bold 16px "8bitoperator", sans-serif';
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fillText('⚠️', drawX + coords.w - 24, drawY + 20);
       }
@@ -960,7 +960,7 @@ export class BossArena {
         this.ctx.fillStyle = 'rgba(255, 87, 34, 0.35)';
         this.ctx.fillRect(drawX, drawY, coords.w, coords.h);
 
-        this.ctx.font = '18px sans-serif';
+        this.ctx.font = '18px "8bitoperator", sans-serif';
         this.ctx.fillText('🔥', drawX + 8, drawY + 22);
       }
 
@@ -1032,7 +1032,7 @@ export class BossArena {
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 11px sans-serif';
+        this.ctx.font = 'bold 11px "8bitoperator", monospace';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(`${unit.currentAtk}`, cx - 26, cy + 23);
@@ -1048,7 +1048,7 @@ export class BossArena {
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 11px sans-serif';
+      this.ctx.font = 'bold 11px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(`${unit.currentHp}`, cx + 26, cy + 23);
@@ -1062,7 +1062,7 @@ export class BossArena {
     for (const ft of this.floatingTexts) {
       const alpha = Math.min(1, ft.life / 0.4);
       this.ctx.globalAlpha = alpha;
-      this.ctx.font = 'bold 20px "Cinzel", Georgia, serif';
+      this.ctx.font = 'bold 20px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
 

@@ -279,9 +279,9 @@ class BirDayApp {
           this.startBossArena();
         }
       } else if (e.code === 'Escape') {
-        if (this.stage1Level.isActive || this.stage1Flight.isActive || this.stage1Editor.isActive || this.stage2Board.isActive || this.stage2Editor.isActive || this.bossArena.isActive) {
-          e.preventDefault();
-          this.exitToTitle();
+        e.preventDefault();
+        if (this.uiManager && this.uiManager.settingsModal) {
+          this.uiManager.settingsModal.toggle();
         }
       }
     });

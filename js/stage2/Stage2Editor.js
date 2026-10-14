@@ -1066,13 +1066,13 @@ export class Stage2Editor {
 
     // Номер шага возле верхней вершины (P0)
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 11px monospace';
+    this.ctx.font = 'bold 11px "8bitoperator", monospace';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(`#${cell.index || index + 1}`, pts[0].x, pts[0].y + 9);
 
     // Иконка в центре
-    this.ctx.font = '22px sans-serif';
+    this.ctx.font = '22px "8bitoperator", sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(cell.icon || '🌲', center.x, center.y + 2);
@@ -1115,7 +1115,7 @@ export class Stage2Editor {
 
       // Текстовая метка вершины
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 9px monospace';
+      this.ctx.font = 'bold 9px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(labels[i], pts[i].x + offsets[i].x, pts[i].y + offsets[i].y);

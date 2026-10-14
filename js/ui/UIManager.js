@@ -1,6 +1,7 @@
 import { gameState } from '../core/GameState.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
+import { SettingsModal } from './SettingsModal.js';
 
 /**
  * UIManager — управление всеми экранными формами, диалогами и модальными окнами
@@ -29,12 +30,18 @@ export class UIManager {
     this.btnStart = document.getElementById('btn-start');
     this.btnSound = document.getElementById('btn-sound');
     this.btnFullscreen = document.getElementById('btn-fullscreen');
+    this.btnSettings = document.getElementById('btn-settings');
+    this.soundIconImg = document.getElementById('sound-icon-img');
+
+    // Окно настроек / паузы
+    this.settingsModal = new SettingsModal();
 
     this.dialogTimeout = null;
 
     this.initDaysDropdown();
     this.restoreSavedData();
     this.bindEvents();
+    this.updateSoundIcon();
   }
 
   initDaysDropdown() {
@@ -126,23 +133,46 @@ export class UIManager {
       });
     }
 
-    // 6. Управление звуком
-    this.btnSound.addEventListener('click', () => {
-      audio.playClick();
-      const enabled = gameState.toggleSound();
-      this.btnSound.querySelector('.icon').textContent = enabled ? '🔊' : '🔇';
-      this.showToast(enabled ? 'Звук включен' : 'Звук выключен');
-    });
+    // 6. Управление звуком (переключение иконки Звук / Mute)
+    if (this.btnSound) {
+      this.btnSound.addEventListener('click', () => {
+        audio.playClick();
+        const enabled = gameState.toggleSound();
+        this.updateSoundIcon();
+        this.showToast(enabled ? 'Звук включен' : 'Звук выключен');
+      });
+    }
 
     // 7. Полноэкранный режим
-    this.btnFullscreen.addEventListener('click', () => {
-      audio.playClick();
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-    });
+    if (this.btnFullscreen) {
+      this.btnFullscreen.addEventListener('click', () => {
+        audio.playClick();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+    }
+
+    // 8. Кнопка Настроек (Пауза)
+    if (this.btnSettings) {
+      this.btnSettings.addEventListener('click', () => {
+        this.settingsModal.toggle();
+      });
+    }
+  }
+
+  updateSoundIcon() {
+    const enabled = gameState.data.soundEnabled;
+    const soundImg = document.getElementById('sound-icon-img');
+    if (soundImg) {
+      soundImg.src = enabled ? 'assets/UI/UI-Sound-Icon.png' : 'assets/UI/UI-Mute-Icon.png';
+      soundImg.alt = enabled ? 'Звук' : 'Без звука';
+    }
+    if (this.btnSound) {
+      this.btnSound.title = enabled ? 'Выключить звук (Mute)' : 'Включить звук';
+    }
   }
 
   startRegistrationFlow() {

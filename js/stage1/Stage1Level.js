@@ -852,8 +852,8 @@ export class Stage1Level {
           </div>
 
           <div class="modal-buttons-row">
-            <button id="btn-vic-replay" class="modal-btn btn-green">ПОВТОРИТЬ</button>
-            <button id="btn-vic-menu" class="modal-btn btn-stone">В МЕНЮ</button>
+            <button id="btn-vic-replay" class="btn-leaf-green"><span class="btn-leaf-green-text">ПОВТОРИТЬ</span></button>
+            <button id="btn-vic-menu" class="btn-leaf-green"><span class="btn-leaf-green-text">В МЕНЮ</span></button>
           </div>
         </div>
       </div>

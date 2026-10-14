@@ -1,4 +1,6 @@
 import { gameState } from './GameState.js';
+import { events } from './EventManager.js';
+import { audio } from './AudioManager.js';
 
 /**
  * VideoManager — управление фоновыми видео игры
@@ -30,6 +32,25 @@ export class VideoManager {
     this.currentState = 'WAITING';
     this.isBoardGameMode = false;
     this._activeEndedHandler = null;
+
+    events.on('music:volume_changed', (vol) => {
+      if (this.videoEl) {
+        this.videoEl.volume = vol;
+      }
+    });
+
+    events.on('sound:toggled', (enabled) => {
+      if (this.videoEl) {
+        const isCutscene = this.currentState === 'END_FIRST_LEVEL' ||
+                           this.currentState === 'START' ||
+                           this.currentState === 'SECOND_LEVEL_IDE' ||
+                           this.isBoardGameMode;
+        if (isCutscene) {
+          this.videoEl.muted = !enabled;
+          this.videoEl.volume = audio.getMusicVolume();
+        }
+      }
+    });
 
     this.initVideo();
   }
@@ -141,7 +162,7 @@ export class VideoManager {
     // Управление звуком: катсцены и босс озвучиваются, если звук включен
     if (stateKey === 'END_FIRST_LEVEL' || stateKey === 'START' || stateKey === 'SECOND_LEVEL_IDE' || isBossVideo) {
       this.videoEl.muted = !gameState.data.soundEnabled;
-      this.videoEl.volume = 1.0;
+      this.videoEl.volume = audio.getMusicVolume();
     } else {
       this.videoEl.muted = true;
     }

@@ -405,8 +405,8 @@ export class Stage2Board {
             <p id="s2-modal-desc" class="s2-modal-desc">Описание события на клетке.</p>
           </div>
           <div class="s2-modal-actions">
-            <button id="btn-s2-modal-action" class="btn-s2-wood btn-s2-action">
-              <span id="s2-modal-btn-text">ПРИНЯТЬ</span>
+            <button id="btn-s2-modal-action" class="btn-leaf-green">
+              <span id="s2-modal-btn-text" class="btn-leaf-green-text">ПРИНЯТЬ</span>
             </button>
           </div>
         </div>
@@ -1102,13 +1102,13 @@ export class Stage2Board {
 
       // Номер шага возле верхней вершины
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 11px monospace';
+      this.ctx.font = 'bold 11px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(String(cell.index || index + 1), pts[0].x, pts[0].y + 9);
 
       // Иконка в центре ромба
-      this.ctx.font = '22px sans-serif';
+      this.ctx.font = '22px "8bitoperator", sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(cell.icon || '🌲', center.x, center.y + 2);
@@ -1123,12 +1123,12 @@ export class Stage2Board {
       this.roundRect(this.ctx, cell.x, cell.y, cell.width, cell.height, 10, false, true);
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 12px monospace';
+      this.ctx.font = 'bold 12px "8bitoperator", monospace';
       this.ctx.textAlign = 'left';
       this.ctx.textBaseline = 'top';
       this.ctx.fillText(String(cell.index || index + 1), cell.x + 5, cell.y + 5);
 
-      this.ctx.font = '24px sans-serif';
+      this.ctx.font = '24px "8bitoperator", sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(cell.icon || '🌲', cell.x + cell.width / 2, cell.y + cell.height / 2 + 2);
@@ -1202,7 +1202,7 @@ export class Stage2Board {
       this.ctx.lineWidth = 3;
       this.ctx.stroke();
 
-      this.ctx.font = '20px sans-serif';
+      this.ctx.font = '20px "8bitoperator", sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText('🐦', px, pawnY);

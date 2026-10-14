@@ -12,12 +12,26 @@ export class AudioManager {
     this.initialized = false;
     this.ambientOsc = null;
     this.ambientGain = null;
+    this.masterGain = null;
+    this.sfxGain = null;
+
+    this.musicVolume = 0.8;
+    this.sfxVolume = 0.9;
+    try {
+      const savedMusic = localStorage.getItem('birday_music_volume');
+      if (savedMusic !== null) this.musicVolume = parseFloat(savedMusic);
+      const savedSfx = localStorage.getItem('birday_sfx_volume');
+      if (savedSfx !== null) this.sfxVolume = parseFloat(savedSfx);
+    } catch (e) {}
 
     events.on('sound:toggled', (enabled) => {
-      if (!enabled && this.ambientGain) {
+      if (this.masterGain && this.ctx) {
+        this.masterGain.gain.setValueAtTime(enabled ? 1.0 : 0.0, this.ctx.currentTime);
+      }
+      if (!enabled && this.ambientGain && this.ctx) {
         this.ambientGain.gain.setValueAtTime(0, this.ctx.currentTime);
-      } else if (enabled && this.ambientGain) {
-        this.ambientGain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      } else if (enabled && this.ambientGain && this.ctx) {
+        this.ambientGain.gain.setValueAtTime(0.04 * this.musicVolume, this.ctx.currentTime);
       }
     });
   }
@@ -28,12 +42,49 @@ export class AudioManager {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(gameState.data.soundEnabled ? 1.0 : 0.0, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        this.sfxGain = this.ctx.createGain();
+        this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+        this.sfxGain.connect(this.masterGain);
+
         this.initialized = true;
         this.startCabinAmbient();
       }
     } catch (e) {
       console.warn('[AudioManager] Web Audio API недоступен:', e);
     }
+  }
+
+  getSfxDestination() {
+    return this.sfxGain || (this.ctx ? this.ctx.destination : null);
+  }
+
+  setMusicVolume(vol) {
+    this.musicVolume = Math.max(0, Math.min(1, vol));
+    try { localStorage.setItem('birday_music_volume', this.musicVolume.toString()); } catch (e) {}
+    events.emit('music:volume_changed', this.musicVolume);
+    if (this.ambientGain && this.ctx && gameState.data.soundEnabled) {
+      this.ambientGain.gain.setValueAtTime(0.04 * this.musicVolume, this.ctx.currentTime);
+    }
+  }
+
+  getMusicVolume() {
+    return this.musicVolume;
+  }
+
+  setSfxVolume(vol) {
+    this.sfxVolume = Math.max(0, Math.min(1, vol));
+    try { localStorage.setItem('birday_sfx_volume', this.sfxVolume.toString()); } catch (e) {}
+    if (this.sfxGain && this.ctx) {
+      this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+    }
+  }
+
+  getSfxVolume() {
+    return this.sfxVolume;
   }
 
   ensureContext() {
@@ -63,7 +114,7 @@ export class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start();
       this.ambientOsc = osc;
@@ -89,7 +140,7 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getSfxDestination());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.08);
@@ -111,7 +162,7 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getSfxDestination());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.04);
@@ -133,7 +184,7 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getSfxDestination());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.35);
@@ -157,7 +208,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start(startTime);
       osc.stop(startTime + 0.25);
@@ -186,7 +237,7 @@ export class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start();
       osc.stop(this.ctx.currentTime + 0.14);
@@ -214,7 +265,7 @@ export class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start();
       this.glideOsc = osc;
@@ -251,7 +302,7 @@ export class AudioManager {
       gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.18);
     } catch (e) {}
@@ -278,7 +329,7 @@ export class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start();
       osc.stop(this.ctx.currentTime + 0.09);
@@ -300,7 +351,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.2);
 
@@ -339,7 +390,7 @@ export class AudioManager {
 
       osc1.connect(gain);
       osc2.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc1.start(this.ctx.currentTime);
       osc1.stop(this.ctx.currentTime + 0.08);
@@ -370,7 +421,7 @@ export class AudioManager {
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
 
       osc.start();
       osc.stop(this.ctx.currentTime + 0.28);
@@ -392,7 +443,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.25);
     } catch (e) {}
@@ -413,7 +464,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.1);
     } catch (e) {}
@@ -434,7 +485,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.12);
     } catch (e) {}
@@ -457,7 +508,7 @@ export class AudioManager {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.getSfxDestination());
         osc.start(t);
         osc.stop(t + 0.2);
       });
@@ -481,7 +532,7 @@ export class AudioManager {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.getSfxDestination());
         osc.start(t);
         osc.stop(t + 0.04);
       });
@@ -505,7 +556,7 @@ export class AudioManager {
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.getSfxDestination());
         osc.start(t);
         osc.stop(t + 0.35);
       });
@@ -527,7 +578,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.15);
     } catch (e) {}
@@ -548,7 +599,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.22);
     } catch (e) {}
@@ -569,7 +620,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.12);
     } catch (e) {}
@@ -590,7 +641,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.16);
     } catch (e) {}
@@ -611,7 +662,7 @@ export class AudioManager {
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getSfxDestination());
       osc.start();
       osc.stop(this.ctx.currentTime + 0.08);
     } catch (e) {}
@@ -641,7 +692,7 @@ export class AudioManager {
           gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
           osc.connect(gain);
-          gain.connect(this.ctx.destination);
+          gain.connect(this.getSfxDestination());
           osc.start(t);
           osc.stop(t + dur);
         });

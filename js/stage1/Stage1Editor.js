@@ -1249,7 +1249,7 @@ export class Stage1Editor {
         ctx.fill();
 
         // Иконка и подпись
-        ctx.font = 'bold 11px monospace';
+        ctx.font = 'bold 11px "8bitoperator", monospace';
         ctx.fillStyle = '#facc15';
         ctx.textAlign = 'center';
         ctx.fillText(`🪺 ${item.name || item.title || 'Гнездо'} (R:${r})`, cx, cy - r - 6);
@@ -1336,7 +1336,7 @@ export class Stage1Editor {
 
       // Имя объекта мелким шрифтом
       if (cat === 'animals' || cat === 'enemies') {
-        ctx.font = '10px monospace';
+        ctx.font = '10px "8bitoperator", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.textAlign = 'center';
         ctx.fillText(item.name || cat, item.x, item.y - h / 2 - 6);
@@ -1364,7 +1364,7 @@ export class Stage1Editor {
         ctx.arc(cp.x, cp.y, 30, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.font = 'bold 11px monospace';
+        ctx.font = 'bold 11px "8bitoperator", monospace';
         ctx.fillStyle = '#38bdf8';
         ctx.textAlign = 'center';
         ctx.fillText(`🚩 СТАРТ (${cp.x}, ${cp.y})`, cp.x, cp.y - 36);
@@ -1390,7 +1390,7 @@ export class Stage1Editor {
         ctx.arc(fz.x, fz.y, r, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = 'bold 12px "8bitoperator", sans-serif';
         ctx.fillStyle = '#facc15';
         ctx.textAlign = 'center';
         ctx.fillText(`🏁 ${fz.name || 'Великое Гнездо (ФИНИШ)'} (R:${r})`, fz.x, fz.y - r - 10);
@@ -1458,7 +1458,7 @@ export class Stage1Editor {
         // Бейдж координат и радиуса
         ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
         ctx.fillRect(cx - 60, cy - r - 28, 120, 18);
-        ctx.font = 'bold 10px monospace';
+        ctx.font = 'bold 10px "8bitoperator", monospace';
         ctx.fillStyle = '#facc15';
         ctx.textAlign = 'center';
         ctx.fillText(`X:${cx} Y:${cy} R:${r}px`, cx, cy - r - 15);
@@ -1489,7 +1489,7 @@ export class Stage1Editor {
           // Информационный бейдж координат
           ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
           ctx.fillRect(this.selectedItem.x - 45, ry - 22, 90, 16);
-          ctx.font = 'bold 10px monospace';
+          ctx.font = 'bold 10px "8bitoperator", monospace';
           ctx.fillStyle = '#facc15';
           ctx.textAlign = 'center';
           ctx.fillText(`X:${this.selectedItem.x} Y:${this.selectedItem.y}`, this.selectedItem.x, ry - 10);
@@ -1526,7 +1526,7 @@ export class Stage1Editor {
       ctx.arc(posX, posY, r, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.font = 'bold 12px monospace';
+      ctx.font = 'bold 12px "8bitoperator", monospace';
       ctx.fillStyle = '#facc15';
       ctx.textAlign = 'center';
       ctx.fillText(`🪺 [ЛКМ: Отметить зону гнезда R:${r}px | Esc: Отмена]`, posX, posY - r - 10);
@@ -1549,7 +1549,7 @@ export class Stage1Editor {
       ctx.arc(posX, posY, r, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.font = 'bold 12px monospace';
+      ctx.font = 'bold 12px "8bitoperator", monospace';
       ctx.fillStyle = '#4ade80';
       ctx.textAlign = 'center';
       ctx.fillText(`🏡 [ЛКМ: Отметить зону кормушки R:${r}px | Esc: Отмена]`, posX, posY - r - 10);
@@ -1566,7 +1566,7 @@ export class Stage1Editor {
       ctx.arc(posX, posY, 30, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.font = 'bold 12px monospace';
+      ctx.font = 'bold 12px "8bitoperator", monospace';
       ctx.fillStyle = '#38bdf8';
       ctx.textAlign = 'center';
       ctx.fillText('🚩 [ЛКМ: Установить старт птицы | Esc: Отмена]', posX, posY - 40);
@@ -1584,7 +1584,7 @@ export class Stage1Editor {
       ctx.arc(posX, posY, r, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.font = 'bold 12px monospace';
+      ctx.font = 'bold 12px "8bitoperator", monospace';
       ctx.fillStyle = '#facc15';
       ctx.textAlign = 'center';
       ctx.fillText(`🏁 [ЛКМ: Установить зону финиша R:${r}px | Esc: Отмена]`, posX, posY - r - 10);
@@ -1607,7 +1607,7 @@ export class Stage1Editor {
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(posX - w / 2 - 2, posY - h / 2 - 2, w + 4, h + 4);
 
-      ctx.font = 'bold 11px monospace';
+      ctx.font = 'bold 11px "8bitoperator", monospace';
       ctx.fillStyle = '#4ade80';
       ctx.textAlign = 'center';
       ctx.fillText(`[ЛКМ: ${this.placingAsset.name} | ПКМ / 👆 ВЫБОР: выход]`, posX, posY - h / 2 - 8);

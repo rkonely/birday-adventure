@@ -52,11 +52,14 @@
             <span class="icon">🪶</span>
             <span class="dev-flight-text">ПОЛЁТ</span>
           </button>
-          <button id="btn-sound" class="icon-btn" title="Вкл/Выкл звук" aria-label="Звук">
-            <span class="icon">🔊</span>
+          <button id="btn-settings" class="icon-btn ui-asset-btn" title="Настройки / Пауза (Esc)" aria-label="Настройки">
+            <img src="assets/UI/UI-Settings-Icon.png" alt="Настройки" class="topbar-icon-img" />
           </button>
-          <button id="btn-fullscreen" class="icon-btn" title="Во весь экран" aria-label="Во весь экран">
-            <span class="icon">⛶</span>
+          <button id="btn-sound" class="icon-btn ui-asset-btn" title="Вкл/Выкл звук" aria-label="Звук">
+            <img id="sound-icon-img" src="assets/UI/UI-Sound-Icon.png" alt="Звук" class="topbar-icon-img" />
+          </button>
+          <button id="btn-fullscreen" class="icon-btn ui-asset-btn" title="Во весь экран" aria-label="Во весь экран">
+            <img src="assets/UI/UI-Fullscreen-Icon-Cropped.png" alt="Во весь экран" class="topbar-icon-img" />
           </button>
         </div>
       </header>
@@ -278,6 +281,84 @@
           </div>
         </button>
       </section>
+
+      <!-- Модальное окно Паузы / Настроек (Big Frame.png) -->
+      <div id="modal-pause" class="pause-modal-backdrop hidden">
+        <div class="pause-modal-window">
+          <!-- Заголовок в верхней деревянной плашке -->
+          <div class="pause-title-header">
+            <span class="pause-title-text">НАСТРОЙКИ</span>
+          </div>
+
+          <!-- Кнопка закрытия (крестик) -->
+          <button id="btn-pause-close" class="btn-pause-close" title="Закрыть (Esc)">✕</button>
+
+          <!-- Содержимое настроек на пергаменте -->
+          <div class="pause-content-body">
+            
+            <!-- 1. Настройка громкости (Музыка и Эффекты) -->
+            <div class="pause-section">
+              <div class="pause-slider-group">
+                <div class="pause-slider-label-row">
+                  <span class="pause-label-title">🎵 МУЗЫКА</span>
+                  <span id="label-music-val" class="pause-label-val">80%</span>
+                </div>
+                <div class="pause-slider-track-wrap">
+                  <input type="range" id="slider-music" min="0" max="100" value="80" class="pixel-slider" />
+                </div>
+              </div>
+
+              <div class="pause-slider-group">
+                <div class="pause-slider-label-row">
+                  <span class="pause-label-title">🔊 ЭФФЕКТЫ</span>
+                  <span id="label-sfx-val" class="pause-label-val">90%</span>
+                </div>
+                <div class="pause-slider-track-wrap">
+                  <input type="range" id="slider-sfx" min="0" max="100" value="90" class="pixel-slider" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Выбор скина кубика для настольной игры (4 варианта) -->
+            <div class="pause-section dice-skin-section">
+              <span class="dice-section-title">🎲 СТИЛЬ КУБИКА (НАСТОЛКА)</span>
+              <div class="dice-skins-grid">
+                <!-- Скин 1: Костяной классик -->
+                <div class="dice-skin-card active" data-skin="skin_classic" data-texture="dice_texture.png" title="Костяной Классик">
+                  <div class="dice-preview-box skin-1"></div>
+                  <span class="dice-skin-name">Классик</span>
+                </div>
+                <!-- Скин 2: Магический янтарь -->
+                <div class="dice-skin-card" data-skin="skin_amber" data-texture="dice_texture02.png" title="Магический Янтарь">
+                  <div class="dice-preview-box skin-2"></div>
+                  <span class="dice-skin-name">Янтарь</span>
+                </div>
+                <!-- Скин 3: Замшелый камень -->
+                <div class="dice-skin-card" data-skin="skin_moss" data-texture="dice_texture03.png" title="Рунический Камень">
+                  <div class="dice-preview-box skin-3"></div>
+                  <span class="dice-skin-name">Руны</span>
+                </div>
+                <!-- Скин 4: Тёмный дуб -->
+                <div class="dice-skin-card" data-skin="skin_wood" data-texture="dice_texture04.png" title="Тёмный Дуб">
+                  <div class="dice-preview-box skin-4"></div>
+                  <span class="dice-skin-name">Дуб</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Кнопки действий -->
+            <div class="pause-actions-row">
+              <button id="btn-pause-resume" class="btn-leaf-green" title="Продолжить игру">
+                <span class="btn-leaf-green-text">ПРОДОЛЖИТЬ ▶</span>
+              </button>
+              <button id="btn-pause-menu" class="btn-leaf-green" title="Выйти в Главное меню">
+                <span class="btn-leaf-green-text">В МЕНЮ 🏠</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
 
       <!-- Уведомления -->
       <div id="toast-container"></div>

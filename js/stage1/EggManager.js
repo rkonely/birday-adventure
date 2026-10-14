@@ -515,7 +515,7 @@ export class EggManager {
     ctx.stroke();
 
     // Текстовая метка таймера с четкой обводкой
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "8bitoperator", monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#000000';
     ctx.fillText(`${(this.aimTimer).toFixed(1)}s`, startX + 1, startY - ringRadius - 7);

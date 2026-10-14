@@ -628,7 +628,7 @@ export class Stage1Flight {
       ctx.stroke();
     }
 
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "8bitoperator", monospace';
     ctx.fillStyle = 'rgba(252, 165, 165, 0.85)';
     ctx.textAlign = 'center';
     ctx.fillText('⚠️ ЗОНА КРАША • НЕ КАСАТЬСЯ ЗЕМЛИ • GAME OVER ТЕРРИТОРИЯ ⚠️', this.width / 2, gy + 32);
@@ -667,12 +667,12 @@ export class Stage1Flight {
     ctx.fillRect(bx - 3, by + bannerH - 3, 6, 6);
     ctx.fillRect(bx + bannerW - 3, by + bannerH - 3, 6, 6);
 
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "8bitoperator", monospace';
     ctx.fillStyle = '#ef4444';
     ctx.textAlign = 'center';
     ctx.fillText('💥 КРАШ! ПТИЦА ОГЛУШЕНА!', this.width / 2, by + 34);
 
-    ctx.font = '13px monospace';
+    ctx.font = '13px "8bitoperator", monospace';
     ctx.fillStyle = '#f8fafc';
     ctx.fillText('Нажмите [ПРОБЕЛ] или [КЛИК], чтобы взлететь!', this.width / 2, by + 64);
 
@@ -724,7 +724,7 @@ export class Stage1Flight {
     ctx.stroke();
 
     ctx.setLineDash([]);
-    ctx.font = '12px monospace';
+    ctx.font = '12px "8bitoperator", monospace';
     ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
     ctx.fillText('ПОТОЛОК (50px)', 16, 42);
 
@@ -761,7 +761,7 @@ export class Stage1Flight {
   drawLoadingProgress(ctx) {
     ctx.save();
     ctx.fillStyle = '#ffffff';
-    ctx.font = '22px monospace';
+    ctx.font = '22px "8bitoperator", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`Загрузка спрайтов (полет + стан)... (${this.loadedCount} / ${this.totalSprites})`, this.width / 2, this.height / 2 - 20);
 
