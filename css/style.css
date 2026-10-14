@@ -2567,287 +2567,7 @@ body {
   z-index: 15;
 }
 
-/* Верхняя карточка статуса игрока (Status Frame) */
-.s2-status-card {
-  position: absolute;
-  top: 14px;
-  left: 20px;
-  width: 320px;
-  min-height: 106px;
-  background: url('../assets/UI/Status Frame.png') no-repeat center / 100% 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
-  animation: s2SlideDown 0.4s ease-out;
-  padding: 8px 12px;
-  box-sizing: border-box;
-}
 
-@keyframes s2SlideDown {
-  from { transform: translateY(-30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.s2-status-content {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 86%;
-}
-
-.s2-status-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.s2-player-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.s2-pilot-badge {
-  font-size: 11px;
-  color: #ffb703;
-  font-weight: bold;
-}
-
-.s2-pilot-name {
-  font-size: 13px;
-  color: #ffffff;
-  text-shadow: 1px 1px 0 #000;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.s2-cell-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.s2-cell-label {
-  font-size: 10px;
-  color: #cbd5e1;
-}
-
-.s2-cell-val {
-  font-size: 12px;
-  color: #2ec4b6;
-  font-weight: bold;
-  text-shadow: 1px 1px 0 #000;
-}
-
-/* Инвентарь на доске */
-.s2-inventory-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
-  padding: 3px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.s2-inv-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.s2-inv-icon {
-  font-size: 13px;
-}
-
-.s2-inv-val {
-  font-size: 12px;
-  font-weight: bold;
-  color: #ffecd1;
-  text-shadow: 1px 1px 0 #000;
-}
-
-/* Бейджи активных эффектов */
-.s2-status-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-height: 16px;
-}
-
-.s2-badge {
-  font-size: 9.5px;
-  font-weight: bold;
-  padding: 1px 5px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-}
-
-.badge-poison { background: #7b2cbf; color: #f3e8ff; border: 1px solid #c77dff; }
-.badge-immune { background: #0077b6; color: #caf0f8; border: 1px solid #48cae4; }
-.badge-magnet { background: #d97706; color: #fef3c7; border: 1px solid #f59e0b; }
-.badge-reverse { background: #dc2626; color: #fee2e2; border: 1px solid #f87171; }
-.badge-water { background: #0284c7; color: #e0f2fe; border: 1px solid #38bdf8; }
-
-/* Нижняя контрольная панель с кубиком */
-.s2-control-panel {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  pointer-events: auto;
-  z-index: 20;
-}
-
-.s2-dice-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: rgba(15, 12, 10, 0.75);
-  border: 2px solid rgba(139, 90, 43, 0.65);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
-  padding: 6px 14px;
-  border-radius: 16px;
-  backdrop-filter: blur(4px);
-}
-
-.s2-dice {
-  width: 52px;
-  height: 52px;
-  background: #ffffff;
-  border: 3px solid #1e293b;
-  border-radius: 10px;
-  box-shadow: 0 4px 0 #94a3b8, 0 6px 12px rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  font-weight: bold;
-  color: #0f172a;
-  transition: transform 0.1s;
-  user-select: none;
-}
-
-/* Кнопка броска кубика / хода на основе ассетов Throw-btn (215x116) */
-.btn-s2-throw {
-  width: 175px;
-  height: 94px;
-  background: url('../assets/UI/Throw-btn.png') no-repeat center / contain;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  padding-bottom: 6px;
-  background-color: transparent;
-  transition: transform 0.1s ease, filter 0.15s ease;
-  user-select: none;
-  outline: none;
-}
-
-.btn-s2-throw:hover:not(:disabled) {
-  background-image: url('../assets/UI/Throw-btn-Hover.png');
-  filter: drop-shadow(0 0 10px rgba(255, 183, 3, 0.5));
-}
-
-.btn-s2-throw:active:not(:disabled) {
-  background-image: url('../assets/UI/Throw-btn-Active.png');
-  transform: translateY(2px) scale(0.97);
-}
-
-.btn-s2-throw:disabled {
-  opacity: 0.5;
-  filter: grayscale(0.65);
-  cursor: not-allowed;
-}
-
-.btn-s2-throw-text {
-  font-family: var(--font-pixel), monospace;
-  font-size: 18px;
-  font-weight: bold;
-  color: #fff8e8;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  text-shadow: 2px 2px 0 #000, 0 0 10px rgba(255, 183, 3, 0.85);
-  pointer-events: none;
-}
-
-.btn-s2-throw.state-step .btn-s2-throw-text {
-  color: #c7f9cc;
-  text-shadow: 0 2px 4px #000, 0 0 12px rgba(46, 196, 182, 0.95);
-  animation: s2StepGlow 1.5s infinite alternate ease-in-out;
-}
-
-@keyframes s2StepGlow {
-  from { filter: drop-shadow(0 0 2px rgba(46, 196, 182, 0.6)); }
-  to { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9)); }
-}
-
-.btn-s2-wood {
-  background: #8b5a2b;
-  border: 2px solid #5a3818;
-  color: #fff;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 10px 22px;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #3e240c, 0 6px 12px rgba(0, 0, 0, 0.6);
-  text-shadow: 1px 1px 0 #000;
-  transition: transform 0.1s, filter 0.2s, box-shadow 0.1s;
-}
-
-.btn-s2-wood:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: brightness(1.15);
-  box-shadow: 0 6px 0 #3e240c, 0 8px 16px rgba(0, 0, 0, 0.7);
-}
-
-.btn-s2-wood:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #3e240c, 0 3px 6px rgba(0, 0, 0, 0.5);
-}
-
-.btn-s2-wood:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
-}
-
-/* Модальное окно события клетки */
-/* Кнопка переброса кубика */
-.btn-s2-reroll {
-  background: linear-gradient(180deg, #d97706, #78350f);
-  border: 1px solid #facc15;
-  color: #fff;
-  border-radius: 6px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
-  transition: transform 0.1s, filter 0.15s;
-}
-
-.btn-s2-reroll:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.15) drop-shadow(0 0 8px rgba(250, 204, 21, 0.7));
-}
-
-.btn-s2-reroll:active {
-  transform: translateY(1px);
-}
 
 /* ==========================================================================
    КВЕСТОВОЕ ОКНО И КАТ-СЦЕНЫ НАСТОЛКИ (Big Frame & Cut-Scene-Boardgame)
@@ -4355,6 +4075,262 @@ body {
   text-shadow: 2px 2px 0 #1b4d1b, -1px -1px 0 #1b4d1b, 1px -1px 0 #1b4d1b, -1px 1px 0 #1b4d1b, 0 2px 4px #000;
   pointer-events: none;
   margin-top: -3px;
+}
+
+/* ==========================================================================
+   НАСТОЛЬНАЯ ИГРА: UI СТАТУСА И НИЖНЕЙ ПАНЕЛИ БРОСКА (Stage 2 HUD)
+   ========================================================================== */
+
+/* 1. Верхний правый блок статуса (Status Frame) */
+.s2-status-card {
+  position: absolute;
+  top: 48px;
+  right: 24px;
+  width: 210px;
+  height: 260px;
+  background-image: url('../assets/UI/Status Frame.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  z-index: 50;
+  pointer-events: auto;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+}
+
+.s2-status-header {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+
+.s2-status-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffecd1;
+  text-shadow: 2px 2px 0 #3a1f0a, -1px -1px 0 #3a1f0a, 1px -1px 0 #3a1f0a, -1px 1px 0 #3a1f0a;
+  letter-spacing: 0.5px;
+}
+
+.s2-status-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 8px 18px 16px 24px;
+  box-sizing: border-box;
+}
+
+.s2-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.s2-icon-box {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.s2-row-icon {
+  max-width: 38px;
+  max-height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.s2-row-cross {
+  font-family: var(--font-pixel), monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #3a1f0a;
+  margin-right: 4px;
+}
+
+.s2-row-val {
+  font-family: var(--font-pixel), monospace;
+  font-size: 22px;
+  font-weight: bold;
+  color: #3a1f0a;
+}
+
+/* 2. Нижняя контрольная панель (Кубик слева, Кнопка броска в центре, Облачко справа) */
+.s2-bottom-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 60;
+  user-select: none;
+}
+
+/* Кубик для броска */
+.s2-dice-widget-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  border: 2px solid #28170c;
+  background-image: var(--dice-texture, url('../assets/Second Level/Dice/dice_texture.png'));
+  background-size: 400% 300%;
+  background-position: 100% 50%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  transition: transform 0.12s ease, filter 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.s2-dice-widget-box:hover {
+  transform: translateY(-3px) scale(1.04);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.75);
+}
+
+.s2-dice-widget-box:active,
+.s2-dice-widget-box.holding {
+  cursor: grabbing !important;
+  transform: scale(0.96);
+}
+
+.s2-dice {
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Кнопка "БРОСОК" / "ПОХОДИТЬ" (Throw-btn.png) */
+.btn-s2-throw {
+  position: relative;
+  width: 176px;
+  height: 70px;
+  background-image: url('../assets/UI/Throw-btn.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, filter 0.1s ease;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+  box-sizing: border-box;
+}
+
+.btn-s2-throw:hover:not(:disabled) {
+  background-image: url('../assets/UI/Throw-btn-Hover.png');
+  transform: translateY(-2px);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.8)) brightness(1.06);
+}
+
+.btn-s2-throw:active:not(:disabled) {
+  background-image: url('../assets/UI/Throw-btn-Active.png');
+  transform: translateY(2px) scale(0.98);
+}
+
+.btn-s2-throw:disabled {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+  cursor: not-allowed;
+}
+
+.btn-s2-throw-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: -2px;
+}
+
+.btn-s2-throw-text {
+  font-family: var(--font-pixel), monospace;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #1b120c, -1px -1px 0 #1b120c, 1px -1px 0 #1b120c, -1px 1px 0 #1b120c;
+  pointer-events: none;
+}
+
+.btn-s2-sub-key {
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  color: #f1f5f9;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 1px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+/* Облачко с последним ходом */
+.s2-last-turn-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.s2-last-turn-bubble {
+  width: 44px;
+  height: 46px;
+  background-image: url('../assets/UI/Status-LastTurn-Count.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+}
+
+#s2-last-turn-num {
+  font-family: var(--font-pixel), monospace;
+  font-size: 20px;
+  font-weight: bold;
+  color: #3a1f0a;
+  margin-left: -3px;
+  margin-top: -2px;
+}
+
+.s2-last-turn-label {
+  font-family: var(--font-pixel), monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #f6d289;
+  letter-spacing: 0.5px;
+  text-shadow: 2px 2px 0 #180f08, -1px -1px 0 #180f08, 1px -1px 0 #180f08, -1px 1px 0 #180f08, 0 3px 6px #000;
+  white-space: nowrap;
 }
 
 

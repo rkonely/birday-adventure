@@ -13,16 +13,17 @@ export class BoardEventManager {
 
     // Характеристики и инвентарь игрока
     this.stats = {
-      eggs: 10,              // Текущие яйца
-      lostEggsCount: 0,      // Всего потеряно яиц на этой карте (для Монумента Cell 21 и Исцеления Cell 8)
-      rerollDice: 0,         // Дополнительные кубики на переброс
-      boosterPacks: 0,       // Бустеры карт пернатых героев для босса
-      poisonTurns: 0,        // Оставшиеся ходы яда (-1 яйцо/ход)
-      isImmune: false,       // Щит иммунитета от несчастий
-      eggMultiplier: 1,      // Множитель яиц (магнит x2)
+      eggs: 35,              // Текущие яйца (35 по умолчанию как на макете)
+      lostEggsCount: 0,      // Всего потеряно яиц на этой карте
+      rerollDice: 4,         // Кубики на переброс (4 по умолчанию)
+      boosterPacks: 0,       // Бустеры карт (0 по умолчанию)
+      lastRoll: 5,           // Последний бросок (5 по умолчанию)
+      poisonTurns: 0,        // Оставшиеся ходы яда
+      isImmune: false,       // Щит иммунитета
+      eggMultiplier: 1,      // Множитель яиц
       reverseNextMove: false,// Обратный ход кубиком
-      bossHpPenalty: 0,      // Штраф к HP босса (Кара небесная Cell 31)
-      mysteriousBuff: null   // Особый бафф (Колба с водой Cell 13)
+      bossHpPenalty: 0,      // Штраф к HP босса
+      mysteriousBuff: null   // Особый бафф
     };
 
     this.modal = new BoardQuestModal(this);
@@ -57,7 +58,6 @@ export class BoardEventManager {
     }
 
     this.saveStats();
-    this.showToast(`+${finalAmount} 🪺 Яиц! (${source})`, '#4ade80');
     return finalAmount;
   }
 
@@ -68,7 +68,6 @@ export class BoardEventManager {
     if (!bypassImmunity && this.stats.isImmune) {
       this.stats.isImmune = false;
       this.saveStats();
-      this.showToast('🛡️ ЩИТ ПОГЛОТИЛ УРОН! Яйца сохранены!', '#38bdf8');
       return 0;
     }
 
@@ -77,7 +76,6 @@ export class BoardEventManager {
     this.stats.lostEggsCount += actualLoss;
 
     this.saveStats();
-    this.showToast(`-${actualLoss} 🪺 Яиц! (${source})`, '#f87171');
     return actualLoss;
   }
 
@@ -85,7 +83,6 @@ export class BoardEventManager {
     if (this.stats.isImmune) {
       this.stats.isImmune = false;
       this.saveStats();
-      this.showToast('🛡️ ЩИТ ОТРАЗИЛ ЯД!', '#38bdf8');
       return;
     }
     this.stats.poisonTurns = Math.max(this.stats.poisonTurns, turns);
@@ -95,19 +92,16 @@ export class BoardEventManager {
   addRerollDice(count) {
     this.stats.rerollDice += count;
     this.saveStats();
-    this.showToast(`+${count} 🎲 Кубик переброса!`, '#ffd166');
   }
 
   addBoosterPacks(count) {
     this.stats.boosterPacks += count;
     this.saveStats();
-    this.showToast(`+${count} 🎴 Бустер карт героя!`, '#c77dff');
   }
 
   setMagnet(mult = 2) {
     this.stats.eggMultiplier = mult;
     this.saveStats();
-    this.showToast('🧲 Магнит x2 активирован!', '#fb8500');
   }
 
   setImmunity(val = true) {
@@ -128,7 +122,11 @@ export class BoardEventManager {
   setMysteriousBuff(name) {
     this.stats.mysteriousBuff = name;
     this.saveStats();
-    this.showToast(`✨ Получен бафф: ${name}!`, '#2ec4b6');
+  }
+
+  setLastRoll(val) {
+    this.stats.lastRoll = val;
+    this.saveStats();
   }
 
   /**
@@ -149,8 +147,7 @@ export class BoardEventManager {
   onTurnStart() {
     if (this.stats.poisonTurns > 0) {
       this.stats.poisonTurns--;
-      const lost = this.loseEggs(1, 'Отравление', true);
-      this.showToast(`☠️ Яд: -1 🪺 яйцо! (осталось ${this.stats.poisonTurns} х.)`, '#a855f7');
+      this.loseEggs(1, 'Отравление', true);
       audio.playImpact();
     }
     this.updateHUD();
@@ -188,45 +185,14 @@ export class BoardEventManager {
   }
 
   updateHUD() {
-    const elEggs = document.getElementById('s2-eggs-count');
-    const elReroll = document.getElementById('s2-reroll-count');
-    const elBoosters = document.getElementById('s2-boosters-count');
-    const elBadges = document.getElementById('s2-status-badges');
+    const elEggs = document.getElementById('s2-status-eggs');
+    const elCards = document.getElementById('s2-status-cards');
+    const elDice = document.getElementById('s2-status-dice');
+    const elLastTurn = document.getElementById('s2-last-turn-num');
 
     if (elEggs) elEggs.textContent = this.stats.eggs;
-    if (elReroll) elReroll.textContent = this.stats.rerollDice;
-    if (elBoosters) elBoosters.textContent = this.stats.boosterPacks;
-
-    if (elBadges) {
-      let badges = [];
-      if (this.stats.poisonTurns > 0) {
-        badges.push(`<span class="s2-badge badge-poison" title="Яд: -1 яйцо/ход">☠️ ${this.stats.poisonTurns}</span>`);
-      }
-      if (this.stats.isImmune) {
-        badges.push('<span class="s2-badge badge-immune" title="Щит от несчастий">🛡️ ЩИТ</span>');
-      }
-      if (this.stats.eggMultiplier > 1) {
-        badges.push('<span class="s2-badge badge-magnet" title="Магнит: x2 к следующей награде">🧲 x2</span>');
-      }
-      if (this.stats.reverseNextMove) {
-        badges.push('<span class="s2-badge badge-reverse" title="Сбитый ориентир: ход назад">🔄 РЕВЕРС</span>');
-      }
-      if (this.stats.mysteriousBuff) {
-        badges.push('<span class="s2-badge badge-water" title="Благословение ручья">💧 БАФФ</span>');
-      }
-      elBadges.innerHTML = badges.join('');
-    }
-  }
-
-  showToast(msg, color = '#ffb703') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = 'pixel-toast';
-    toast.style.borderColor = color;
-    toast.style.color = '#fff';
-    toast.textContent = msg;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 2800);
+    if (elCards) elCards.textContent = this.stats.boosterPacks;
+    if (elDice) elDice.textContent = this.stats.rerollDice;
+    if (elLastTurn) elLastTurn.textContent = this.stats.lastRoll || '5';
   }
 }

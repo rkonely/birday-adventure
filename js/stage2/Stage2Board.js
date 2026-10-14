@@ -340,38 +340,33 @@ export class Stage2Board {
     this.uiContainer.className = 'stage2-board-ui';
 
     this.uiContainer.innerHTML = `
-      <!-- Верхний статус игрока (используем Status Frame) -->
+      <!-- Верхний статус игрока (Status Frame) -->
       <div class="s2-status-card">
-        <div class="s2-status-content">
-          <div class="s2-status-top-row">
-            <div class="s2-player-info">
-              <span class="s2-pilot-badge">ПИЛОТ:</span>
-              <span class="s2-pilot-name">${gameState.data.playerName || 'Именинник'}</span>
+        <div class="s2-status-header">
+          <span class="s2-status-title">${gameState.data.playerName || 'Игрок'}</span>
+        </div>
+        <div class="s2-status-rows">
+          <div class="s2-status-row">
+            <div class="s2-icon-box">
+              <img src="assets/First-Level/Item/Egg/Default-Egg.png" class="s2-row-icon" alt="Яйца" />
             </div>
-            <div class="s2-cell-status">
-              <span class="s2-cell-label">КЛЕТКА:</span>
-              <span id="s2-current-step" class="s2-cell-val">${this.currentCellIndex + 1} / ${this.cells.length}</span>
-            </div>
+            <span class="s2-row-cross">X</span>
+            <span id="s2-status-eggs" class="s2-row-val">${this.eventManager.stats.eggs}</span>
           </div>
-
-          <!-- Инвентарь и характеристики настольной игры -->
-          <div class="s2-inventory-row">
-            <div class="s2-inv-item" title="Собранные яйца именинника">
-              <span class="s2-inv-icon">🪺</span>
-              <span id="s2-eggs-count" class="s2-inv-val">${this.eventManager.stats.eggs}</span>
+          <div class="s2-status-row">
+            <div class="s2-icon-box">
+              <img src="assets/UI/Status-Icon-CardCount.png" class="s2-row-icon" alt="Карты" />
             </div>
-            <div class="s2-inv-item" title="Кубики на переброс хода">
-              <span class="s2-inv-icon">🎲</span>
-              <span id="s2-reroll-count" class="s2-inv-val">${this.eventManager.stats.rerollDice}</span>
-            </div>
-            <div class="s2-inv-item" title="Бустеры карт для битвы с Бобром">
-              <span class="s2-inv-icon">🎴</span>
-              <span id="s2-boosters-count" class="s2-inv-val">${this.eventManager.stats.boosterPacks}</span>
-            </div>
+            <span class="s2-row-cross">X</span>
+            <span id="s2-status-cards" class="s2-row-val">${this.eventManager.stats.boosterPacks}</span>
           </div>
-
-          <!-- Активные эффекты и статусы (Яд, Щит, Магнит, Реверс) -->
-          <div id="s2-status-badges" class="s2-status-badges"></div>
+          <div class="s2-status-row">
+            <div class="s2-icon-box">
+              <img src="assets/UI/Status-Icon-DiceCount.png" class="s2-row-icon" alt="Кубики" />
+            </div>
+            <span class="s2-row-cross">X</span>
+            <span id="s2-status-dice" class="s2-row-val">${this.eventManager.stats.rerollDice}</span>
+          </div>
         </div>
       </div>
 
@@ -409,20 +404,25 @@ export class Stage2Board {
         </div>
       </div>
 
-      <!-- Нижняя контрольная панель с кубиком -->
-      <div class="s2-control-panel">
-        <div class="s2-dice-box" id="s2-dice-box" title="Зажмите и резко швырните кубик мышкой!">
+      <!-- Нижняя контрольная панель -->
+      <div class="s2-bottom-bar">
+        <div class="s2-dice-widget-box" id="s2-dice-box" title="Нажмите или бросьте кубик мышкой!">
           <div class="s2-dice" id="s2-dice-face">
-            <span id="s2-dice-num">🎲</span>
+            <span id="s2-dice-num"></span>
           </div>
-          <button id="btn-s2-roll" class="btn-s2-throw" title="Бросить кубик (или нажмите Пробел)">
-            <span id="s2-roll-btn-text" class="btn-s2-throw-text">БРОСОК</span>
-          </button>
-          <button id="btn-s2-reroll" class="btn-s2-reroll hidden" title="Перебросить кубик (тратит 1 кубик переброса)">
-            <span id="s2-reroll-btn-text">ПЕРЕБРОС 🎲</span>
-          </button>
         </div>
-        <div class="s2-dice-hint" id="s2-dice-hint">🖐️ Зажмите кубик или нажмите Пробел для броска!</div>
+        <button id="btn-s2-roll" class="btn-s2-throw" title="Бросить кубик (или нажмите Пробел)">
+          <div class="btn-s2-throw-content">
+            <span id="s2-roll-btn-text" class="btn-s2-throw-text">БРОСОК</span>
+            <span class="btn-s2-sub-key">Пробел</span>
+          </div>
+        </button>
+        <div class="s2-last-turn-wrap">
+          <div class="s2-last-turn-bubble">
+            <span id="s2-last-turn-num">${this.eventManager.stats.lastRoll || '5'}</span>
+          </div>
+          <span class="s2-last-turn-label">Последний бросок</span>
+        </div>
       </div>
     `;
 
@@ -441,26 +441,18 @@ export class Stage2Board {
       });
     }
 
-    const btnReroll = document.getElementById('btn-s2-reroll');
-    if (btnReroll) {
-      btnReroll.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.eventManager.stats.rerollDice > 0 && !this.isMoving) {
-          this.eventManager.stats.rerollDice--;
-          this.eventManager.saveStats();
-          btnReroll.classList.add('hidden');
-          this.rollDice();
-        }
-      });
-    }
-
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
       diceBox.addEventListener('mousedown', (e) => {
-        if (e.target === btnRoll || e.target === btnReroll) return;
+        if (e.target === btnRoll) return;
+        if (this.isDiceSettled) {
+          this.confirmStep();
+          return;
+        }
         this.startHoldingDice(e);
       });
     }
+
 
     const arena = document.getElementById('s2-dice-3d-arena');
     if (arena) {
@@ -880,6 +872,11 @@ export class Stage2Board {
 
     audio.playSuccess();
 
+    // Обновляем статистику последнего броска
+    this.eventManager.setLastRoll(finalValue);
+    const lastTurnEl = document.getElementById('s2-last-turn-num');
+    if (lastTurnEl) lastTurnEl.textContent = String(finalValue);
+
     // Обновляем кнопку на "ПОХОДИТЬ"
     const btnText = document.getElementById('s2-roll-btn-text');
     if (btnText) btnText.textContent = 'ПОХОДИТЬ';
@@ -891,33 +888,19 @@ export class Stage2Board {
       btnRoll.title = 'Сделать ход (или нажмите Пробел)';
     }
 
-    // Если есть кубики переброса — показываем кнопку переброса
-    const btnReroll = document.getElementById('btn-s2-reroll');
-    if (btnReroll && this.eventManager.stats.rerollDice > 0) {
-      btnReroll.classList.remove('hidden');
-      const textSpan = btnReroll.querySelector('span');
-      if (textSpan) textSpan.textContent = `ПЕРЕБРОС 🎲 (${this.eventManager.stats.rerollDice})`;
-    }
-
     const hudDiceNum = document.getElementById('s2-dice-num');
     if (hudDiceNum) hudDiceNum.textContent = String(finalValue);
-
-    const hint = document.getElementById('s2-dice-hint');
-    if (hint) hint.textContent = `🎲 Выпало ${finalValue}! Нажмите "Походить" или Пробел!`;
   }
 
   confirmStep() {
     if (!this.isDiceSettled || this.isMoving) return;
     this.isDiceSettled = false;
 
-    // Прячем кубик со стола и кнопку переброса перед началом хода
+    // Прячем кубик со стола перед началом хода
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
     if (arena) arena.classList.add('hidden');
     if (cube) cube.style.transition = '';
-
-    const btnReroll = document.getElementById('btn-s2-reroll');
-    if (btnReroll) btnReroll.classList.add('hidden');
 
     // Блокируем кнопку на время хода пешки
     const btnRoll = document.getElementById('btn-s2-roll');
@@ -943,12 +926,6 @@ export class Stage2Board {
       btnRoll.classList.remove('state-step');
       btnRoll.title = 'Бросить кубик (или нажмите Пробел)';
     }
-
-    const btnReroll = document.getElementById('btn-s2-reroll');
-    if (btnReroll) btnReroll.classList.add('hidden');
-
-    const hint = document.getElementById('s2-dice-hint');
-    if (hint) hint.textContent = '🖐️ Зажмите кубик или нажмите Пробел для броска!';
   }
 
   /* ==========================================================================
