@@ -3634,31 +3634,43 @@ body {
   margin-top: -2px;
 }
 
-/* Намерение атаки босса (Телеграф) */
+/* Оповещение о следующей атаке босса в левом верхнем углу (без фона, красным пиксельным шрифтом) */
 .boss-intent-badge {
   position: absolute;
-  top: 96px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(20, 14, 12, 0.9);
-  color: #fff;
-  padding: 4px 16px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  border: 1.5px solid #e63946;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 8px rgba(230, 57, 70, 0.4);
-  pointer-events: auto;
-  animation: intentPulse 1.8s infinite ease-in-out;
+  top: 86px;
+  left: 24px;
+  max-width: 310px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  pointer-events: none;
+  z-index: 25;
 }
 
-@keyframes intentPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(230, 57, 70, 0.5); }
-  50% { transform: scale(1.03); box-shadow: 0 0 16px rgba(255, 77, 109, 0.85); }
+.boss-intent-badge .intent-prefix {
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ff3344;
+  letter-spacing: 0.8px;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 4px rgba(0, 0, 0, 0.95);
+  text-transform: uppercase;
+}
+
+.boss-intent-badge .intent-desc {
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #ff4d6d;
+  letter-spacing: 0.4px;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 4px rgba(0, 0, 0, 0.95);
+  word-break: break-word;
 }
 
 /* Центральная подсказка выбора клетки */
@@ -4247,23 +4259,45 @@ body {
 }
 
 .inspect-close-btn {
-  background: #2b9348;
-  border: 2px solid #55a630;
-  color: #fff;
-  padding: 6px 18px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: bold;
+  position: relative;
+  width: 185px;
+  height: 54px;
+  background-image: url('../assets/UI/Leaf Green Button.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border: none;
+  outline: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
+  transition: transform 0.1s ease, filter 0.12s ease;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+  box-sizing: border-box;
   font-family: var(--font-pixel), monospace;
-  text-shadow: 1px 1px 0 #000;
+  font-size: 12.5px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #1b4d1b, -1px -1px 0 #1b4d1b, 1px -1px 0 #1b4d1b, -1px 1px 0 #1b4d1b, 0 2px 4px #000;
+  letter-spacing: 0.5px;
+  padding: 0 12px;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .inspect-close-btn:hover {
-  background: #38b000;
-  box-shadow: 0 0 12px rgba(85, 166, 48, 0.8);
+  background-image: url('../assets/UI/Leaf Green Button - Hover.png');
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.85)) brightness(1.08);
   transform: translateY(-2px);
+}
+
+.inspect-close-btn:active {
+  background-image: url('../assets/UI/Leaf Green Button - Active.png');
+  transform: translateY(1px) scale(0.98);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
 /* ==========================================================================

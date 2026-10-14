@@ -39,7 +39,27 @@ export class BossArena {
     this.arenaWidth = 1376;
     this.arenaHeight = 768;
 
-    // Загрузка ассетов арены
+    // Загрузка ассетов арены (фоновое видео IDE-BossArena.mp4 и статичный фоллбэк)
+    this.bgVideo = document.createElement('video');
+    this.bgVideo.src = 'assets/videos/IDE-BossArena.mp4';
+    this.bgVideo.loop = true;
+    this.bgVideo.muted = true;
+    this.bgVideo.playsInline = true;
+    this.bgVideo.setAttribute('playsinline', '');
+    this.bgVideo.preload = 'auto';
+
+    events.on('music:volume_changed', (vol) => {
+      if (this.bgVideo) {
+        this.bgVideo.volume = vol;
+      }
+    });
+
+    events.on('sound:toggled', (enabled) => {
+      if (this.bgVideo) {
+        this.bgVideo.muted = !enabled;
+      }
+    });
+
     this.bgImage = new Image();
     this.bgImage.src = 'assets/Boss Fight/Bober/Arena Tile/Bober Fight Static.png';
 
@@ -202,6 +222,21 @@ export class BossArena {
       }
     }
 
+    // Запускаем фоновое видео арены IDE-BossArena.mp4
+    if (this.bgVideo) {
+      try {
+        this.bgVideo.currentTime = 0;
+      } catch (e) {}
+      const playPromise = this.bgVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('[BossArena] Автоплей видео заблокирован со звуком, запускаем без звука:', err);
+          this.bgVideo.muted = true;
+          this.bgVideo.play().catch(() => {});
+        });
+      }
+    }
+
     // 3. Скрываем ненужные экраны
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 
@@ -273,6 +308,10 @@ export class BossArena {
       this.canvas.style.display = 'none';
     }
 
+    if (this.bgVideo) {
+      this.bgVideo.pause();
+    }
+
     if (this.uiContainer && this.uiContainer.parentNode) {
       this.uiContainer.parentNode.removeChild(this.uiContainer);
       this.uiContainer = null;
@@ -318,9 +357,9 @@ export class BossArena {
         <span id="round-counter" class="boss-round-text">Раунд ${this.player.round}</span>
       </div>
 
-      <!-- Намерение атаки босса (Телеграф) -->
+      <!-- Оповещение о следующей атаке босса (в левом верхнем углу) -->
       <div id="boss-intent-badge" class="boss-intent-badge">
-        <span class="intent-icon">⚠️</span>
+        <span class="intent-prefix">СЛЕДУЮЩАЯ АТАКА:</span>
         <span id="boss-intent-desc" class="intent-desc">Готовит атаку...</span>
       </div>
 
@@ -739,24 +778,24 @@ export class BossArena {
     if (round === 1) {
       targetCount = 1;
       damagePerCell = 1;
-      attackTitle = '🪓 Пробный замах';
+      attackTitle = 'Пробный замах';
     } else if (round === 2) {
       targetCount = 2;
       damagePerCell = 3;
-      attackTitle = '🪵 Рубка брёвен';
+      attackTitle = 'Рубка брёвен';
     } else if (round === 3) {
       targetCount = 3;
       damagePerCell = 5;
-      attackTitle = '🪚 Циркулярные пилы';
+      attackTitle = 'Циркулярные пилы';
     } else if (round === 4) {
       targetCount = Math.random() < 0.5 ? 3 : 4;
       damagePerCell = 7;
-      attackTitle = '💥 Грохот плотины';
+      attackTitle = 'Грохот плотины';
     } else {
       // Раунд 5 и выше: 4 клетки, урон до 10 за клетку (максимум -40 при полном пропуске!)
       targetCount = 4;
       damagePerCell = Math.min(10, 8 + Math.min(2, round - 5));
-      attackTitle = '⚡ Смертоносный удар плотины';
+      attackTitle = 'Смертоносный удар плотины';
     }
 
     // Подбор комбинаций клеток
@@ -1294,8 +1333,11 @@ export class BossArena {
       this.ctx.translate(ox, oy);
     }
 
-    // 1. Отрисовка базового фона арены (1376x768)
-    if (this.bgImage.complete && this.bgImage.naturalWidth > 0) {
+    // 1. Отрисовка базового фона арены (видео IDE-BossArena.mp4 или статичный Bober Fight Static.png)
+    const isVideoReady = this.bgVideo && (this.bgVideo.readyState >= 2 || !this.bgVideo.paused);
+    if (isVideoReady) {
+      this.ctx.drawImage(this.bgVideo, 0, 0, this.arenaWidth, this.arenaHeight);
+    } else if (this.bgImage.complete && this.bgImage.naturalWidth > 0) {
       this.ctx.drawImage(this.bgImage, 0, 0, this.arenaWidth, this.arenaHeight);
     } else {
       this.ctx.fillStyle = '#1a1614';
