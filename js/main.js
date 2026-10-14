@@ -38,11 +38,16 @@ class BirDayApp {
     this.btnMarketIntroContinue = document.getElementById('btn-market-intro-continue');
     this.screenMarket = document.getElementById('screen-market');
 
+    this.isAdmin = false;
+
     this.init();
   }
 
   init() {
     console.log('🚀 [BirDay Adventure] Инициализация архитектуры...');
+
+    // 0. Секретный режим разработчика / админ-панели
+    this.initAdminMode();
 
     // 1. Менеджер видео
     this.videoManager = new VideoManager();
@@ -275,16 +280,24 @@ class BirDayApp {
       });
     }
 
-    // Горячие клавиши:
-    // F1 — Уровень 1 (Лесной полёт)
-    // F2 — Калибровочная тестовая комната
-    // F3 — Конструктор уровня 1
-    // F4 — Настольная игра (Этап 2)
-    // F5 — Конструктор карты настолки (Этап 2)
-    // Escape — Выход в меню
+    // Горячие клавиши (F1-F7 работают только при включенном режиме разработчика):
     window.addEventListener('keydown', (e) => {
       // Игнорируем функциональные клавиши, если пользователь вводит текст
       if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        return;
+      }
+
+      // Клавиша Escape всегда открывает/закрывает Настройки
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        if (this.uiManager && this.uiManager.settingsModal) {
+          this.uiManager.settingsModal.toggle();
+        }
+        return;
+      }
+
+      // F1-F7 защищены: работают ТОЛЬКО если активен режим разработчика (isAdmin === true)
+      if (!this.isAdmin) {
         return;
       }
 
@@ -337,15 +350,68 @@ class BirDayApp {
         } else {
           this.startBossArena();
         }
-      } else if (e.code === 'Escape') {
-        e.preventDefault();
-        if (this.uiManager && this.uiManager.settingsModal) {
-          this.uiManager.settingsModal.toggle();
-        }
       }
     });
 
-    console.log('✨ [BirDay Adventure] Готово к старту! [🦫 БОСС F7] [🃏 МАГАЗИН F6] [🎲 НАСТОЛКА F4] [🗺️ РЕДАКТОР 2 F5] [🛠️ РЕДАКТОР 1 F3] [🌲 УРОВЕНЬ 1 F1] [🪶 ПОЛЁТ F2].');
+    console.log('✨ [BirDay Adventure] Готово к старту! Вход в панель разработчика: ?admin, #admin или [Ctrl+Shift+A].');
+  }
+
+  /* ==========================================================================
+     Секретный режим Администратора / Разработчика (?admin, #admin, Ctrl+Shift+A)
+     ========================================================================== */
+  initAdminMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAdminParam = urlParams.has('admin') || urlParams.has('dev') || urlParams.get('admin') === '1' || urlParams.get('dev') === '1';
+    const hasAdminHash = window.location.hash.toLowerCase().includes('admin') || window.location.hash.toLowerCase().includes('dev');
+    const savedAdmin = localStorage.getItem('birday_admin_mode') === '1';
+
+    this.isAdmin = hasAdminParam || hasAdminHash || savedAdmin;
+    this.updateAdminVisibility();
+
+    // Секретная комбинация клавиш: Ctrl + Shift + A или Shift + ~ (Тильда)
+    window.addEventListener('keydown', (e) => {
+      const isCtrlShiftA = e.ctrlKey && e.shiftKey && (e.code === 'KeyA' || e.key === 'A' || e.key === 'a' || e.key === 'Ф' || e.key === 'ф');
+      const isTilde = e.shiftKey && (e.code === 'Backquote' || e.key === '~' || e.key === '`');
+      if (isCtrlShiftA || isTilde) {
+        e.preventDefault();
+        this.toggleAdminMode();
+      }
+    });
+
+    // Кнопка закрытия панели разработчика
+    const btnAdminClose = document.getElementById('btn-admin-close');
+    if (btnAdminClose) {
+      btnAdminClose.addEventListener('click', () => {
+        this.toggleAdminMode(false);
+      });
+    }
+
+    // Слушатель смены хеша URL (#admin)
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash.toLowerCase().includes('admin')) {
+        this.toggleAdminMode(true);
+      }
+    });
+  }
+
+  toggleAdminMode(forceState = null) {
+    this.isAdmin = forceState !== null ? forceState : !this.isAdmin;
+    localStorage.setItem('birday_admin_mode', this.isAdmin ? '1' : '0');
+    this.updateAdminVisibility();
+    if (this.uiManager && this.uiManager.showToast) {
+      this.uiManager.showToast(this.isAdmin ? '🛠️ Режим разработчика ВКЛЮЧЕН' : '🔒 Режим разработчика СКРЫТ');
+    }
+  }
+
+  updateAdminVisibility() {
+    const devGroup = document.getElementById('dev-buttons-group');
+    if (devGroup) {
+      if (this.isAdmin) {
+        devGroup.classList.remove('hidden');
+      } else {
+        devGroup.classList.add('hidden');
+      }
+    }
   }
 
   hideMenuScreens() {

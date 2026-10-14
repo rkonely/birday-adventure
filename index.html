@@ -26,7 +26,10 @@
     <!-- UI Слой -->
     <div id="ui-layer">
 
-      <!-- Верхняя панель (Звук, Полноэкранный режим) -->
+      <!-- Верхняя панель (Звук, Полноэкранный режим, Настройки) -->
+      <header id="top-bar">
+        <!-- Секретная группа кнопок разработчика (скрыта по умолчанию, открывается через ?admin, #admin или Ctrl+Shift+A) -->
+        <div id="dev-buttons-group" class="dev-buttons-group hidden">
           <button id="btn-boss-arena" class="icon-btn boss-arena-btn" title="Этап 3: Битва с Бобром (F7)" aria-label="Босс">
             <span class="icon">🦫</span>
             <span class="dev-flight-text">БОСС</span>
@@ -55,6 +58,13 @@
             <span class="icon">🪶</span>
             <span class="dev-flight-text">ПОЛЁТ</span>
           </button>
+          <button id="btn-admin-close" class="icon-btn admin-close-btn" title="Закрыть панель разработчика (Ctrl+Shift+A)" aria-label="Скрыть">
+            <span class="icon">✕</span>
+          </button>
+        </div>
+
+        <!-- Обычные кнопки игрока (видны всегда) -->
+        <div class="player-buttons-group">
           <button id="btn-settings" class="icon-btn ui-asset-btn" title="Настройки / Пауза (Esc)" aria-label="Настройки">
             <img src="assets/UI/UI-Settings-Icon.png" alt="Настройки" class="topbar-icon-img" />
           </button>

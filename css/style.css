@@ -181,7 +181,6 @@ body {
   pointer-events: auto;
 }
 
-/* Верхняя сервисная панель */
 #top-bar {
   position: absolute;
   top: 12px;
@@ -190,6 +189,41 @@ body {
   justify-content: flex-end;
   align-items: center;
   z-index: 20;
+}
+
+.dev-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 12, 20, 0.85);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 183, 3, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  margin-right: 12px;
+}
+
+.dev-buttons-group.hidden {
+  display: none !important;
+}
+
+.admin-close-btn {
+  background: rgba(230, 57, 70, 0.35) !important;
+  border-color: rgba(230, 57, 70, 0.6) !important;
+  color: #ff858d !important;
+  font-weight: bold;
+}
+
+.admin-close-btn:hover {
+  background: rgba(230, 57, 70, 0.85) !important;
+  border-color: #ff4d6d !important;
+  color: #fff !important;
+}
+
+.player-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .controls-group {
