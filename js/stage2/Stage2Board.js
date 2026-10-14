@@ -44,6 +44,21 @@ export class Stage2Board {
     this.movePath = []; // очередь шагов для плавной анимации
     this.moveTimer = 0;
 
+    // 4 изометрические модели фигурки игрока (поворот по 4 сторонам стола)
+    // 1-9: Back-Right | 10-18: Up-Right | 19-27: Up-Left | 28-36: Back-Left
+    this.figureImages = {
+      backRight: new Image(),
+      upRight: new Image(),
+      upLeft: new Image(),
+      backLeft: new Image()
+    };
+    this.figureImages.backRight.src = 'assets/Second Level/Figure/Back-Right.png';
+    this.figureImages.upRight.src = 'assets/Second Level/Figure/Up-Right.png';
+    this.figureImages.upLeft.src = 'assets/Second Level/Figure/Up-Left.png';
+    this.figureImages.backLeft.src = 'assets/Second Level/Figure/Back-Left.png';
+    this.currentDirectionKey = 'backRight';
+    this.turnEffectTimer = 0;
+
     // Кубик
     this.diceValue = 1;
     this.isRollingDice = false;
@@ -106,7 +121,34 @@ export class Stage2Board {
       const center = this.getCellCenter(startCell);
       this.playerVisualPos = { x: center.x, y: center.y };
       this.targetVisualPos = { ...this.playerVisualPos };
+      this.updateDirection();
     }
+  }
+
+  getFigureDirectionKey(stepNumber) {
+    // Нормализуем номер клетки в диапазон 1..36
+    const step = ((stepNumber - 1) % 36 + 36) % 36 + 1;
+    if (step >= 1 && step <= 9) return 'backRight';
+    if (step >= 10 && step <= 18) return 'upRight';
+    if (step >= 19 && step <= 27) return 'upLeft';
+    return 'backLeft';
+  }
+
+  getFigureImage() {
+    const cell = this.cells[this.currentCellIndex];
+    const stepNumber = (cell && typeof cell.index === 'number') ? cell.index : (this.currentCellIndex + 1);
+    const key = this.getFigureDirectionKey(stepNumber);
+    return this.figureImages[key] || this.figureImages.backRight;
+  }
+
+  updateDirection() {
+    const cell = this.cells[this.currentCellIndex];
+    const stepNumber = (cell && typeof cell.index === 'number') ? cell.index : (this.currentCellIndex + 1);
+    const newDir = this.getFigureDirectionKey(stepNumber);
+    if (this.currentDirectionKey && this.currentDirectionKey !== newDir) {
+      this.turnEffectTimer = 0.22; // сочный пружинящий поворот на углах
+    }
+    this.currentDirectionKey = newDir;
   }
 
   getCellPoints(cell) {
@@ -729,6 +771,7 @@ export class Stage2Board {
 
     const nextIndex = this.movePath.shift();
     this.currentCellIndex = nextIndex;
+    this.updateDirection();
 
     const elStep = document.getElementById('s2-current-step');
     if (elStep) {
@@ -829,11 +872,15 @@ export class Stage2Board {
 
     this.animTime += dt;
 
+    if (this.turnEffectTimer > 0) {
+      this.turnEffectTimer = Math.max(0, this.turnEffectTimer - dt);
+    }
+
     // Плавное приближение фишки игрока к целевой позиции
     const dx = this.targetVisualPos.x - this.playerVisualPos.x;
     const dy = this.targetVisualPos.y - this.playerVisualPos.y;
-    this.playerVisualPos.x += dx * Math.min(1, dt * 8);
-    this.playerVisualPos.y += dy * Math.min(1, dt * 8);
+    this.playerVisualPos.x += dx * Math.min(1, dt * 9);
+    this.playerVisualPos.y += dy * Math.min(1, dt * 9);
   }
 
   render(alpha) {
@@ -988,36 +1035,73 @@ export class Stage2Board {
   renderPlayerPawn() {
     const px = this.playerVisualPos.x;
     const py = this.playerVisualPos.y;
-    const bounce = Math.sin(this.animTime * 6) * 4;
+
+    const dx = this.targetVisualPos.x - this.playerVisualPos.x;
+    const dy = this.targetVisualPos.y - this.playerVisualPos.y;
+    const dist = Math.hypot(dx, dy);
+
+    // Прыжок фишки при перемещении между клетками и легкое дыхание в покое
+    const isHopping = this.isMoving && dist > 1.5;
+    const jumpOffset = isHopping ? Math.abs(Math.sin(this.animTime * 14)) * 14 : 0;
+    const idleBob = Math.sin(this.animTime * 4) * 2;
+    const totalYOffset = jumpOffset + idleBob;
 
     this.ctx.save();
 
-    // Тень под фишкой
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    // 1. Тень под фигуркой на плоскости клетки (сжимается и бледнеет во время прыжка)
+    const shadowScale = Math.max(0.6, 1 - (jumpOffset / 28));
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${0.45 * shadowScale})`;
     this.ctx.beginPath();
-    this.ctx.ellipse(px, py + 18, 16, 8, 0, 0, Math.PI * 2);
+    this.ctx.ellipse(px, py + 8, 22 * shadowScale, 9 * shadowScale, 0, 0, Math.PI * 2);
     this.ctx.fill();
 
-    // Свечение фишки пилота
+    // 2. Золотистая подсветка пьедестала / активного хода
     this.ctx.shadowColor = '#ffb703';
-    this.ctx.shadowBlur = 15;
+    this.ctx.shadowBlur = 12;
 
-    // Круглая фишка с рамкой
-    const pawnY = py - 4 + bounce;
-    this.ctx.fillStyle = '#ffb703';
-    this.ctx.beginPath();
-    this.ctx.arc(px, pawnY, 18, 0, Math.PI * 2);
-    this.ctx.fill();
+    // 3. Вычисляем размеры и позицию фигурки
+    const img = this.getFigureImage();
+    const drawW = 72; // ширина фигурки
+    const drawH = Math.round(drawW * (322 / 303)); // ~76.5px (соотношение 303x322)
+    const drawX = px - drawW / 2;
+    // Ноги персонажа стоят аккуратно в центре изометрической плитки
+    const drawY = py - drawH + 12 - totalYOffset;
 
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 3;
-    this.ctx.stroke();
+    // Эффект пружинистого поворота на углу (squash & stretch)
+    let scaleX = 1;
+    let scaleY = 1;
+    if (this.turnEffectTimer > 0) {
+      const progress = this.turnEffectTimer / 0.22;
+      scaleX = 1 - Math.sin(progress * Math.PI) * 0.25;
+      scaleY = 1 + Math.sin(progress * Math.PI) * 0.2;
+    }
 
-    // Иконка пилота / птицы
-    this.ctx.font = '20px sans-serif';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillText('🐦', px, pawnY);
+    if (img && img.complete && img.naturalWidth > 0) {
+      this.ctx.save();
+      // Применяем squash & stretch относительно основания фигурки
+      if (scaleX !== 1 || scaleY !== 1) {
+        this.ctx.translate(px, py + 8 - totalYOffset);
+        this.ctx.scale(scaleX, scaleY);
+        this.ctx.translate(-px, -(py + 8 - totalYOffset));
+      }
+      this.ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      this.ctx.restore();
+    } else {
+      // Резервная отрисовка, пока грузится ассет
+      const pawnY = py - 6 + totalYOffset;
+      this.ctx.fillStyle = '#ffb703';
+      this.ctx.beginPath();
+      this.ctx.arc(px, pawnY, 18, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.strokeStyle = '#ffffff';
+      this.ctx.lineWidth = 3;
+      this.ctx.stroke();
+
+      this.ctx.font = '20px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText('🐦', px, pawnY);
+    }
 
     this.ctx.restore();
   }
