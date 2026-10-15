@@ -195,14 +195,17 @@ export class Stage1Flight {
         this.input.down = true;
       }
 
-      // Горячие клавиши
-      if (e.code === 'KeyR' && this.bird) {
-        this.bird.reset();
-        this.eggManager.eggs = [];
-        this.trail = [];
-      }
-      if (e.code === 'KeyH') {
-        this.toggleTuningUI();
+      // Горячие клавиши (только для админа)
+      const isAdmin = window.game?.isAdmin || localStorage.getItem('birday_admin_mode') === '1';
+      if (isAdmin) {
+        if (e.code === 'KeyR' && this.bird) {
+          this.bird.reset();
+          this.eggManager.eggs = [];
+          this.trail = [];
+        }
+        if (e.code === 'KeyH') {
+          this.toggleTuningUI();
+        }
       }
     });
 

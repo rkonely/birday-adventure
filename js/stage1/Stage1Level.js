@@ -57,8 +57,9 @@ export class Stage1Level {
     this.score = 0;
     this.invulnerableTimer = 0;
 
-    // Чекпоинт (последняя кормушка)
-    this.checkpoint = { x: 260, y: 320, name: 'Старт' };
+    // Точка старта миссии и текущий чекпоинт
+    this.missionStartPoint = { x: 30, y: 64, name: 'Старт' };
+    this.checkpoint = { ...this.missionStartPoint };
 
     // Сущности уровня
     this.backgrounds = [];
@@ -263,7 +264,14 @@ export class Stage1Level {
     if (data.worldWidth) this.worldWidth = data.worldWidth;
     if (data.worldHeight) this.worldHeight = data.worldHeight;
     if (data.groundY) this.groundY = data.groundY;
-    if (data.checkpoint) this.checkpoint = { ...data.checkpoint };
+    if (data.checkpoint) {
+      if (data.checkpoint.name && data.checkpoint.name.toLowerCase().includes('кормушк')) {
+        this.missionStartPoint = { x: 30, y: 64, name: 'Старт' };
+      } else {
+        this.missionStartPoint = { ...data.checkpoint };
+      }
+      this.checkpoint = { ...this.missionStartPoint };
+    }
     if (data.finishZone) this.finishZone = { ...data.finishZone };
 
     if (data.scenery !== undefined) this.scenery = JSON.parse(JSON.stringify(data.scenery));
@@ -598,24 +606,28 @@ export class Stage1Level {
         return;
       }
 
-      // R: Быстрый перезапуск уровня с начала
-      if (e.code === 'KeyR') {
-        this.restartLevelFromBeginning();
-      }
-
-      // K: Быстрый тест окна поражения / краша птицы
-      if (e.code === 'KeyK') {
-        this.stamina = 0;
-        if (this.bird) {
-          this.bird.y = this.groundY;
-          this.bird.triggerStun();
+      // Дебаг-клавиши (активны только в админ-панели ?admin)
+      const isAdmin = window.game?.isAdmin || localStorage.getItem('birday_admin_mode') === '1';
+      if (isAdmin) {
+        // R: Быстрый перезапуск уровня с начала (для тестов)
+        if (e.code === 'KeyR') {
+          this.restartLevelFromBeginning();
         }
-        this.triggerDefeatModal();
-      }
 
-      // V: Быстрый тест победы / завершения 1 уровня (видео End First Level)
-      if (e.code === 'KeyV') {
-        this.triggerVictory();
+        // K: Быстрый тест окна поражения / краша птицы
+        if (e.code === 'KeyK') {
+          this.stamina = 0;
+          if (this.bird) {
+            this.bird.y = this.groundY;
+            this.bird.triggerStun();
+          }
+          this.triggerDefeatModal();
+        }
+
+        // V: Быстрый тест победы / завершения 1 уровня (видео End First Level)
+        if (e.code === 'KeyV') {
+          this.triggerVictory();
+        }
       }
     });
 
@@ -769,11 +781,18 @@ export class Stage1Level {
       this.canvas.style.display = 'block';
     }
 
+    // Всегда сбрасываем чекпоинт и камеру на истинный старт миссии!
+    this.checkpoint = { ...(this.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) };
+    this.cameraX = 0;
+    this.targetCameraX = 0;
+
     if (this.bird) {
       this.bird.reset();
       this.bird.crashCount = 0;
       this.bird.x = this.checkpoint.x;
       this.bird.y = this.checkpoint.y;
+      this.bird.vx = this.bird.baseForwardSpeed || 190;
+      this.bird.vy = 0;
     }
 
     // Сброс гнезд
@@ -1493,7 +1512,7 @@ export class Stage1Level {
   }
 
   restartLevelFromBeginning() {
-    this.checkpoint = { x: 260, y: 320, name: 'Старт' };
+    this.checkpoint = { ...(this.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) };
     this.stamina = 100;
     this.maxStamina = 100;
     this.score = 0;
@@ -1522,6 +1541,8 @@ export class Stage1Level {
       this.bird.isExhausted = false;
       this.bird.x = this.checkpoint.x;
       this.bird.y = this.checkpoint.y;
+      this.bird.vx = this.bird.baseForwardSpeed || 190;
+      this.bird.vy = 0;
       this.bird.crashCount = 0;
     }
 
