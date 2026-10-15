@@ -992,7 +992,6 @@ export class BossArena {
 
     // Выжившие возвращаются в руку
     if (survivingCards.length > 0) {
-      this.addFloatingText(this.arenaWidth / 2, 380, 'Птицы возвращаются в руку!', '#2ec4b6', 2.0);
       for (const card of survivingCards) {
         this.player.hand.push(card);
       }

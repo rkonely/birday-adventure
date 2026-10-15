@@ -83,6 +83,7 @@ export class Stage1Level {
     this.isActive = false;
     this.isVictory = false;
     this.isGameOver = false;
+    this.isPaused = false;
     this.isTutorialOpen = true; // Окно обучения перед первым полётом
     this.defeatAnimFrame = null; // Кадр анимации окна поражения
     this.nestsCompleted = 0;
@@ -212,7 +213,6 @@ export class Stage1Level {
     this.eggManager.onThrowCallback = () => {
       this.stats.eggsLaid++;
       this.stamina = Math.max(0, this.stamina - 10);
-      this.showToast('Бросок яйца (-10% энергии)');
       this.updateHUD();
     };
 
@@ -646,7 +646,6 @@ export class Stage1Level {
       if (e.key >= '1' && e.key <= '6') {
         const idx = parseInt(e.key, 10) - 1;
         this.eggManager.selectType(eggTypes[idx]);
-        this.showToast(`Выбрано яйцо: ${eggTypes[idx]}`);
       }
 
       // Q / E: Переключение типов яиц
@@ -657,10 +656,12 @@ export class Stage1Level {
         this.cycleEggType(1);
       }
 
-      // Escape: Выход в меню
+      // Escape: Пауза / Настройки
       if (e.code === 'Escape') {
-        audio.playClick();
-        events.emit('stage:exit_to_title');
+        e.preventDefault();
+        if (window.game && window.game.uiManager && window.game.uiManager.settingsModal) {
+          window.game.uiManager.settingsModal.toggle();
+        }
         return;
       }
 
@@ -718,7 +719,7 @@ export class Stage1Level {
 
     // Мышь: ЛКМ — взмах (-5% энергии) или бросок яйца, ПКМ — планирование (0% энергии)
     window.addEventListener('pointerdown', (e) => {
-      if (!this.isActive || this.isTutorialOpen || this.isGameOver) return;
+      if (!this.isActive || this.isTutorialOpen || this.isGameOver || this.isPaused) return;
 
       if (e.button === 2) {
         // ПКМ -> Режим планирования
@@ -747,6 +748,20 @@ export class Stage1Level {
 
     window.addEventListener('contextmenu', (e) => {
       if (this.isActive) e.preventDefault();
+    });
+
+    // Обработка глобальных событий паузы
+    events.on('pause:opened', () => {
+      if (this.isActive) {
+        this.isPaused = true;
+        audio.stopGlide();
+      }
+    });
+
+    events.on('pause:closed', () => {
+      if (this.isActive) {
+        this.isPaused = false;
+      }
     });
   }
 
@@ -802,7 +817,6 @@ export class Stage1Level {
     if (idx === -1) idx = 0;
     idx = (idx + dir + types.length) % types.length;
     this.eggManager.selectType(types[idx]);
-    this.showToast(`Яйцо: ${types[idx]}`);
   }
 
   /* ==========================================================================
@@ -1000,7 +1014,6 @@ export class Stage1Level {
     if (modal) {
       modal.classList.add('hidden');
     }
-    this.showToast('В добрый путь! Удачи в полёте!');
   }
 
   removeUIOverlay() {
@@ -1060,6 +1073,7 @@ export class Stage1Level {
     if (!this.isActive || !this.isLoaded) return;
     if (this.isTutorialOpen) return;
     if (this.isGameOver) return;
+    if (this.isPaused) return;
 
     this.levelTime += dt;
 
@@ -1335,7 +1349,6 @@ export class Stage1Level {
 
           audio.playNestHit();
           this.spawnCelebrationParticles(cupX, cupY, '#facc15');
-          this.showToast(`Попадание в ${nest.title || nest.name || 'Гнездо'}! (+${bonus} Очков)`);
           break;
         }
       }
@@ -1361,7 +1374,6 @@ export class Stage1Level {
           } else if (enemy.type === 'beehive') {
             this.score += 400;
             this.stamina = Math.min(this.maxStamina, this.stamina + 20);
-            this.showToast('Мёд из улья! (+400 очков и +20% энергии)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#f59e0b');
             this.updateHUD();
           } else if (enemy.type === 'trap_squirrel') {
@@ -1398,7 +1410,6 @@ export class Stage1Level {
       this.bird.spawnFlapParticles();
     }
 
-    this.showToast(`${reason} (-${amount}% энергии)`);
     this.updateHUD();
 
     // Если птица упала/уже оглушена на земле и энергия на нуле
