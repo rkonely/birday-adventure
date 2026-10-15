@@ -511,7 +511,11 @@ export class Stage2Board {
       diceStatusRow.addEventListener('click', (e) => {
         e.stopPropagation();
         if (this.isMoving || this.isRollingDice) return;
-        this.rollDice();
+        if (this.isDiceSettled) {
+          this.rerollDice();
+        } else {
+          this.rollDice();
+        }
       });
     }
   }
@@ -643,12 +647,23 @@ export class Stage2Board {
 
   rerollDice() {
     if (this.isRollingDice || this.isMoving) return;
-    if (this.eventManager && this.eventManager.stats) {
-      if (typeof this.eventManager.stats.rerollDice === 'number' && this.eventManager.stats.rerollDice > 0) {
-        this.eventManager.stats.rerollDice--;
-        this.eventManager.updateHUD();
+
+    const rollsLeft = (this.eventManager && this.eventManager.stats) ? (this.eventManager.stats.rerollDice || 0) : 0;
+    if (rollsLeft <= 0) {
+      // Перебросы закончились! Не даем бросать кубик заново
+      if (typeof audio !== 'undefined' && audio.playError) {
+        audio.playError();
       }
+      const statusRow = document.getElementById('s2-status-dice')?.closest('.s2-status-row');
+      if (statusRow) {
+        statusRow.classList.add('error-pulse');
+        setTimeout(() => statusRow.classList.remove('error-pulse'), 500);
+      }
+      return;
     }
+
+    this.eventManager.stats.rerollDice--;
+    this.eventManager.updateHUD();
     this.rollDice();
   }
 
@@ -1010,15 +1025,27 @@ export class Stage2Board {
     const hudDiceNum = document.getElementById('s2-dice-num');
     if (hudDiceNum) hudDiceNum.textContent = String(finalValue);
 
+    const rerollsLeft = (this.eventManager && this.eventManager.stats) ? (this.eventManager.stats.rerollDice || 0) : 0;
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
-      diceBox.classList.add('can-reroll');
-      diceBox.title = 'Нажмите на кубик, чтобы перебросить! 🎲';
+      if (rerollsLeft > 0) {
+        diceBox.classList.add('can-reroll');
+        diceBox.title = `Нажмите на кубик, чтобы перебросить! (Осталось: ${rerollsLeft}) 🎲`;
+      } else {
+        diceBox.classList.remove('can-reroll');
+        diceBox.title = 'Перебросов нет (нажмите ПОХОДИТЬ)';
+      }
     }
 
     const arena = document.getElementById('s2-dice-3d-arena');
     if (arena) {
-      arena.classList.add('settled');
+      if (rerollsLeft > 0) {
+        arena.classList.add('settled');
+        arena.title = `Нажмите на кубик, чтобы перебросить! (Осталось: ${rerollsLeft}) 🎲`;
+      } else {
+        arena.classList.remove('settled');
+        arena.title = '';
+      }
     }
   }
 
