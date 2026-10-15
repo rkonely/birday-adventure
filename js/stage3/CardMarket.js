@@ -1,6 +1,7 @@
 import { CARDS_DATABASE, getCardById } from './cardsData.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
+import { gameState } from '../core/GameState.js';
 
 /**
  * CardMarket — Интерактивный альбом-магазин карт перед битвой с Бобром
@@ -62,7 +63,10 @@ export class CardMarket {
         }
       }
     } catch (e) {}
-    return 53; // Значение по умолчанию с макета
+    if (gameState && gameState.data && typeof gameState.data.eggs === 'number') {
+      return gameState.data.eggs;
+    }
+    return 0;
   }
 
   setEggBalance(newAmount) {
@@ -74,6 +78,12 @@ export class CardMarket {
       }
       localStorage.setItem('birday_board_stats', JSON.stringify(stats));
     } catch (e) {}
+    if (gameState && gameState.data) {
+      gameState.data.eggs = newAmount;
+      if (typeof gameState.saveToStorage === 'function') {
+        gameState.saveToStorage();
+      }
+    }
   }
 
   getBoosterCount() {
@@ -316,15 +326,29 @@ export class CardMarket {
 
     // 5. Обновляем кнопку бустера
     const freeBoosters = this.getBoosterCount();
+    const isAllCollected = this.ownedCardIds.size >= CARDS_DATABASE.length;
+    const boosterBtn = document.getElementById('btn-market-buy-booster');
     const boosterPriceText = document.getElementById('market-booster-price-text');
-    const boosterBtnText = document.getElementById('market-booster-btn-text');
-    if (boosterPriceText && boosterBtnText) {
-      if (freeBoosters > 0) {
+
+    if (boosterBtn && boosterPriceText) {
+      if (isAllCollected && freeBoosters <= 0) {
+        boosterBtn.classList.add('is-bought');
+        boosterBtn.classList.remove('cant-afford');
+        boosterBtn.disabled = true;
+        boosterBtn.title = 'Все 29 карт уже в вашей колоде!';
+        boosterPriceText.textContent = '';
+      } else if (freeBoosters > 0) {
+        boosterBtn.classList.remove('is-bought', 'cant-afford');
+        boosterBtn.disabled = false;
+        boosterBtn.title = `Открыть подарочный бустер (в наличии: ${freeBoosters})`;
         boosterPriceText.textContent = `x${freeBoosters}`;
-        boosterBtnText.textContent = 'ОТКРЫТЬ';
       } else {
+        const canAfford = currentEggs >= 15;
+        boosterBtn.classList.remove('is-bought');
+        boosterBtn.classList.toggle('cant-afford', !canAfford);
+        boosterBtn.disabled = false;
+        boosterBtn.title = canAfford ? 'Купить бустер карт за 15 яиц' : `Не хватает яиц! Нужно 15 (у вас: ${currentEggs})`;
         boosterPriceText.textContent = '15';
-        boosterBtnText.textContent = 'КУПИТЬ';
       }
     }
 
@@ -409,25 +433,37 @@ export class CardMarket {
   handleBoosterClick() {
     const freeBoosters = this.getBoosterCount();
     const currentEggs = this.getEggBalance();
+    const isAllCollected = this.ownedCardIds.size >= CARDS_DATABASE.length;
 
+    // 1. Если вся коллекция (29 карт) уже собрана и нет подарочных бустеров
+    if (isAllCollected && freeBoosters <= 0) {
+      audio.playImpact();
+      this.showQuickNotice('🎉 Все 29 карт уже в колоде! Пора на битву с Бобром!');
+      return;
+    }
+
+    // 2. Открытие подарочного бустера с настольной игры
     if (freeBoosters > 0) {
-      // Открываем бесплатный бустер с настольной игры
       audio.playSuccess();
       this.consumeBooster();
+      this.renderAlbum();
       this.playBoosterOpeningVideo();
-    } else if (currentEggs >= 15) {
-      // Покупаем бустер за 15 яиц
+      return;
+    }
+
+    // 3. Покупка бустера за 15 яиц
+    if (currentEggs >= 15) {
       audio.playSuccess();
       this.setEggBalance(currentEggs - 15);
-      const nestVal = document.getElementById('market-nest-amount');
-      if (nestVal) nestVal.textContent = String(this.getEggBalance());
+      this.renderAlbum();
       this.playBoosterOpeningVideo();
-    } else {
-      // Если яиц меньше 15 и нет бустеров - дарим игроку бонусный бустер, чтобы он всегда мог открыть!
-      audio.playSuccess();
-      this.showQuickNotice('🎁 Бонусный бустер от Лесных Друзей!');
-      this.playBoosterOpeningVideo();
+      return;
     }
+
+    // 4. Не хватает яиц на покупку бустера
+    audio.playImpact();
+    this.shakeNest();
+    this.showQuickNotice(`Не хватает яиц на бустер! Нужно 15 🥚 (у вас: ${currentEggs})`);
   }
 
   playBoosterOpeningVideo() {
@@ -482,9 +518,20 @@ export class CardMarket {
 
     // Выбираем 4 случайные карты (приоритет не открытым)
     const unowned = CARDS_DATABASE.filter(c => !this.ownedCardIds.has(c.id));
-    const pool = unowned.length >= 4 ? unowned : CARDS_DATABASE;
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    const dropped = shuffled.slice(0, 4);
+    let dropped = [];
+    if (unowned.length >= 4) {
+      const shuffled = [...unowned].sort(() => 0.5 - Math.random());
+      dropped = shuffled.slice(0, 4);
+    } else if (unowned.length > 0) {
+      // Все оставшиеся неоткрытые карты гарантированно выпадают
+      dropped = [...unowned];
+      const rest = CARDS_DATABASE.filter(c => !unowned.some(u => u.id === c.id));
+      const shuffledRest = [...rest].sort(() => 0.5 - Math.random());
+      dropped = dropped.concat(shuffledRest.slice(0, 4 - unowned.length));
+    } else {
+      const shuffled = [...CARDS_DATABASE].sort(() => 0.5 - Math.random());
+      dropped = shuffled.slice(0, 4);
+    }
 
     let openedCount = 0;
     cardsRow.innerHTML = '';

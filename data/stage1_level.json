@@ -2,7 +2,7 @@
   "worldWidth": 14999,
   "worldHeight": 720,
   "groundY": 660,
-  "checkpoint": {
+  "startPoint": {
     "x": 30,
     "y": 64,
     "name": "Старт"

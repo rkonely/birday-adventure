@@ -39,7 +39,7 @@ export class Stage1Editor {
       worldWidth: 14999,
       worldHeight: 720,
       groundY: 660,
-      checkpoint: { x: 30, y: 64, name: 'Старт' },
+      startPoint: { x: 30, y: 64, name: 'Старт' },
       finishZone: { x: 14500, y: 320, radius: 110, name: 'Великое Гнездо' },
       scenery: [],
       animals: [],
@@ -128,7 +128,7 @@ export class Stage1Editor {
         worldWidth: this.stage1Level.worldWidth,
         worldHeight: this.stage1Level.worldHeight,
         groundY: this.stage1Level.groundY,
-        checkpoint: { ...(this.stage1Level.missionStartPoint || this.stage1Level.checkpoint || { x: 30, y: 64, name: 'Старт' }) },
+        startPoint: { ...(this.stage1Level.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) },
         finishZone: this.stage1Level.finishZone ? { ...this.stage1Level.finishZone } : { x: 14500, y: 320, radius: 110, name: 'Великое Гнездо' },
         scenery: JSON.parse(JSON.stringify(this.stage1Level.scenery || [])),
         animals: JSON.parse(JSON.stringify(this.stage1Level.animals || [])),
@@ -322,10 +322,10 @@ export class Stage1Editor {
     }
 
     // 2. Проверяем точку старта
-    if (this.levelData.checkpoint) {
-      const cp = this.levelData.checkpoint;
-      if (Math.hypot(worldX - cp.x, screenY - cp.y) <= 40) {
-        return { item: cp, category: 'start' };
+    const startPoint = this.levelData.startPoint || this.levelData.checkpoint;
+    if (startPoint) {
+      if (Math.hypot(worldX - startPoint.x, screenY - startPoint.y) <= 40) {
+        return { item: startPoint, category: 'start' };
       }
     }
 
@@ -384,12 +384,14 @@ export class Stage1Editor {
 
     // 1. Точка старта птицы
     if (template.type === 'zone_start') {
-      this.levelData.checkpoint = {
+      const sp = {
         x: Math.round(posX),
         y: Math.round(posY),
         name: 'Старт'
       };
-      this.selectedItem = this.levelData.checkpoint;
+      this.levelData.startPoint = sp;
+      delete this.levelData.checkpoint;
+      this.selectedItem = sp;
       this.selectedCategory = 'start';
       audio.playClick();
       this.showToast('🚩 Точка старта птицы установлена!');
@@ -672,7 +674,7 @@ export class Stage1Editor {
           worldWidth: this.stage1Level.worldWidth,
           worldHeight: this.stage1Level.worldHeight,
           groundY: this.stage1Level.groundY,
-          checkpoint: { ...(this.stage1Level.missionStartPoint || this.stage1Level.checkpoint || { x: 30, y: 64, name: 'Старт' }) },
+          startPoint: { ...(this.stage1Level.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) },
           scenery: JSON.parse(JSON.stringify(this.stage1Level.scenery || [])),
           animals: JSON.parse(JSON.stringify(this.stage1Level.animals || [])),
           enemies: JSON.parse(JSON.stringify(this.stage1Level.enemies || [])),
@@ -702,6 +704,10 @@ export class Stage1Editor {
       if (this.stage1Level.bird) {
         this.stage1Level.bird.x = Math.max(120, this.cameraX + 240);
         this.stage1Level.bird.y = 320;
+      }
+
+      if (this.stage1Level.saveInitialEntitiesSnapshot) {
+        this.stage1Level.saveInitialEntitiesSnapshot();
       }
     }
 
@@ -1348,8 +1354,8 @@ export class Stage1Editor {
 
   renderStartAndFinish(ctx) {
     // 1. Точка старта птицы
-    if (this.levelData.checkpoint) {
-      const cp = this.levelData.checkpoint;
+    const cp = this.levelData.startPoint || this.levelData.checkpoint;
+    if (cp) {
       if (cp.x >= this.cameraX - 100 && cp.x <= this.cameraX + this.viewWidth + 100) {
         ctx.save();
         ctx.strokeStyle = '#38bdf8';

@@ -57,9 +57,8 @@ export class Stage1Level {
     this.score = 0;
     this.invulnerableTimer = 0;
 
-    // Точка старта миссии и текущий чекпоинт
+    // Истинная точка старта миссии (на 1 этапе нет чекпоинтов и промежуточных сохранений)
     this.missionStartPoint = { x: 30, y: 64, name: 'Старт' };
-    this.checkpoint = { ...this.missionStartPoint };
 
     // Сущности уровня
     this.backgrounds = [];
@@ -71,6 +70,14 @@ export class Stage1Level {
     this.projectiles = []; // снаряды врагов (шишки, желуди)
     this.particles = [];
     this.ambientLeaves = [];
+
+    // Снимки для идеального полного сброса уровня (Full Reset)
+    this.initialNests = null;
+    this.initialFeeders = null;
+    this.initialEnemies = null;
+    this.initialAnimals = null;
+    this.initialScenery = null;
+    this.initialStartPoint = null;
 
     // Геймплейный статус
     this.isActive = false;
@@ -184,14 +191,14 @@ export class Stage1Level {
   /* ==========================================================================
      Инициализация мира, врагов, кормушек и гнезд
      ========================================================================== */
-  initWorldEntities() {
+  async initWorldEntities() {
     // 1. Игрок (Птица)
     this.bird = new Bird(this.flapSprites, this.glideSprites, this.stunSprite);
     this.bird.minX = 60;
     this.bird.maxX = this.worldWidth - 120;
     this.bird.groundY = this.groundY;
-    this.bird.x = this.checkpoint.x;
-    this.bird.y = this.checkpoint.y;
+    this.bird.x = this.missionStartPoint.x;
+    this.bird.y = this.missionStartPoint.y;
     this.bird.scale = 0.105;
     this.bird.onlyForward = true;
     this.bird.baseForwardSpeed = 190;
@@ -209,26 +216,19 @@ export class Stage1Level {
       this.updateHUD();
     };
 
-    // 2. Создание структуры декораций (деревья, камни, кусты)
+    // 2. Дефолтные заготовки структур
     this.buildScenery();
-
-    // 3. Создание мирных животных
     this.buildAnimals();
-
-    // 4. Создание врагов (пчелы, ульи, вороны, белки-ловушки)
     this.buildEnemies();
-
-    // 5. Создание кормушек (Feeder Stations)
     this.buildFeeders();
-
-    // 6. Создание целевых гнезд (Nests)
     this.buildNests();
-
-    // 7. Летающие листья в атмосфере
     this.buildAmbientLeaves();
 
-    // 8. Загрузка пользовательских данных уровня (если есть сохранённые)
-    this.loadCustomLevelData();
+    // 3. Загружаем и применяем сохранённые настройки уровня (data/stage1_level.json или localStorage)
+    await this.loadCustomLevelData();
+
+    // 4. Сохраняем исходный снимок сущностей ПОСЛЕ загрузки настроек уровня
+    this.saveInitialEntitiesSnapshot();
   }
 
   async loadCustomLevelData() {
@@ -264,13 +264,13 @@ export class Stage1Level {
     if (data.worldWidth) this.worldWidth = data.worldWidth;
     if (data.worldHeight) this.worldHeight = data.worldHeight;
     if (data.groundY) this.groundY = data.groundY;
-    if (data.checkpoint) {
-      if (data.checkpoint.name && data.checkpoint.name.toLowerCase().includes('кормушк')) {
+    const startData = data.startPoint || data.checkpoint;
+    if (startData) {
+      if (startData.name && startData.name.toLowerCase().includes('кормушк')) {
         this.missionStartPoint = { x: 30, y: 64, name: 'Старт' };
       } else {
-        this.missionStartPoint = { ...data.checkpoint };
+        this.missionStartPoint = { x: startData.x, y: startData.y, name: 'Старт' };
       }
-      this.checkpoint = { ...this.missionStartPoint };
     }
     if (data.finishZone) this.finishZone = { ...data.finishZone };
 
@@ -283,12 +283,61 @@ export class Stage1Level {
       this.totalNests = this.nests.length;
     }
 
-    if (this.bird && this.checkpoint) {
-      this.bird.x = this.checkpoint.x;
-      this.bird.y = this.checkpoint.y;
+    if (this.bird && this.missionStartPoint) {
+      this.bird.x = this.missionStartPoint.x;
+      this.bird.y = this.missionStartPoint.y;
       this.bird.maxX = this.worldWidth - 120;
       this.bird.groundY = this.groundY;
     }
+
+    // Обновляем начальный снимок уровня на основе загруженных данных
+    this.saveInitialEntitiesSnapshot();
+  }
+
+  /* ==========================================================================
+     Сохранение и полное восстановление исходного состояния уровня (Full Reset)
+     ========================================================================== */
+  saveInitialEntitiesSnapshot() {
+    this.initialNests = JSON.parse(JSON.stringify(this.nests || []));
+    this.initialFeeders = JSON.parse(JSON.stringify(this.feeders || []));
+    this.initialEnemies = JSON.parse(JSON.stringify(this.enemies || []));
+    this.initialAnimals = JSON.parse(JSON.stringify(this.animals || []));
+    this.initialScenery = JSON.parse(JSON.stringify(this.scenery || []));
+    this.initialStartPoint = { ...(this.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) };
+  }
+
+  restoreInitialEntitiesSnapshot() {
+    if (!this.initialEnemies) {
+      this.saveInitialEntitiesSnapshot();
+    }
+
+    if (Array.isArray(this.initialNests)) {
+      this.nests = JSON.parse(JSON.stringify(this.initialNests));
+      this.nests.forEach(n => { n.filled = false; });
+      this.totalNests = this.nests.length;
+    }
+
+    if (Array.isArray(this.initialFeeders)) {
+      this.feeders = JSON.parse(JSON.stringify(this.initialFeeders));
+      this.feeders.forEach(f => { f.visited = false; });
+    }
+
+    if (Array.isArray(this.initialEnemies)) {
+      this.enemies = JSON.parse(JSON.stringify(this.initialEnemies));
+      this.enemies.forEach(en => { en.alive = true; });
+    }
+
+    if (Array.isArray(this.initialAnimals)) {
+      this.animals = JSON.parse(JSON.stringify(this.initialAnimals));
+      this.animals.forEach(a => { a.reacted = false; });
+    }
+
+    if (Array.isArray(this.initialScenery)) {
+      this.scenery = JSON.parse(JSON.stringify(this.initialScenery));
+    }
+
+    this.projectiles = [];
+    this.particles = [];
   }
 
   buildScenery() {
@@ -531,6 +580,15 @@ export class Stage1Level {
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
+      // Если окно поражения активно — Space или Enter запускает перезапуск с начала
+      if (this.isGameOver) {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          this.restartLevelFromBeginning();
+        }
+        return;
+      }
+
       // Если открыто окно обучения — закрываем по Space, Enter или Escape
       if (this.isTutorialOpen) {
         if (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape') {
@@ -660,7 +718,7 @@ export class Stage1Level {
 
     // Мышь: ЛКМ — взмах (-5% энергии) или бросок яйца, ПКМ — планирование (0% энергии)
     window.addEventListener('pointerdown', (e) => {
-      if (!this.isActive || this.isTutorialOpen) return;
+      if (!this.isActive || this.isTutorialOpen || this.isGameOver) return;
 
       if (e.button === 2) {
         // ПКМ -> Режим планирования
@@ -781,26 +839,21 @@ export class Stage1Level {
       this.canvas.style.display = 'block';
     }
 
-    // Всегда сбрасываем чекпоинт и камеру на истинный старт миссии!
-    this.checkpoint = { ...(this.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) };
+    // На 1 этапе нет сохранений и чекпоинтов: старт всегда с истинного начала уровня
     this.cameraX = 0;
     this.targetCameraX = 0;
 
     if (this.bird) {
       this.bird.reset();
       this.bird.crashCount = 0;
-      this.bird.x = this.checkpoint.x;
-      this.bird.y = this.checkpoint.y;
+      this.bird.x = this.missionStartPoint.x;
+      this.bird.y = this.missionStartPoint.y;
       this.bird.vx = this.bird.baseForwardSpeed || 190;
       this.bird.vy = 0;
     }
 
-    // Сброс гнезд
-    this.nests.forEach(n => { n.filled = false; });
-    // Сброс врагов
-    this.enemies.forEach(en => { en.alive = true; });
-    // Сброс кормушек
-    this.feeders.forEach(f => { f.visited = false; });
+    // Восстанавливаем все сущности мира в исходное чистое состояние
+    this.restoreInitialEntitiesSnapshot();
 
     // Скрываем общую шапку сайта и очищаем тосты для максимального минимализма
     const topBar = document.getElementById('top-bar');
@@ -995,6 +1048,7 @@ export class Stage1Level {
   update(dt) {
     if (!this.isActive || !this.isLoaded) return;
     if (this.isTutorialOpen) return;
+    if (this.isGameOver) return;
 
     this.levelTime += dt;
 
@@ -1193,7 +1247,7 @@ export class Stage1Level {
       }
     });
 
-    // 3. Проверка кормушек (Feeder Checkpoints)
+    // 3. Проверка кормушек (пополнение энергии и очки; НЕ являются чекпоинтами)
     this.feeders.forEach(feeder => {
       const radius = feeder.radius || 52;
       const dist = Math.hypot(this.bird.x - feeder.x, this.bird.y - feeder.y);
@@ -1201,7 +1255,6 @@ export class Stage1Level {
         if (!feeder.visited) {
           feeder.visited = true;
           this.stats.feedersEaten++;
-          this.checkpoint = { x: feeder.x, y: feeder.y - 30, name: feeder.name };
           audio.playEatFeeder();
 
           // Пополнение 25% энергии
@@ -1512,18 +1565,33 @@ export class Stage1Level {
   }
 
   restartLevelFromBeginning() {
-    this.checkpoint = { ...(this.missionStartPoint || { x: 30, y: 64, name: 'Старт' }) };
+    // 1. Скрываем модальное окно поражения и останавливаем его анимацию
+    this.hideDefeatModal();
+
+    // 2. Скрываем модальные окна победы и обучения, если были открыты
+    const vicModal = document.getElementById('level-victory-modal');
+    if (vicModal) vicModal.classList.add('hidden');
+    const tutModal = document.getElementById('level-tutorial-modal');
+    if (tutModal) tutModal.classList.add('hidden');
+
+    // 3. Полный сброс точки старта миссии и положения камеры (старт с самого начала)
+    const startPt = this.initialStartPoint || this.missionStartPoint || { x: 30, y: 64, name: 'Старт' };
+    this.missionStartPoint = { ...startPt };
+    this.cameraX = 0;
+    this.targetCameraX = 0;
+
+    // 4. Полный сброс игрового состояния, таймеров и счетчиков
+    this.isGameOver = false;
+    this.isVictory = false;
+    this.isTutorialOpen = false;
     this.stamina = 100;
     this.maxStamina = 100;
     this.score = 0;
     this.levelTime = 0;
-    this.cameraX = 0;
-    this.targetCameraX = 0;
-    this.isGameOver = false;
-    this.isVictory = false;
-    this.isTutorialOpen = false;
+    this.nestsCompleted = 0;
     this.invulnerableTimer = 2.0;
 
+    // 5. Сброс статистики за уровень
     this.stats = {
       eggsLaid: 0,
       feedersEaten: 0,
@@ -1531,33 +1599,56 @@ export class Stage1Level {
       levelTime: 0
     };
 
+    // 6. Сброс менеджера яиц и замедления времени (Slo-Mo)
     if (this.eggManager) {
       this.eggManager.eggsThrown = 0;
       this.eggManager.eggs = [];
+      this.eggManager.isAiming = false;
+      this.eggManager.timeScale = 1.0;
+      this.eggManager.aimTimer = 0;
+      if (typeof this.eggManager.selectType === 'function') {
+        this.eggManager.selectType('Default');
+      }
     }
 
+    // 7. Полное восстановление птицы (Кукушки)
     if (this.bird) {
       this.bird.reset();
       this.bird.isExhausted = false;
-      this.bird.x = this.checkpoint.x;
-      this.bird.y = this.checkpoint.y;
+      this.bird.isStunned = false;
+      this.bird.stunTimer = 0;
+      this.bird.isGliding = false;
+      this.bird.crashCount = 0;
+      this.bird.x = this.missionStartPoint.x;
+      this.bird.y = this.missionStartPoint.y;
       this.bird.vx = this.bird.baseForwardSpeed || 190;
       this.bird.vy = 0;
-      this.bird.crashCount = 0;
+      this.bird.angle = 0;
+      this.bird.targetAngle = 0;
+      this.bird.particles = [];
+      this.bird.dustParticles = [];
+      this.bird.windStreaks = [];
+      this.bird.minX = Math.max(60, this.cameraX + 40);
     }
 
-    // Сброс гнезд
-    this.nests.forEach(n => { n.filled = false; });
-    // Сброс врагов
-    this.enemies.forEach(en => { en.alive = true; });
-    // Сброс кормушек
-    this.feeders.forEach(f => { f.visited = false; });
-    // Очистка снарядов
-    this.projectiles = [];
+    // 8. Полный сброс всех объектов (гнезда, кормушки, враги на исходных позициях, животные, очистка снарядов)
+    this.restoreInitialEntitiesSnapshot();
 
-    // Гарантируем саундтрек 1 уровня
+    // 9. Сброс зажатых клавиш управления
+    this.input = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+      shift: false,
+      space: false
+    };
+
+    // 10. Остановка звуков парения и запуск фонового саундтрека 1 уровня
+    audio.stopGlide();
     audio.playMusic('LEVEL1');
 
+    // 11. Обновление интерфейса (HUD)
     this.updateHUD();
     this.showToast('🚀 Начинаем с самого начала! Соберись с силами!');
   }

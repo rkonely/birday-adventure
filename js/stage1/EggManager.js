@@ -232,8 +232,15 @@ export class EggManager {
     // Статистика
     this.eggsThrown = 0;
     this.goldEggsThrown = 0;
+    this.currentEggType = 'Default';
 
     this.preloadSprites();
+  }
+
+  selectType(type) {
+    if (this.types.includes(type)) {
+      this.currentEggType = type;
+    }
   }
 
   preloadSprites() {
