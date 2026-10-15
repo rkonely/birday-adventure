@@ -551,7 +551,7 @@ export class BossArena {
 
       cardEl.innerHTML = `
         <img src="${card.image}" alt="${card.name}" class="boss-card-full-img" draggable="false" />
-        ${isDamaged ? `<div class="card-damaged-hp-badge" title="Текущее здоровье: ${displayHp}/${card.hp}">❤️ ${displayHp}</div>` : ''}
+        ${isDamaged ? `<div class="card-damaged-hp-badge" title="Текущее здоровье: ${displayHp}/${card.hp}">HP ${displayHp}</div>` : ''}
       `;
 
       // Механика зажатия карты для подробного осмотра на весь экран
@@ -665,13 +665,13 @@ export class BossArena {
 
     // Ограничение новой механики: МАКСИМУМ 3 существа за ход!
     if (Object.keys(this.gridUnits).length >= 3) {
-      this.addFloatingText(this.arenaWidth / 2, 400, 'Лимит: максимум 3 существа за ход! ⚠️', '#ff4d4d', 1.6);
+      this.addFloatingText(this.arenaWidth / 2, 400, 'Лимит: максимум 3 существа за ход!', '#ff4d4d', 1.6);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
       return;
     }
 
     if (this.gridUnits[tileKey]) {
-      this.addFloatingText(this.arenaWidth / 2, 400, 'Клетка уже занята птицей! 🪶', '#ff4d4d', 1.2);
+      this.addFloatingText(this.arenaWidth / 2, 400, 'Клетка уже занята птицей!', '#ff4d4d', 1.2);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
       return;
     }
@@ -707,7 +707,7 @@ export class BossArena {
     // 1. Пингвин-Менеджер («Квартальный отчёт»): добор карты
     if (card.id === 'penguin_manager') {
       this.drawCards(1);
-      this.addFloatingText(this.arenaWidth / 2, 450, '+1 Карта (Квартальный отчёт)! 📈', '#2ec4b6', 1.8);
+      this.addFloatingText(this.arenaWidth / 2, 450, '+1 Карта (Квартальный отчёт)!', '#2ec4b6', 1.8);
     }
     // 2. Павлин-Фокусник («Зеркальный дубль»): зеркальные копии по бокам
     else if (card.id === 'magician_peacock') {
@@ -737,7 +737,7 @@ export class BossArena {
           };
         }
       });
-      this.addFloatingText(this.arenaWidth / 2, 400, 'Зеркальные копии созданы! 🪞', '#a335ee', 1.8);
+      this.addFloatingText(this.arenaWidth / 2, 400, 'Зеркальные копии созданы!', '#a335ee', 1.8);
     }
     // 3. Сова Афина («Афинская фаланга»): +18 временного щита всей своей линии
     else if (card.id === 'owl_sparta') {
@@ -749,12 +749,12 @@ export class BossArena {
           this.gridUnits[k].maxHp += 18;
         }
       }
-      this.addFloatingText(this.arenaWidth / 2, 420, 'Фаланга Спарты: +18 HP в линии! 🛡️', '#f39c12', 2.0);
+      this.addFloatingText(this.arenaWidth / 2, 420, 'Фаланга Спарты: +18 HP в линии!', '#f39c12', 2.0);
     }
     // 4. Синица-Пиромант («Огненное чириканье»): поджог клетки
     else if (card.id === 'tit_pyromancer') {
       this.tileEffects[tileKey].burningRounds = 3;
-      this.addFloatingText(ARENA_TILES_COORDS[tileKey].x + 60, ARENA_TILES_COORDS[tileKey].y, 'Клетка охвачена огнём! 🔥', '#ff5722', 1.8);
+      this.addFloatingText(ARENA_TILES_COORDS[tileKey].x + 60, ARENA_TILES_COORDS[tileKey].y, 'Клетка охвачена огнём!', '#ff5722', 1.8);
     }
   }
 
@@ -854,7 +854,7 @@ export class BossArena {
       if (this.tileEffects[key].burningRounds > 0) {
         this.tileEffects[key].burningRounds--;
         this.boss.hp -= 5;
-        this.addFloatingText(this.arenaWidth / 2, 220, '-5 Горение 🔥', '#ff5722', 1.2);
+        this.addFloatingText(this.arenaWidth / 2, 220, '-5 Горение', '#ff5722', 1.2);
       }
     }
     this.updateHUD();
@@ -862,7 +862,7 @@ export class BossArena {
     // Шаг 2: Атака всех выставленных птиц по бобру
     const activeUnits = Object.values(this.gridUnits);
     if (activeUnits.length > 0) {
-      this.addFloatingText(this.arenaWidth / 2, 280, 'ПЕРНАТЫЕ АТАКУЮТ! 🦅', '#ffd166', 1.5);
+      this.addFloatingText(this.arenaWidth / 2, 280, 'ПЕРНАТЫЕ АТАКУЮТ!', '#ffd166', 1.5);
       await this.sleep(400);
 
       let totalBirdsDamage = 0;
@@ -880,7 +880,7 @@ export class BossArena {
       this.boss.hitFlashTimer = 0.5;
       this.screenShake(12, 0.4);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
-      this.addFloatingText(this.arenaWidth / 2 + (Math.random() * 60 - 30), 200, `-${totalBirdsDamage} УРОНА БОССУ! 💥`, '#ff3333', 2.0);
+      this.addFloatingText(this.arenaWidth / 2 + (Math.random() * 60 - 30), 200, `-${totalBirdsDamage} УРОНА БОССУ!`, '#ff3333', 2.0);
       this.updateHUD();
 
       await this.sleep(600);
@@ -896,7 +896,7 @@ export class BossArena {
 
     // Шаг 3: Атака Бобра по намеченным клеткам
     const intent = this.boss.intents[0] || { damage: 1 };
-    this.addFloatingText(this.arenaWidth / 2, 160, 'БОБЁР НАНОСИТ УДАР! 🪓', '#e63946', 2.0);
+    this.addFloatingText(this.arenaWidth / 2, 160, 'БОБЁР НАНОСИТ УДАР!', '#e63946', 2.0);
     this.screenShake(16, 0.5);
     if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
     await this.sleep(600);
@@ -916,14 +916,14 @@ export class BossArena {
           unit.hitAnim = 0.5;
           if (unit.currentHp <= 0) {
             unit.currentHp = 0;
-            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! Но ${unit.name} повержен! 🪶`, '#ffd166', 1.8);
+            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! Но ${unit.name} повержен!`, '#ffd166', 1.8);
           } else {
-            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! -${cellDamage} HP 🛡️`, '#55efc4', 1.5);
+            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! -${cellDamage} HP`, '#55efc4', 1.5);
           }
         } else {
           // Клетка НЕ ПЕРЕКРЫТА! Урон наносится напрямую игроку!
           directPlayerDamage += cellDamage;
-          this.addFloatingText(tile.x + tile.w / 2, tile.y + 20, `ПРОПУСК! -${cellDamage} HP 💥`, '#ff3838', 2.0);
+          this.addFloatingText(tile.x + tile.w / 2, tile.y + 20, `ПРОПУСК! -${cellDamage} HP`, '#ff3838', 2.0);
         }
       }
     }
@@ -934,7 +934,7 @@ export class BossArena {
       this.player.hp = Math.max(0, this.player.hp - directPlayerDamage);
       this.screenShake(20, 0.6);
       audio.playBonk();
-      this.addFloatingText(this.arenaWidth / 2, 430, `УРОН ИГРОКУ: -${directPlayerDamage} HP! 💔`, '#ff3838', 2.5);
+      this.addFloatingText(this.arenaWidth / 2, 430, `УРОН ИГРОКУ: -${directPlayerDamage} HP!`, '#ff3838', 2.5);
       this.updateHUD();
     }
 
@@ -992,7 +992,7 @@ export class BossArena {
 
     // Выжившие возвращаются в руку
     if (survivingCards.length > 0) {
-      this.addFloatingText(this.arenaWidth / 2, 380, 'Птицы возвращаются в руку! 🕊️', '#2ec4b6', 2.0);
+      this.addFloatingText(this.arenaWidth / 2, 380, 'Птицы возвращаются в руку!', '#2ec4b6', 2.0);
       for (const card of survivingCards) {
         this.player.hand.push(card);
       }
@@ -1017,7 +1017,7 @@ export class BossArena {
 
   handleDefeat() {
     audio.playBonk();
-    this.addFloatingText(this.arenaWidth / 2, 300, '💀 ВАША ЗАЩИТА ПАЛА! 💀', '#ff4d4d', 3.0);
+    this.addFloatingText(this.arenaWidth / 2, 300, 'ВАША ЗАЩИТА ПАЛА!', '#ff4d4d', 3.0);
 
     setTimeout(() => {
       const modal = document.createElement('div');
@@ -1035,10 +1035,10 @@ export class BossArena {
             </div>
             <div class="boss-defeat-actions">
               <button class="btn-leaf-green" id="btn-boss-retry" title="Попробовать бой снова">
-                <span class="btn-leaf-green-text">В БОЙ СНОВА 🔄</span>
+                <span class="btn-leaf-green-text">В БОЙ СНОВА</span>
               </button>
               <button class="btn-leaf-green btn-boss-to-market" id="btn-boss-to-market" title="Вернуться в Магазин Карт">
-                <span class="btn-leaf-green-text">В МАГАЗИН 🛒</span>
+                <span class="btn-leaf-green-text">В МАГАЗИН</span>
               </button>
             </div>
           </div>
@@ -1063,11 +1063,26 @@ export class BossArena {
 
   handleVictory() {
     audio.playSuccess();
-    this.addFloatingText(this.arenaWidth / 2, 300, '👑 ПОБЕДА! ПЛОТИНА СВОБОДНА! 👑', '#ffd166', 4.0);
+    this.addFloatingText(this.arenaWidth / 2, 300, 'ПОБЕДА! ПЛОТИНА СВОБОДНА!', '#ffd166', 4.0);
+    this.showToast('ПОЗДРАВЛЯЕМ! Вы одолели Бобра-Дровосека и освободили лес!');
     setTimeout(() => {
-      alert('🎉 ПОЗДРАВЛЯЕМ! Вы одолели Бобра-Дровосека и освободили лес!');
       events.emit('stage:exit_to_title');
-    }, 1500);
+    }, 2400);
+  }
+
+  showToast(text) {
+    if (!text) return;
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = text;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.35s';
+      setTimeout(() => toast.remove(), 350);
+    }, 2000);
   }
 
   screenShake(intensity = 10, duration = 0.4) {

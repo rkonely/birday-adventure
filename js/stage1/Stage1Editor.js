@@ -394,7 +394,7 @@ export class Stage1Editor {
       this.selectedItem = sp;
       this.selectedCategory = 'start';
       audio.playClick();
-      this.showToast('🚩 Точка старта птицы установлена!');
+      this.showToast('Точка старта птицы установлена!');
       this.updatePropertiesPanel();
       return;
     }
@@ -410,7 +410,7 @@ export class Stage1Editor {
       this.selectedItem = this.levelData.finishZone;
       this.selectedCategory = 'finish';
       audio.playClick();
-      this.showToast('🏁 Финишная зона установлена!');
+      this.showToast('Финишная зона установлена!');
       this.updatePropertiesPanel();
       return;
     }
@@ -435,7 +435,7 @@ export class Stage1Editor {
       this.selectedItem = newNest;
       this.selectedCategory = 'nests';
       audio.playClick();
-      this.showToast(`✨ Отмечена зона: ${newNest.name}`);
+      this.showToast(`Отмечена зона: ${newNest.name}`);
       this.updatePropertiesPanel();
       return;
     }
@@ -457,7 +457,7 @@ export class Stage1Editor {
       this.selectedItem = newFeeder;
       this.selectedCategory = 'feeders';
       audio.playClick();
-      this.showToast(`✨ Отмечена зона: ${newFeeder.name}`);
+      this.showToast(`Отмечена зона: ${newFeeder.name}`);
       this.updatePropertiesPanel();
       return;
     }
@@ -490,7 +490,7 @@ export class Stage1Editor {
     this.selectedCategory = cat;
 
     audio.playClick();
-    this.showToast(`✨ Размещено: ${template.name}`);
+    this.showToast(`Размещено: ${template.name}`);
     this.updatePropertiesPanel();
   }
 
@@ -507,7 +507,7 @@ export class Stage1Editor {
     this.levelData[this.selectedCategory].push(clone);
     this.selectedItem = clone;
     audio.playClick();
-    this.showToast('📋 Объект продублирован');
+    this.showToast('Объект продублирован');
     this.updatePropertiesPanel();
   }
 
@@ -518,7 +518,7 @@ export class Stage1Editor {
     if (idx !== -1) {
       list.splice(idx, 1);
       audio.playClick();
-      this.showToast('🗑️ Объект удален');
+      this.showToast('Объект удален');
       this.selectedItem = null;
       this.selectedCategory = null;
       this.updatePropertiesPanel();
@@ -545,7 +545,7 @@ export class Stage1Editor {
     const ind = document.getElementById('ed-placement-indicator');
     if (ind) ind.classList.add('hidden');
 
-    this.showToast('👆 Режим: Выбор и перемещение объектов');
+    this.showToast('Режим: Выбор и перемещение объектов');
   }
 
   setPlaceMode(asset) {
@@ -569,7 +569,7 @@ export class Stage1Editor {
       ind.classList.remove('hidden');
     }
 
-    this.showToast(`➕ Размещение: ${asset.name} (клик по карте; 👆 ВЫБОР / Esc для отмены)`);
+    this.showToast(`Размещение: ${asset.name} (клик по карте; ВЫБОР / Esc для отмены)`);
   }
 
   cancelPlacing() {
@@ -596,7 +596,7 @@ export class Stage1Editor {
       const res = await resp.json();
       if (res.success) {
         audio.playSuccess();
-        this.showToast('💾 Уровень сохранён в проект (data/stage1_level.json)!');
+        this.showToast('Уровень сохранён в проект (data/stage1_level.json)!');
         return;
       }
     } catch (e) {
@@ -604,7 +604,7 @@ export class Stage1Editor {
     }
 
     audio.playSuccess();
-    this.showToast('💾 Уровень сохранен в браузере (localStorage)!');
+    this.showToast('Уровень сохранен в браузере (localStorage)!');
   }
 
   downloadJSON() {
@@ -619,7 +619,7 @@ export class Stage1Editor {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    this.showToast('📥 Файл stage1_level.json скачан!');
+    this.showToast('Файл stage1_level.json скачан!');
   }
 
   importJSON() {
@@ -637,10 +637,10 @@ export class Stage1Editor {
             this.levelData = parsed;
             this.selectedItem = null;
             audio.playSuccess();
-            this.showToast('📤 Уровень успешно импортирован!');
+            this.showToast('Уровень успешно импортирован!');
           }
         } catch (err) {
-          this.showToast('❌ Ошибка: неверный формат JSON');
+          this.showToast('Ошибка: неверный формат JSON');
         }
       };
       reader.readAsText(file);
@@ -661,7 +661,7 @@ export class Stage1Editor {
       this.setSelectMode();
       this.updatePropertiesPanel();
       audio.playSuccess();
-      this.showToast('🗑️ Карта полностью очищена! Чистый холст готов.');
+      this.showToast('Карта полностью очищена! Чистый холст готов.');
     }
   }
 
@@ -686,7 +686,7 @@ export class Stage1Editor {
       this.setSelectMode();
       this.updatePropertiesPanel();
       audio.playSuccess();
-      this.showToast('🔄 Уровень сброшен к исходному виду!');
+      this.showToast('Уровень сброшен к исходному виду!');
     }
   }
 
@@ -712,7 +712,7 @@ export class Stage1Editor {
     }
 
     events.emit('stage:switch_to_level1');
-    this.showToast('🎮 Режим тестирования: взлетаем!');
+    this.showToast('Режим тестирования: взлетаем!');
   }
 
   /* ==========================================================================
@@ -935,7 +935,7 @@ export class Stage1Editor {
     btnGrid.addEventListener('click', () => {
       this.snapToGrid = !this.snapToGrid;
       btnGrid.classList.toggle('active', this.snapToGrid);
-      this.showToast(this.snapToGrid ? '🧲 Привязка к сетке 20px ВКЛ' : 'Свободное перемещение');
+      this.showToast(this.snapToGrid ? 'Привязка к сетке 20px ВКЛ' : 'Свободное перемещение');
     });
 
     // Действия хедера

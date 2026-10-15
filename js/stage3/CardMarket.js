@@ -117,7 +117,7 @@ export class CardMarket {
         <div class="market-top-banner">
           <div class="market-title-stone-wrap" id="btn-market-title-final" title="Вступить в бой с Бобром!">
             <img src="assets/UI/Title Stone.png" alt="В БОЙ С БОБРОМ!" class="market-title-stone-img" />
-            <span class="market-title-stone-text">В БОЙ С БОБРОМ! ⚔️</span>
+            <span class="market-title-stone-text">В БОЙ С БОБРОМ!</span>
           </div>
         </div>
 
@@ -188,7 +188,7 @@ export class CardMarket {
         <div id="market-booster-modal" class="market-booster-modal hidden">
           <div class="market-booster-modal-content">
             <div class="market-booster-modal-header">
-              <span class="booster-modal-title">✨ ОТКРЫТИЕ БУСТЕРА КАРТ! ✨</span>
+              <span class="booster-modal-title">ОТКРЫТИЕ БУСТЕРА КАРТ</span>
               <div class="booster-modal-subtitle" id="booster-modal-subtitle">Нажмите на рубашку каждой карты, чтобы открыть её! (0 / 4)</div>
             </div>
             <div class="market-booster-cards-row" id="market-booster-cards-row"></div>
@@ -414,7 +414,7 @@ export class CardMarket {
       // Недостаточно яиц
       audio.playImpact();
       this.shakeNest();
-      this.showQuickNotice(`Не хватает яиц! Нужно ещё ${price - currentEggs} 🥚`);
+      this.showQuickNotice(`Не хватает яиц! Нужно ещё ${price - currentEggs}`);
       return;
     }
 
@@ -438,7 +438,7 @@ export class CardMarket {
     // 1. Если вся коллекция (29 карт) уже собрана и нет подарочных бустеров
     if (isAllCollected && freeBoosters <= 0) {
       audio.playImpact();
-      this.showQuickNotice('🎉 Все 29 карт уже в колоде! Пора на битву с Бобром!');
+      this.showQuickNotice('Все 29 карт уже в колоде! Пора на битву с Бобром!');
       return;
     }
 
@@ -463,7 +463,7 @@ export class CardMarket {
     // 4. Не хватает яиц на покупку бустера
     audio.playImpact();
     this.shakeNest();
-    this.showQuickNotice(`Не хватает яиц на бустер! Нужно 15 🥚 (у вас: ${currentEggs})`);
+    this.showQuickNotice(`Не хватает яиц на бустер! Нужно 15 (у вас: ${currentEggs})`);
   }
 
   playBoosterOpeningVideo() {
@@ -554,7 +554,7 @@ export class CardMarket {
           <!-- Рубашка (закрытая карта) -->
           <div class="booster-flip-front">
             <img src="assets/Market/Card back/Back-Card01.png" alt="Рубашка карты" class="booster-shirt-img" />
-            <div class="booster-flip-hint">ОТКРЫТЬ ✨</div>
+            <div class="booster-flip-hint">ОТКРЫТЬ</div>
           </div>
           <!-- Лицевая сторона карты -->
           <div class="booster-flip-back rarity-${card.rarity}">
@@ -581,7 +581,7 @@ export class CardMarket {
         if (openedCount >= 4) {
           this.savePlayerCards();
           if (subtitleEl) {
-            subtitleEl.textContent = `🎉 Все карты открыты! Заберите их в свою колоду:`;
+            subtitleEl.textContent = `Все карты открыты! Заберите их в свою колоду:`;
           }
           if (btnCollect) {
             btnCollect.disabled = false;
@@ -625,8 +625,8 @@ export class CardMarket {
       </div>
       <div class="market-tip-role">${card.role || ''}</div>
       <div class="market-tip-stats">
-        <span class="tip-stat tip-atk">⚔️ ATK: ${card.atk}</span>
-        <span class="tip-stat tip-hp">🛡️ HP: ${card.hp}</span>
+        <span class="tip-stat tip-atk">ATK: ${card.atk}</span>
+        <span class="tip-stat tip-hp">HP: ${card.hp}</span>
       </div>
       <div class="market-tip-ability">
         <div class="tip-ability-name">★ ${card.abilityName || 'Способность'}:</div>
@@ -665,22 +665,18 @@ export class CardMarket {
   }
 
   showQuickNotice(text) {
-    let notice = document.getElementById('market-quick-notice');
-    if (!notice) {
-      notice = document.createElement('div');
-      notice.id = 'market-quick-notice';
-      notice.className = 'market-quick-notice';
-      this.container.querySelector('.market-stage-viewport')?.appendChild(notice);
-    }
-    notice.textContent = text;
-    notice.classList.remove('hidden', 'fade-out');
-    void notice.offsetWidth;
-    notice.classList.add('visible');
-
+    if (!text) return;
+    const container = document.getElementById('toast-container') || this.container.querySelector('.market-stage-viewport');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = text;
+    container.appendChild(toast);
     setTimeout(() => {
-      notice.classList.add('fade-out');
-      setTimeout(() => notice.classList.add('hidden'), 400);
-    }, 1800);
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.35s';
+      setTimeout(() => toast.remove(), 350);
+    }, 2000);
   }
 
   proceedToBoss() {

@@ -212,7 +212,7 @@ export class Stage1Level {
     this.eggManager.onThrowCallback = () => {
       this.stats.eggsLaid++;
       this.stamina = Math.max(0, this.stamina - 10);
-      this.showToast('🥚 Бросок яйца (-10% ⚡)');
+      this.showToast('Бросок яйца (-10% энергии)');
       this.updateHUD();
     };
 
@@ -423,31 +423,31 @@ export class Stage1Level {
   buildAnimals() {
     this.animals = [
       // Олени
-      { key: 'animal_deer_eat', name: 'Оленёнок', x: 480, y: 530, scale: 0.38, greeting: '🦌 *хрумкает клевер*', reacted: false },
-      { key: 'animal_deer_stand', name: 'Благородный Олень', x: 3800, y: 515, scale: 0.42, greeting: '🦌 *смотрит ввысь*', reacted: false },
+      { key: 'animal_deer_eat', name: 'Оленёнок', x: 480, y: 530, scale: 0.38, greeting: '*хрумкает клевер*', reacted: false },
+      { key: 'animal_deer_stand', name: 'Благородный Олень', x: 3800, y: 515, scale: 0.42, greeting: '*смотрит ввысь*', reacted: false },
 
       // Дятел на березе
-      { key: 'animal_woodpecker', name: 'Дятел', x: 670, y: 330, scale: 0.32, greeting: '🪵 *тук-тук-тук!*', reacted: false },
+      { key: 'animal_woodpecker', name: 'Дятел', x: 670, y: 330, scale: 0.32, greeting: '*тук-тук-тук!*', reacted: false },
 
       // Ежики у грибных пней
-      { key: 'animal_hedgehog', name: 'Ёжик', x: 920, y: 570, scale: 0.28, greeting: '🦔 *фыр-фыр*', reacted: false },
-      { key: 'animal_hedgehog_2', name: 'Ежиха', x: 5020, y: 570, scale: 0.28, greeting: '🦔 *собирает листики*', reacted: false },
+      { key: 'animal_hedgehog', name: 'Ёжик', x: 920, y: 570, scale: 0.28, greeting: '*фыр-фыр*', reacted: false },
+      { key: 'animal_hedgehog_2', name: 'Ежиха', x: 5020, y: 570, scale: 0.28, greeting: '*собирает листики*', reacted: false },
 
       // Лиса
-      { key: 'animal_fox', name: 'Лисица', x: 1820, y: 535, scale: 0.36, greeting: '🦊 *любопытно щурится*', reacted: false },
+      { key: 'animal_fox', name: 'Лисица', x: 1820, y: 535, scale: 0.36, greeting: '*любопытно щурится*', reacted: false },
 
       // Орел на высоком дубе
-      { key: 'animal_eagle', name: 'Гордый Орёл', x: 3120, y: 190, scale: 0.40, greeting: '🦅 *кивает кукушке*', reacted: false },
+      { key: 'animal_eagle', name: 'Гордый Орёл', x: 3120, y: 190, scale: 0.40, greeting: '*кивает кукушке*', reacted: false },
 
       // Енот и скунс
-      { key: 'animal_raccoon', name: 'Енот-полоскун', x: 2200, y: 540, scale: 0.32, greeting: '🦝 *моет лапки*', reacted: false },
-      { key: 'animal_skunk', name: 'Скунс', x: 4400, y: 545, scale: 0.30, greeting: '🐾 *машет хвостиком*', reacted: false },
+      { key: 'animal_raccoon', name: 'Енот-полоскун', x: 2200, y: 540, scale: 0.32, greeting: '*моет лапки*', reacted: false },
+      { key: 'animal_skunk', name: 'Скунс', x: 4400, y: 545, scale: 0.30, greeting: '*машет хвостиком*', reacted: false },
 
       // Летучая мышь под сводом ветвей
-      { key: 'animal_bat', name: 'Летучая Мышь', x: 3580, y: 160, scale: 0.30, greeting: '🦇 *спит вниз головой*', reacted: false },
+      { key: 'animal_bat', name: 'Летучая Мышь', x: 3580, y: 160, scale: 0.30, greeting: '*спит вниз головой*', reacted: false },
 
       // Белочка мирная
-      { key: 'animal_squirrel', name: 'Белка', x: 6540, y: 340, scale: 0.32, greeting: '🐿️ *грызёт семечко*', reacted: false }
+      { key: 'animal_squirrel', name: 'Белка', x: 6540, y: 340, scale: 0.32, greeting: '*грызёт семечко*', reacted: false }
     ];
   }
 
@@ -764,7 +764,7 @@ export class Stage1Level {
     if (this.input.shift) return;
 
     if (this.stamina < 5) {
-      this.showToast('⚠️ Нет энергии для взмаха! (нужно 5% ⚡)');
+      this.showToast('Нет энергии для взмаха! (нужно 5% энергии)');
       return;
     }
 
@@ -776,7 +776,7 @@ export class Stage1Level {
   attemptStartAiming() {
     if (!this.bird || this.bird.isStunned || this.eggManager.isAiming) return;
     if (this.stamina < 10) {
-      this.showToast('⚠️ Недостаточно энергии для броска яйца! (нужно 10% ⚡)');
+      this.showToast('Недостаточно энергии для броска яйца! (нужно 10% энергии)');
       return;
     }
     const worldMouseX = this.mouseX + this.cameraX;
@@ -787,7 +787,7 @@ export class Stage1Level {
   quickThrowEgg() {
     if (!this.bird || this.bird.isStunned) return;
     if (this.stamina < 10) {
-      this.showToast('⚠️ Недостаточно энергии для броска яйца! (нужно 10% ⚡)');
+      this.showToast('Недостаточно энергии для броска яйца! (нужно 10% энергии)');
       return;
     }
     const worldMouseX = this.mouseX + this.cameraX;
@@ -1000,7 +1000,7 @@ export class Stage1Level {
     if (modal) {
       modal.classList.add('hidden');
     }
-    this.showToast('🚀 В добрый путь! Удачи в полёте!');
+    this.showToast('В добрый путь! Удачи в полёте!');
   }
 
   removeUIOverlay() {
@@ -1039,7 +1039,18 @@ export class Stage1Level {
   }
 
   showToast(text) {
-    // В минималистичном игровом дизайне всплывающие уведомления по центру отключены
+    if (!text) return;
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = text;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.35s';
+      setTimeout(() => toast.remove(), 350);
+    }, 2000);
   }
 
   /* ==========================================================================
@@ -1175,7 +1186,7 @@ export class Stage1Level {
       life: 3.5
     });
 
-    this.showToast('⚠️ Осторожно! Белка бросила шишку!');
+    this.showToast('Осторожно! Белка бросила шишку!');
   }
 
   updateProjectiles(dt) {
@@ -1324,7 +1335,7 @@ export class Stage1Level {
 
           audio.playNestHit();
           this.spawnCelebrationParticles(cupX, cupY, '#facc15');
-          this.showToast(`✨ Попадание в ${nest.title || nest.name || 'Гнездо'}! (+${bonus} Очков)`);
+          this.showToast(`Попадание в ${nest.title || nest.name || 'Гнездо'}! (+${bonus} Очков)`);
           break;
         }
       }
@@ -1341,21 +1352,21 @@ export class Stage1Level {
 
           if (enemy.type === 'bee') {
             this.score += 150;
-            this.showToast('🐝 Пчела рассеяна! (+150)');
+            this.showToast('Пчела рассеяна! (+150)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#fef08a');
           } else if (enemy.type === 'crow') {
             this.score += 300;
-            this.showToast('🦅 Ворона отступила в испуге! (+300)');
+            this.showToast('Ворона отступила в испуге! (+300)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#38bdf8');
           } else if (enemy.type === 'beehive') {
             this.score += 400;
             this.stamina = Math.min(this.maxStamina, this.stamina + 20);
-            this.showToast('🍯 Мёд из улья! (+400 очков и +20% ⚡ энергии)');
+            this.showToast('Мёд из улья! (+400 очков и +20% энергии)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#f59e0b');
             this.updateHUD();
           } else if (enemy.type === 'trap_squirrel') {
             this.score += 250;
-            this.showToast('🐿️ Белка-разбойник выронила запасы! (+250)');
+            this.showToast('Белка-разбойник выронила запасы! (+250)');
             this.spawnCelebrationParticles(enemy.x, enemy.y, '#f97316');
           }
           break;
@@ -1387,7 +1398,7 @@ export class Stage1Level {
       this.bird.spawnFlapParticles();
     }
 
-    this.showToast(`💥 ${reason} (-${amount}% ⚡)`);
+    this.showToast(`${reason} (-${amount}% энергии)`);
     this.updateHUD();
 
     // Если птица упала/уже оглушена на земле и энергия на нуле
@@ -1650,7 +1661,7 @@ export class Stage1Level {
 
     // 11. Обновление интерфейса (HUD)
     this.updateHUD();
-    this.showToast('🚀 Начинаем с самого начала! Соберись с силами!');
+    this.showToast('Начинаем с самого начала! Соберись с силами!');
   }
 
   triggerVictory() {

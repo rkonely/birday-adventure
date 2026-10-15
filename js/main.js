@@ -413,7 +413,7 @@ class BirDayApp {
     localStorage.setItem('birday_admin_mode', this.isAdmin ? '1' : '0');
     this.updateAdminVisibility();
     if (this.uiManager && this.uiManager.showToast) {
-      this.uiManager.showToast(this.isAdmin ? '🛠️ Режим разработчика ВКЛЮЧЕН' : '🔒 Режим разработчика СКРЫТ');
+      this.uiManager.showToast(this.isAdmin ? 'Режим разработчика ВКЛЮЧЕН' : 'Режим разработчика СКРЫТ');
     }
   }
 

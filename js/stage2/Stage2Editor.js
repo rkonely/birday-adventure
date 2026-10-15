@@ -873,7 +873,7 @@ export class Stage2Editor {
       });
       if (resp.ok) {
         audio.playSuccess();
-        alert('💾 Успешно! Карта настольной игры сохранена в data/board_level.json');
+        this.showToast('Успешно! Карта настольной игры сохранена в data/board_level.json');
         return;
       }
     } catch (e) {
@@ -881,7 +881,7 @@ export class Stage2Editor {
     }
 
     audio.playSuccess();
-    alert('💾 Карта сохранена локально в браузере (localStorage)!');
+    this.showToast('Карта сохранена локально в браузере (localStorage)!');
   }
 
   exportJSON() {
@@ -917,13 +917,28 @@ export class Stage2Editor {
           this.hideInspector();
           this.applyChangesToBoard();
           audio.playSuccess();
-          alert(`📥 Загружено ${this.cells.length} клеток из файла!`);
+          this.showToast(`Загружено ${this.cells.length} клеток из файла!`);
         }
       } catch (err) {
-        alert('❌ Ошибка чтения JSON файла: ' + err.message);
+        this.showToast('Ошибка чтения JSON файла: ' + err.message);
       }
     };
     reader.readAsText(file);
+  }
+
+  showToast(text) {
+    if (!text) return;
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = text;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.35s';
+      setTimeout(() => toast.remove(), 350);
+    }, 2000);
   }
 
   /* ==========================================================================
