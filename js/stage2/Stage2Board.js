@@ -881,26 +881,25 @@ export class Stage2Board {
   }
 
   /* ==========================================================================
-     Ядро физической симуляции 3D кубика (Полет, отскоки о стол и стены, финал)
+     Улучшенное ядро 3D-физики кубика (Перспектива, угловые отскоки, естественный докат)
      ========================================================================== */
   launchDicePhysics(startX, startY, customVx = null, customVy = null, customVz = null, isFlick = false) {
     if (this.isRollingDice) return;
     this.isRollingDice = true;
 
-    // Сбрасываем возможный зависший таймаут
     if (this._diceSafetyTimeout) {
       clearTimeout(this._diceSafetyTimeout);
       this._diceSafetyTimeout = null;
     }
 
-    // 1. Результат броска (1..6)
+    // 1. Выпавшее число (1..6)
     const finalValue = Math.floor(Math.random() * 6) + 1;
     this.diceValue = finalValue;
 
-    // Страховочный таймер, если анимация физики кубика не завершится вовремя
+    // Страховочный таймер
     this._diceSafetyTimeout = setTimeout(() => {
       this.onDiceSettled(finalValue);
-    }, 2200);
+    }, 2600);
 
     const btnRoll = document.getElementById('btn-s2-roll');
     if (btnRoll) {
@@ -911,87 +910,136 @@ export class Stage2Board {
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
       diceBox.classList.remove('can-reroll');
-      diceBox.title = 'Кубик катится... 🎲';
+      diceBox.title = 'Кубик катится...';
     }
 
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
     const shadow = document.getElementById('s2-dice-shadow');
     const badge = document.getElementById('s2-dice-result-badge');
-    const resultNum = document.getElementById('s2-dice-result-num');
-    const hudDiceNum = document.getElementById('s2-dice-num');
 
     if (!arena || !cube || !shadow) {
       this.advancePlayer(finalValue);
       return;
     }
 
-    // Углы показа нужной грани
-    const faceAngles = {
-      1: { rx: 0, ry: 0 },
-      2: { rx: 0, ry: -90 },
-      3: { rx: -90, ry: 0 },
-      4: { rx: 90, ry: 0 },
-      5: { rx: 0, ry: 90 },
-      6: { rx: 0, ry: 180 }
-    };
-    const targetFace = faceAngles[finalValue] || { rx: 0, ry: 0 };
-
     arena.classList.remove('hidden');
     if (badge) badge.classList.add('hidden');
-    cube.style.transition = '';
+    cube.style.transition = 'none';
 
-    // Звук замаха и броска
     audio.playDiceThrow();
 
     const arenaWidth = arena.clientWidth || window.innerWidth || 1366;
     const arenaHeight = arena.clientHeight || window.innerHeight || 768;
 
-    // Начальные физические координаты
-    let posX = Math.max(80, Math.min(arenaWidth - 80, startX));
-    let posY = Math.max(80, Math.min(arenaHeight - 80, startY));
-    let posZ = 30;
+    let posX = Math.max(90, Math.min(arenaWidth - 90, startX));
+    let posY = Math.max(90, Math.min(arenaHeight - 90, startY));
+    let posZ = 45;
 
     let velX, velY, velZ;
 
     if (isFlick && customVx !== null) {
       velX = customVx;
       velY = customVy;
-      velZ = customVz || 700;
+      velZ = customVz || 780;
     } else {
-      // Авто-бросок в центр игрового стола
-      const targetLandingX = (arenaWidth * 0.5) + (Math.random() - 0.5) * 160;
-      const targetLandingY = (arenaHeight * 0.48) + (Math.random() - 0.5) * 100;
-      const flightDuration = 0.55;
+      // Целевая зона в центре стола с приятным разбросом
+      const targetLandingX = (arenaWidth * 0.5) + (Math.random() - 0.5) * 200;
+      const targetLandingY = (arenaHeight * 0.48) + (Math.random() - 0.5) * 120;
+      const flightDuration = 0.52;
       velX = (targetLandingX - posX) / flightDuration;
       velY = (targetLandingY - posY) / flightDuration;
-      velZ = 760 + Math.random() * 100;
+      velZ = 820 + Math.random() * 140;
     }
 
-    const gravity = -2500;
+    const gravity = -2650;
+    const airDrag = 0.992; // Сопротивление воздуха
 
-    // Скорость вращения в 3D
+    // Точные базовые углы граней с учётом изометрического наклона стола (35°)
+    // и случайным разворотом кубика на плоскости стола (tableYaw), чтобы он не лежал по линейке
+    const tableYaw = (Math.random() - 0.5) * 55; // Случайный поворот от -27° до +27°
+    const baseFaceAngles = {
+      1: { rx: 35,  ry: 0,   rz: tableYaw },
+      2: { rx: 35,  ry: -90, rz: tableYaw },
+      3: { rx: -55, ry: 0,   rz: tableYaw },
+      4: { rx: 125, ry: 0,   rz: tableYaw },
+      5: { rx: 35,  ry: 90,  rz: tableYaw },
+      6: { rx: 215, ry: 0,   rz: tableYaw }
+    };
+    const targetAngles = baseFaceAngles[finalValue] || baseFaceAngles[1];
+
+    // Начальное вращение
     const speed = Math.hypot(velX, velY);
     let rotX = Math.random() * 360;
     let rotY = Math.random() * 360;
     let rotZ = Math.random() * 360;
-    let rotVelX = (velY * 1.5) + (Math.random() - 0.5) * 800;
-    let rotVelY = (-velX * 1.5) + (Math.random() - 0.5) * 800;
-    let rotVelZ = (speed * 1.1) + 400;
+
+    let rotVelX = (velY * 1.6) + (Math.random() > 0.5 ? 650 : -650);
+    let rotVelY = (-velX * 1.6) + (Math.random() > 0.5 ? 650 : -650);
+    let rotVelZ = (speed * 0.9) + (Math.random() - 0.5) * 700;
 
     let bounces = 0;
+    let isSettlingPhase = false;
+    let settleProgress = 0;
+    let settleStartRot = null;
+    let settleTargetRot = null;
     let lastTime = performance.now();
 
-    // Границы игрового стола, от которых кубик отскакивает (бортики)
-    const minBoundX = 70, maxBoundX = arenaWidth - 70;
-    const minBoundY = 60, maxBoundY = arenaHeight - 60;
+    const minBoundX = 85, maxBoundX = arenaWidth - 85;
+    const minBoundY = 75, maxBoundY = arenaHeight - 75;
+
+    // Вспомогательная функция поиска ближайшего кратного 360 угла для плавного доката
+    const getNearestAngle = (current, target, extraSpins = 0) => {
+      const diff = ((target - current) % 360 + 540) % 360 - 180;
+      const sign = diff >= 0 ? 1 : -1;
+      return current + diff + (extraSpins * 360 * sign);
+    };
 
     const animatePhysics = (now) => {
-      const dt = Math.min(0.035, (now - lastTime) / 1000);
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
       lastTime = now;
 
-      // Гравитация и перемещение
+      // Фаза финального "доката и покачивания на ребре" (последние 220 мс)
+      if (isSettlingPhase) {
+        settleProgress = Math.min(1, settleProgress + dt / 0.24);
+        // Эффект упругой остановки на ребре (OutBack / Wobble)
+        const easeOutBack = 1 + 1.8 * Math.pow(settleProgress - 1, 3) + 0.8 * Math.pow(settleProgress - 1, 2);
+
+        posX += velX * dt;
+        posY += velY * dt;
+        velX *= 0.82;
+        velY *= 0.82;
+
+        // Микро-подскок ребра при перекате
+        const tipHop = Math.sin(settleProgress * Math.PI) * 9 * (1 - settleProgress);
+
+        const curRx = settleStartRot.rx + (settleTargetRot.rx - settleStartRot.rx) * easeOutBack;
+        const curRy = settleStartRot.ry + (settleTargetRot.ry - settleStartRot.ry) * easeOutBack;
+        const curRz = settleStartRot.rz + (settleTargetRot.rz - settleStartRot.rz) * easeOutBack;
+
+        shadow.style.left = `${posX}px`;
+        shadow.style.top = `${posY}px`;
+        shadow.style.transform = `translate(-50%, -50%) scale(0.98)`;
+        shadow.style.opacity = '0.82';
+        shadow.style.filter = 'blur(2px)';
+
+        cube.style.left = `${posX}px`;
+        cube.style.top = `${posY - tipHop}px`;
+        cube.style.transform = `translate(-50%, -50%) scale(1) rotateX(${curRx}deg) rotateY(${curRy}deg) rotateZ(${curRz}deg)`;
+
+        if (settleProgress >= 1) {
+          this.onDiceSettled(finalValue);
+          return;
+        }
+        requestAnimationFrame(animatePhysics);
+        return;
+      }
+
+      // Обычный полёт и отскоки
       velZ += gravity * dt;
+      velX *= airDrag;
+      velY *= airDrag;
+
       posX += velX * dt;
       posY += velY * dt;
       posZ += velZ * dt;
@@ -1000,98 +1048,87 @@ export class Stage2Board {
       rotY += rotVelY * dt;
       rotZ += rotVelZ * dt;
 
-      // Отскок от бортиков стола
-      if (posX <= minBoundX) {
-        posX = minBoundX;
-        velX = -velX * 0.6;
-        rotVelY = -rotVelY * 0.6;
-        audio.playDiceBounce(0.45);
-      } else if (posX >= maxBoundX) {
-        posX = maxBoundX;
-        velX = -velX * 0.6;
-        rotVelY = -rotVelY * 0.6;
+      // Отскоки от деревянных бортиков стола с подкруткой
+      if (posX <= minBoundX || posX >= maxBoundX) {
+        posX = posX <= minBoundX ? minBoundX : maxBoundX;
+        velX = -velX * 0.62;
+        rotVelY = -rotVelY * 0.7 + (Math.random() - 0.5) * 250;
+        rotVelZ += velY * 0.5;
         audio.playDiceBounce(0.45);
       }
 
-      if (posY <= minBoundY) {
-        posY = minBoundY;
-        velY = -velY * 0.6;
-        rotVelX = -rotVelX * 0.6;
-        audio.playDiceBounce(0.45);
-      } else if (posY >= maxBoundY) {
-        posY = maxBoundY;
-        velY = -velY * 0.6;
-        rotVelX = -rotVelX * 0.6;
+      if (posY <= minBoundY || posY >= maxBoundY) {
+        posY = posY <= minBoundY ? minBoundY : maxBoundY;
+        velY = -velY * 0.62;
+        rotVelX = -rotVelX * 0.7 + (Math.random() - 0.5) * 250;
+        rotVelZ -= velX * 0.5;
         audio.playDiceBounce(0.45);
       }
 
-      // Удар о деревянный стол карты
+      // Столкновение со столом
       if (posZ <= 0) {
         posZ = 0;
         bounces++;
 
-        const bounceVolume = bounces === 1 ? 1.0 : (bounces === 2 ? 0.6 : 0.3);
-        audio.playDiceBounce(bounceVolume);
+        const impactStrength = Math.min(1, Math.abs(velZ) / 750);
+        audio.playDiceBounce(Math.max(0.2, impactStrength));
 
-        if (bounces < 3 || Math.abs(velZ) > 160) {
-          // Отскок вверх и затухание
-          velZ = -velZ * 0.44;
-          velX *= 0.62;
-          velY *= 0.62;
-          rotVelX *= 0.5;
-          rotVelY *= 0.5;
-          rotVelZ *= 0.5;
+        if (bounces < 4 && Math.abs(velZ) > 170) {
+          // Упругий отскок с физическим разбросом от удара углом кубика
+          velZ = -velZ * (0.46 - bounces * 0.05);
+
+          // Кубик ударился углом — траектория слегка виляет!
+          const cornerKickAngle = Math.random() * Math.PI * 2;
+          const kickPower = Math.abs(velZ) * 0.22;
+          velX = (velX * 0.64) + Math.cos(cornerKickAngle) * kickPower;
+          velY = (velY * 0.64) + Math.sin(cornerKickAngle) * kickPower;
+
+          // Трение стола связывает линейную скорость и вращение
+          rotVelX = (velY * 1.8) + (Math.random() - 0.5) * 420;
+          rotVelY = (-velX * 1.8) + (Math.random() - 0.5) * 420;
+          rotVelZ *= 0.55;
+
+          // На 3-м отскоке начинаем мягко направлять кубик к нужной грани
+          if (bounces === 3) {
+            const targetSnapRx = getNearestAngle(rotX, targetAngles.rx, 0);
+            const targetSnapRy = getNearestAngle(rotY, targetAngles.ry, 0);
+            const remainTime = Math.max(0.14, (velZ * 2) / Math.abs(gravity));
+            rotVelX = (targetSnapRx - rotX) / remainTime;
+            rotVelY = (targetSnapRy - rotY) / remainTime;
+          }
         } else {
-          // Кубик полностью остановился!
-          velZ = 0;
-          velX = 0;
-          velY = 0;
-
-          // Углы естественного приземления кубика на стол в перспективе (35° наклон стола)
-          // Кубик лежит на столе как упал, верхняя грань показывает выпавшее число
-          const restingAngles = {
-            1: { rx: 35, ry: 0, rz: 0 },
-            2: { rx: 215, ry: 90, rz: 0 },
-            3: { rx: 305, ry: 0, rz: 0 },
-            4: { rx: 125, ry: 0, rz: 0 },
-            5: { rx: 35, ry: 90, rz: 0 },
-            6: { rx: 215, ry: 0, rz: 0 }
+          // Переход в фазу финального переката на грань (без резкого CSS transition!)
+          isSettlingPhase = true;
+          settleProgress = 0;
+          velX *= 0.35;
+          velY *= 0.35;
+          settleStartRot = { rx: rotX, ry: rotY, rz: rotZ };
+          settleTargetRot = {
+            rx: getNearestAngle(rotX, targetAngles.rx, 0),
+            ry: getNearestAngle(rotY, targetAngles.ry, 0),
+            rz: getNearestAngle(rotZ, targetAngles.rz, 0)
           };
-          const targetAngles = restingAngles[finalValue] || { rx: 35, ry: 0, rz: 0 };
-
-          // Плавное выравнивание к ближайшему эквивалентному углу
-          const smoothAngle = (curr, target) => {
-            const diff = ((target - curr) % 360 + 540) % 360 - 180;
-            return curr + diff;
-          };
-
-          const finalRx = smoothAngle(rotX, targetAngles.rx);
-          const finalRy = smoothAngle(rotY, targetAngles.ry);
-          const finalRz = smoothAngle(rotZ, targetAngles.rz);
-
-          cube.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.35, 1)';
-          cube.style.transform = `translate(-50%, -50%) rotateX(${finalRx}deg) rotateY(${finalRy}deg) rotateZ(${finalRz}deg)`;
-
-          // Кубик остаётся лежать на столе — игрок сам видит число!
-          setTimeout(() => {
-            this.onDiceSettled(finalValue);
-          }, 240);
-
+          requestAnimationFrame(animatePhysics);
           return;
         }
       }
 
-      // Обновление положения тени и 3D кубика
-      shadow.style.left = `${posX}px`;
-      shadow.style.top = `${posY}px`;
-      const shadowScale = Math.max(0.35, 1 - (posZ / 400));
-      shadow.style.transform = `translate(-50%, -50%) scale(${shadowScale})`;
-      shadow.style.opacity = String(Math.max(0.15, 0.85 - (posZ / 340)));
-      shadow.style.filter = `blur(${Math.min(14, 2 + posZ / 22)}px)`;
+      // Перспективное увеличение кубика по мере приближения к камере (по высоте posZ)
+      const perspectiveScale = 1 + Math.min(0.42, posZ / 520);
 
+      // Динамическая тень (чем выше кубик, тем дальше и размытее тень)
+      const shadowOffset = Math.min(28, posZ * 0.12);
+      shadow.style.left = `${posX + shadowOffset * 0.5}px`;
+      shadow.style.top = `${posY + shadowOffset}px`;
+      const shadowScale = Math.max(0.32, 1 - (posZ / 420));
+      shadow.style.transform = `translate(-50%, -50%) scale(${shadowScale})`;
+      shadow.style.opacity = String(Math.max(0.14, 0.85 - (posZ / 360)));
+      shadow.style.filter = `blur(${Math.min(16, 2 + posZ / 20)}px)`;
+
+      // Позиция и 3D-трансформация самого куба
       cube.style.left = `${posX}px`;
       cube.style.top = `${posY - posZ}px`;
-      cube.style.transform = `translate(-50%, -50%) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+      cube.style.transform = `translate(-50%, -50%) scale(${perspectiveScale.toFixed(3)}) rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg)`;
 
       requestAnimationFrame(animatePhysics);
     };

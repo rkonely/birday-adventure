@@ -3464,7 +3464,7 @@ body {
   height: 62px;
   transform-style: preserve-3d;
   pointer-events: none;
-  will-change: transform;
+  will-change: transform, left, top;
 }
 
 /* Грани кубика с поддержкой развёртки dice_texture.png */
@@ -3476,8 +3476,8 @@ body {
   background-image: var(--dice-texture, url('../assets/Second Level/Dice/dice_texture.png'));
   background-size: 400% 300%;
   background-repeat: no-repeat;
-  border-radius: 12px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
+  border-radius: 9px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.28), 0 0 1px rgba(0, 0, 0, 0.6);
   display: block;
   box-sizing: border-box;
   backface-visibility: hidden;
@@ -3491,31 +3491,37 @@ body {
 .face-front {
   transform: rotateY(0deg) translateZ(31px);
   background-position: 33.333% 50%;
+  filter: brightness(1.0);
 }
 
 .face-back {
   transform: rotateY(180deg) translateZ(31px);
   background-position: 100% 50%;
+  filter: brightness(0.85);
 }
 
 .face-right {
   transform: rotateY(90deg) translateZ(31px);
   background-position: 66.666% 50%;
+  filter: brightness(0.92);
 }
 
 .face-left {
   transform: rotateY(-90deg) translateZ(31px);
   background-position: 0% 50%;
+  filter: brightness(0.95);
 }
 
 .face-top {
   transform: rotateX(90deg) translateZ(31px);
   background-position: 33.333% 0%;
+  filter: brightness(1.08);
 }
 
 .face-bottom {
   transform: rotateX(-90deg) translateZ(31px);
   background-position: 33.333% 100%;
+  filter: brightness(0.78);
 }
 
 .dice-face .pip {
