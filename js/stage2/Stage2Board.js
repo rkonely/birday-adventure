@@ -378,6 +378,21 @@ export class Stage2Board {
         }
       }
     });
+
+    // Глобальное отслеживание руки при зажатом кубике
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isActive) return;
+      if (this.isHoldingDice) {
+        this.onDiceMouseMove(e);
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!this.isActive) return;
+      if (this.isHoldingDice) {
+        this.onDiceMouseUp(e);
+      }
+    });
   }
 
   getCanvasCoords(e) {
@@ -653,27 +668,44 @@ export class Stage2Board {
       });
     }
 
-    // Виджет кубика около кнопки: клик бросает или перебрасывает кубик в любой момент
+    // Виджет кубика около кнопки: зажатие ЛКМ берёт кубик в руку, чтобы потрясти и швырнуть!
     const diceBox = document.getElementById('s2-dice-box');
     if (diceBox) {
-      diceBox.addEventListener('click', (e) => {
+      diceBox.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // Только левая кнопка мыши
         e.stopPropagation();
         if (this.isMoving || this.isRollingDice) return;
+
+        // Если кубик уже брошен, проверяем наличие перебросов перед захватом
         if (this.isDiceSettled) {
-          this.rerollDice();
+          const rollsLeft = this.eventManager?.stats?.rerollDice || 0;
+          if (rollsLeft <= 0) {
+            if (audio.playError) audio.playError();
+            return;
+          }
+          this.isConsumingRerollOnRelease = true;
         } else {
-          this.rollDice();
+          this.isConsumingRerollOnRelease = false;
         }
+
+        this.startHoldingDice(e);
       });
     }
 
-    // 3D Кубик на столе и бейдж результата: клик по лежащему кубику перебрасывает его!
+    // Сам 3D-кубик на столе: тоже можно схватить мышкой и потрясти для переброса!
     const cube = document.getElementById('s2-dice-cube');
     if (cube) {
-      cube.addEventListener('click', (e) => {
+      cube.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
         e.stopPropagation();
         if (this.isDiceSettled && !this.isMoving && !this.isRollingDice) {
-          this.rerollDice();
+          const rollsLeft = this.eventManager?.stats?.rerollDice || 0;
+          if (rollsLeft <= 0) {
+            if (audio.playError) audio.playError();
+            return;
+          }
+          this.isConsumingRerollOnRelease = true;
+          this.startHoldingDice(e);
         }
       });
     }
@@ -713,7 +745,7 @@ export class Stage2Board {
   }
 
   /* ==========================================================================
-     Интерактивный бросок кубика мышкой (Drag & Flick Physics)
+     Интерактивный захват, тряска в руке со звуком костей и бросок (Drag, Shake & Flick)
      ========================================================================== */
   startHoldingDice(e) {
     if (e && e.preventDefault) e.preventDefault();
@@ -721,6 +753,14 @@ export class Stage2Board {
 
     this.isHoldingDice = true;
     this.mouseHistory = [];
+
+    // Состояние вращения и тряски в руке
+    this.handRot = { x: 25, y: -20, z: 0 };
+    this.handRotVel = { x: 0, y: 0, z: 0 };
+    this.shakeEnergy = 0;       // Накопленная сила тряски (0..100)
+    this.lastRattleSoundTime = 0; // Кулдаун звука стука костей
+    this.lastShakeSignX = 0;
+    this.lastShakeSignY = 0;
 
     const arena = document.getElementById('s2-dice-3d-arena');
     const cube = document.getElementById('s2-dice-cube');
@@ -735,27 +775,58 @@ export class Stage2Board {
     this.mouseHistory.push({ x: curX, y: curY, time: performance.now() });
 
     if (arena) {
-      arena.classList.remove('hidden');
+      arena.classList.remove('hidden', 'settled');
       arena.classList.add('grabbing');
     }
     if (diceBox) diceBox.classList.add('holding');
     if (badge) badge.classList.add('hidden');
 
-    // Поднимаем кубик в воздух прямо под курсор мыши
+    // Поднимаем кубик в воздух под курсор мыши
     if (cube && shadow) {
       cube.style.transition = 'none';
       cube.style.left = `${curX}px`;
-      cube.style.top = `${curY - 45}px`;
-      cube.style.transform = `translate(-50%, -50%) rotateX(25deg) rotateY(-20deg) scale(1.2)`;
+      cube.style.top = `${curY - 55}px`;
+      cube.style.transform = `translate(-50%, -50%) scale(1.28) rotateX(${this.handRot.x}deg) rotateY(${this.handRot.y}deg) rotateZ(0deg)`;
 
-      shadow.style.left = `${curX}px`;
-      shadow.style.top = `${curY}px`;
-      shadow.style.transform = `translate(-50%, -50%) scale(0.9)`;
-      shadow.style.opacity = '0.6';
-      shadow.style.filter = 'blur(6px)';
+      shadow.style.left = `${curX + 10}px`;
+      shadow.style.top = `${curY + 15}px`;
+      shadow.style.transform = `translate(-50%, -50%) scale(0.75)`;
+      shadow.style.opacity = '0.5';
+      shadow.style.filter = 'blur(8px)';
     }
 
-    audio.playClick();
+    // Приятный звук взятия кости в руку
+    audio.playDiceBounce(0.35);
+
+    // Запускаем цикл инерционного вращения кубика в зажатой руке
+    if (this._handShakeLoopId) cancelAnimationFrame(this._handShakeLoopId);
+    let lastTick = performance.now();
+
+    const updateHandShake = (now) => {
+      if (!this.isHoldingDice) return;
+      const dt = Math.min(0.04, (now - lastTick) / 1000);
+      lastTick = now;
+
+      // Плавное затухание угловой скорости, если рука остановилась
+      this.handRot.x += this.handRotVel.x * dt;
+      this.handRot.y += this.handRotVel.y * dt;
+      this.handRot.z += this.handRotVel.z * dt;
+
+      this.handRotVel.x *= 0.88;
+      this.handRotVel.y *= 0.88;
+      this.handRotVel.z *= 0.88;
+      this.shakeEnergy = Math.max(0, this.shakeEnergy - dt * 25);
+
+      if (cube) {
+        // Небольшая вибрация масштаба при сильной тряске
+        const pulseScale = 1.28 + Math.min(0.14, this.shakeEnergy * 0.0015) * Math.sin(now * 0.04);
+        cube.style.transform = `translate(-50%, -50%) scale(${pulseScale.toFixed(3)}) rotateX(${this.handRot.x.toFixed(1)}deg) rotateY(${this.handRot.y.toFixed(1)}deg) rotateZ(${this.handRot.z.toFixed(1)}deg)`;
+      }
+
+      this._handShakeLoopId = requestAnimationFrame(updateHandShake);
+    };
+
+    this._handShakeLoopId = requestAnimationFrame(updateHandShake);
   }
 
   onDiceMouseMove(e) {
@@ -767,25 +838,56 @@ export class Stage2Board {
     const curY = e.clientY - arenaRect.top;
 
     const now = performance.now();
+    const prevPoint = this.mouseHistory.length > 0 ? this.mouseHistory[this.mouseHistory.length - 1] : null;
+
     this.mouseHistory.push({ x: curX, y: curY, time: now });
-    if (this.mouseHistory.length > 6) this.mouseHistory.shift();
+    if (this.mouseHistory.length > 7) this.mouseHistory.shift();
 
     const cube = document.getElementById('s2-dice-cube');
     const shadow = document.getElementById('s2-dice-shadow');
 
+    if (prevPoint) {
+      const dx = curX - prevPoint.x;
+      const dy = curY - prevPoint.y;
+      const dist = Math.hypot(dx, dy);
+
+      // Подкручиваем кубик в ладони от каждого движения мыши
+      this.handRotVel.x -= dy * 28;
+      this.handRotVel.y += dx * 28;
+      this.handRotVel.z += (dx - dy) * 14;
+
+      // Проверяем смену направления движения (настоящая тряска туда-сюда!)
+      const signX = Math.sign(dx);
+      const signY = Math.sign(dy);
+      const isDirectionFlip = (signX !== 0 && signX !== this.lastShakeSignX) ||
+                              (signY !== 0 && signY !== this.lastShakeSignY);
+
+      if (signX !== 0) this.lastShakeSignX = signX;
+      if (signY !== 0) this.lastShakeSignY = signY;
+
+      if (dist > 6) {
+        this.shakeEnergy = Math.min(100, this.shakeEnergy + dist * (isDirectionFlip ? 0.8 : 0.35));
+      }
+
+      // Звук перестука костей в руке при резком движении или смене направления
+      const rattleCooldown = isDirectionFlip ? 75 : 120;
+      if (dist > 14 && (now - this.lastRattleSoundTime > rattleCooldown)) {
+        this.lastRattleSoundTime = now;
+        const rattleVolume = Math.min(0.85, Math.max(0.2, dist / 65));
+        audio.playDiceBounce(rattleVolume);
+      }
+    }
+
     if (cube && shadow) {
-      // Покачивание кубика при движении руки
-      const speedX = this.mouseHistory.length > 1
-        ? (curX - this.mouseHistory[0].x) * 0.25 : 0;
-      const speedY = this.mouseHistory.length > 1
-        ? (curY - this.mouseHistory[0].y) * 0.25 : 0;
+      // Небольшой люфт кубика внутри кулака при тряске
+      const jitterX = (Math.random() - 0.5) * Math.min(8, this.shakeEnergy * 0.08);
+      const jitterY = (Math.random() - 0.5) * Math.min(8, this.shakeEnergy * 0.08);
 
-      cube.style.left = `${curX}px`;
-      cube.style.top = `${curY - 45}px`;
-      cube.style.transform = `translate(-50%, -50%) rotateX(${25 - speedY}deg) rotateY(${-20 + speedX}deg) rotateZ(${speedX * 0.5}deg) scale(1.2)`;
+      cube.style.left = `${curX + jitterX}px`;
+      cube.style.top = `${curY - 55 + jitterY}px`;
 
-      shadow.style.left = `${curX}px`;
-      shadow.style.top = `${curY}px`;
+      shadow.style.left = `${curX + 10}px`;
+      shadow.style.top = `${curY + 15}px`;
     }
   }
 
@@ -793,17 +895,32 @@ export class Stage2Board {
     if (!this.isActive || !this.isHoldingDice) return;
 
     this.isHoldingDice = false;
+    if (this._handShakeLoopId) {
+      cancelAnimationFrame(this._handShakeLoopId);
+      this._handShakeLoopId = null;
+    }
+
     const arena = document.getElementById('s2-dice-3d-arena');
     const diceBox = document.getElementById('s2-dice-box');
     if (arena) arena.classList.remove('grabbing');
     if (diceBox) diceBox.classList.remove('holding');
+
+    // Если игрок схватил уже лежащий кубик для переброса — списываем 1 переброс
+    if (this.isConsumingRerollOnRelease) {
+      this.isConsumingRerollOnRelease = false;
+      if (this.eventManager?.stats?.rerollDice > 0) {
+        this.eventManager.stats.rerollDice--;
+        this.eventManager.updateHUD();
+      }
+      this.isDiceSettled = false;
+    }
 
     const arenaRect = arena ? arena.getBoundingClientRect() : { left: 0, top: 0 };
     const curX = e.clientX - arenaRect.left;
     const curY = e.clientY - arenaRect.top;
     const now = performance.now();
 
-    // Вычисляем скорость броска (flick velocity)
+    // Вычисляем вектор и скорость броска (flick velocity)
     let vx = 0;
     let vy = 0;
     if (this.mouseHistory.length >= 2) {
@@ -814,19 +931,21 @@ export class Stage2Board {
     }
 
     const flingSpeed = Math.hypot(vx, vy);
+    // Бонус к подбросу от того, насколько сильно игрок тряс кубик перед броском
+    const shakeBoost = (this.shakeEnergy || 0) * 3.5;
 
-    if (flingSpeed > 180) {
-      // Игрок дернул мышкой (швырнул со всего маху!)
-      const clampedSpeed = Math.min(2200, Math.max(350, flingSpeed));
+    if (flingSpeed > 160) {
+      // Игрок метнул кубик движением мыши
+      const clampedSpeed = Math.min(2300, Math.max(380, flingSpeed + shakeBoost));
       const factor = clampedSpeed / flingSpeed;
       const launchVx = vx * factor * 0.85;
       const launchVy = vy * factor * 0.85;
-      const launchVz = Math.min(1350, 480 + clampedSpeed * 0.45);
+      const launchVz = Math.min(1450, 520 + clampedSpeed * 0.42 + shakeBoost);
 
       this.launchDicePhysics(curX, curY, launchVx, launchVy, launchVz, true);
     } else {
-      // Игрок просто отпустил мышь или нажал без замаха -> красивый авто-бросок на середину стола
-      this.launchDicePhysics(curX, curY, null, null, null, false);
+      // Игрок потряс кубик на месте и просто разжал ладонь -> бросок в центр стола
+      this.launchDicePhysics(curX, curY, null, null, 850 + shakeBoost, false);
     }
   }
 
