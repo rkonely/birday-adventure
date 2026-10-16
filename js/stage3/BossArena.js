@@ -343,9 +343,6 @@ export class BossArena {
     this.uiContainer.innerHTML = `
       <!-- Верхняя панель: Рамка босса UI-Boss-HP-FRAME.png (1278x193) -->
       <div class="boss-frame-container">
-        <div class="boss-frame-name-banner">
-          <span class="boss-name-title">${this.boss.name}</span>
-        </div>
         <div class="boss-frame-inner-row">
           <div id="boss-segments-track" class="boss-segments-track"></div>
           <span id="boss-hp-num" class="boss-hp-num">HP ${this.boss.hp}/${this.boss.maxHp}</span>
@@ -1378,6 +1375,36 @@ export class BossArena {
     this.ctx.restore();
   }
 
+  /**
+   * Получить кэшированный offscreen canvas со спрайтом тайла,
+   * окрашенным в нужный цвет по его альфа-маске (без грубых прямоугольных рамок)
+   */
+  getTintedTileCanvas(key, colorHex, overlayAlpha = 0.65) {
+    if (!this._tintedTileCache) this._tintedTileCache = {};
+    const cacheKey = `${key}_${colorHex}_${overlayAlpha}`;
+    if (this._tintedTileCache[cacheKey]) return this._tintedTileCache[cacheKey];
+
+    const tileImg = this.tileImages[key];
+    if (!tileImg || !tileImg.complete || tileImg.naturalWidth === 0) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = tileImg.naturalWidth;
+    canvas.height = tileImg.naturalHeight;
+    const ctx = canvas.getContext('2d');
+
+    // Базовый спрайт тайла
+    ctx.drawImage(tileImg, 0, 0);
+
+    // Окрашиваем непрозрачные пиксели спрайта с режимом source-atop
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.globalAlpha = overlayAlpha;
+    ctx.fillStyle = colorHex;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    this._tintedTileCache[cacheKey] = canvas;
+    return canvas;
+  }
+
   renderTiles() {
     for (const [key, coords] of Object.entries(ARENA_TILES_COORDS)) {
       const isHovered = (this.hoveredTileKey === key);
@@ -1394,47 +1421,59 @@ export class BossArena {
         drawY += (Math.random() - 0.5) * 6;
       }
 
-      // Если тайл имеет специальный эффект (например, горение или атака), накладываем вырезанный спрайт плитки
       const tileImg = this.tileImages[key];
-      if (eff.burningRounds > 0 || eff.shakeTimer > 0 || isHovered) {
+
+      // Обычный спрайт тайла при сотрясении (если нет активного эффекта подсветки)
+      if (eff.shakeTimer > 0 && !eff.isTargeted && !isHovered && eff.burningRounds <= 0) {
         if (tileImg && tileImg.complete && tileImg.naturalWidth > 0) {
           this.ctx.drawImage(tileImg, drawX, drawY, coords.w, coords.h);
         }
       }
 
-      // Зона атаки Бобра (Красное предупреждение / Hazard glow)
+      // Зона атаки Бобра: красим спрайт плитки в тревожный красный цвет с мягкой пульсацией
       if (eff.isTargeted) {
-        const pulse = Math.sin(this.animTime * 8) * 0.2 + 0.5;
-        this.ctx.fillStyle = `rgba(230, 57, 70, ${pulse * 0.45})`;
-        this.ctx.fillRect(drawX, drawY, coords.w, coords.h);
-
-        this.ctx.strokeStyle = '#e63946';
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(drawX + 2, drawY + 2, coords.w - 4, coords.h - 4);
-
-        // Иконка опасности в углу клетки
-        this.ctx.font = 'bold 16px "8bitoperator", sans-serif';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('⚠️', drawX + coords.w - 24, drawY + 20);
+        const pulse = Math.sin(this.animTime * 6) * 0.2 + 0.8;
+        const redTile = this.getTintedTileCanvas(key, '#ff2233', 0.7);
+        if (redTile) {
+          this.ctx.save();
+          this.ctx.globalAlpha = pulse;
+          this.ctx.shadowColor = '#ff2233';
+          this.ctx.shadowBlur = 12;
+          this.ctx.drawImage(redTile, drawX, drawY, coords.w, coords.h);
+          this.ctx.restore();
+        }
       }
 
-      // Эффект горения (Синица-пиромант)
+      // Эффект горения (Синица-пиромант): тлеющий оранжевый спрайт клетки
       if (eff.burningRounds > 0) {
-        this.ctx.fillStyle = 'rgba(255, 87, 34, 0.35)';
-        this.ctx.fillRect(drawX, drawY, coords.w, coords.h);
+        const burnPulse = Math.sin(this.animTime * 8) * 0.15 + 0.8;
+        const burnTile = this.getTintedTileCanvas(key, '#ff6700', 0.6);
+        if (burnTile) {
+          this.ctx.save();
+          this.ctx.globalAlpha = burnPulse;
+          this.ctx.shadowColor = '#ff6700';
+          this.ctx.shadowBlur = 14;
+          this.ctx.drawImage(burnTile, drawX, drawY, coords.w, coords.h);
+          this.ctx.restore();
+        }
 
         this.ctx.font = '18px "8bitoperator", sans-serif';
         this.ctx.fillText('🔥', drawX + 8, drawY + 22);
       }
 
-      // Подсветка при наведении мыши
+      // Подсветка при наведении курсора: мягкое свечение по контуру спрайта тайла
       if (isHovered) {
-        this.ctx.strokeStyle = isSelected ? '#ffd166' : '#2ec4b6';
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(drawX + 1, drawY + 1, coords.w - 2, coords.h - 2);
-
-        this.ctx.fillStyle = isSelected ? 'rgba(255, 209, 102, 0.25)' : 'rgba(46, 196, 182, 0.2)';
-        this.ctx.fillRect(drawX, drawY, coords.w, coords.h);
+        const hoverColor = isSelected ? '#ffd166' : '#48cae4';
+        const hoverTile = this.getTintedTileCanvas(key, hoverColor, isSelected ? 0.6 : 0.45);
+        if (hoverTile) {
+          const hoverPulse = Math.sin(this.animTime * 8) * 0.15 + 0.85;
+          this.ctx.save();
+          this.ctx.globalAlpha = hoverPulse;
+          this.ctx.shadowColor = hoverColor;
+          this.ctx.shadowBlur = 12;
+          this.ctx.drawImage(hoverTile, drawX, drawY, coords.w, coords.h);
+          this.ctx.restore();
+        }
       }
 
       this.ctx.restore();
@@ -1459,16 +1498,15 @@ export class BossArena {
       // Тень под птицей
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       this.ctx.beginPath();
-      this.ctx.ellipse(cx, cy + 28, 28, 12, 0, 0, Math.PI * 2);
+      this.ctx.ellipse(cx, cy + 32, 34, 14, 0, 0, Math.PI * 2);
       this.ctx.fill();
 
-      // Отрисовка портрета героя
-      // Отрисовка карты героя (полная текстура карты 264x373)
+      // Отрисовка портрета героя (увеличенный размер карты для лучшей видимости)
       const img = this.getCardImage(unit.image);
-      const cardW = 48 * spawnScale;
-      const cardH = 68 * spawnScale;
+      const cardW = 60 * spawnScale;
+      const cardH = 85 * spawnScale;
       const cardX = cx - cardW / 2;
-      const cardY = cy - cardH / 2 - 6 + bob;
+      const cardY = cy - cardH / 2 - 8 + bob;
 
       if (img && img.complete && img.naturalWidth > 0) {
         this.ctx.save();
@@ -1477,8 +1515,8 @@ export class BossArena {
           this.ctx.filter = 'brightness(2.2) saturate(0.2)';
         }
         // Тень вокруг карты
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-        this.ctx.shadowBlur = 6;
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+        this.ctx.shadowBlur = 8;
         this.ctx.shadowOffsetY = 4;
         this.ctx.drawImage(img, cardX, cardY, cardW, cardH);
         this.ctx.restore();
@@ -1486,42 +1524,58 @@ export class BossArena {
         // Запасная круглая иконка
         this.ctx.fillStyle = '#ffb703';
         this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 8 + bob, 22, 0, Math.PI * 2);
+        this.ctx.arc(cx, cy - 8 + bob, 26, 0, Math.PI * 2);
         this.ctx.fill();
       }
 
-      // Бейдж ATK (Меч слева внизу)
+      // Бейдж ATK (Увеличенный кружок с четким числом)
       if (unit.currentAtk > 0) {
+        const atkX = cx - 24;
+        const atkY = cy + 28;
+        this.ctx.save();
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        this.ctx.shadowBlur = 4;
+        this.ctx.shadowOffsetY = 2;
+
         this.ctx.fillStyle = '#b7094c';
         this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1.5;
+        this.ctx.lineWidth = 2.5;
         this.ctx.beginPath();
-        this.ctx.arc(cx - 20, cy + 22, 10, 0, Math.PI * 2);
+        this.ctx.arc(atkX, atkY, 14, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 10px "8bitoperator", monospace';
+        this.ctx.font = 'bold 14px "8bitoperator", monospace';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(`${unit.currentAtk}`, cx - 20, cy + 23);
+        this.ctx.fillText(`${unit.currentAtk}`, atkX, atkY + 1);
+        this.ctx.restore();
       }
 
-      // Бейдж HP (Щит справа внизу: зеленый если цел, красный если ранен)
+      // Бейдж HP (Увеличенный кружок: синий если цел, красный если ранен)
       const isDamaged = unit.currentHp < unit.maxHp;
+      const hpX = cx + 24;
+      const hpY = cy + 28;
+      this.ctx.save();
+      this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      this.ctx.shadowBlur = 4;
+      this.ctx.shadowOffsetY = 2;
+
       this.ctx.fillStyle = isDamaged ? '#d90429' : '#0077b6';
       this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 1.5;
+      this.ctx.lineWidth = 2.5;
       this.ctx.beginPath();
-      this.ctx.arc(cx + 20, cy + 22, 10, 0, Math.PI * 2);
+      this.ctx.arc(hpX, hpY, 14, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 10px "8bitoperator", monospace';
+      this.ctx.font = 'bold 14px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(`${unit.currentHp}`, cx + 20, cy + 23);
+      this.ctx.fillText(`${unit.currentHp}`, hpX, hpY + 1);
+      this.ctx.restore();
 
       this.ctx.restore();
     }

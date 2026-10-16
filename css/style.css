@@ -3635,12 +3635,7 @@ body {
 }
 
 .boss-frame-name-banner {
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  text-align: center;
+  display: none !important;
 }
 
 .boss-name-title {
@@ -3707,7 +3702,7 @@ body {
 /* Счетчик раундов UI boss-ROUND-COUNTER.png (338x147) в правом верхнем углу */
 .boss-round-container {
   position: absolute;
-  top: 10px;
+  top: 55px;
   right: 24px;
   width: 200px;
   height: 86px;
@@ -3816,7 +3811,7 @@ body {
 .boss-summon-slots-container {
   display: flex;
   gap: 10px;
-  margin-left: 10px;
+  margin-left: 60px;
 }
 
 .boss-summon-slot {
@@ -3899,7 +3894,7 @@ body {
 /* 3. Центральный ряд карт: Рука игрока */
 .boss-hand-container {
   position: absolute;
-  bottom: 8px;
+  bottom: 6px;
   left: calc(50% - 20px);
   transform: translateX(-50%);
   display: flex;
@@ -3911,9 +3906,9 @@ body {
 
 .boss-hand-card {
   position: relative;
-  width: 106px;
-  height: 150px;
-  margin: 0 -2px;
+  width: 130px;
+  height: 184px;
+  margin: 0 -3px;
   cursor: pointer;
   user-select: none;
   transition: transform 0.16s ease, filter 0.16s ease;
@@ -4033,8 +4028,8 @@ body {
 /* Колода UI-DrawCard.png (144x193) */
 .boss-deck-card-wrap {
   position: relative;
-  width: 86px;
-  height: 115px;
+  width: 104px;
+  height: 139px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
   cursor: help;
 }
@@ -4052,8 +4047,8 @@ body {
 /* Сброс UI-Discard-Counter.png (145x176) */
 .boss-discard-card-wrap {
   position: relative;
-  width: 92px;
-  height: 110px;
+  width: 108px;
+  height: 131px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
   cursor: help;
 }
@@ -4070,19 +4065,31 @@ body {
 
 .boss-counter-badge {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: rgba(22, 16, 14, 0.95);
-  border: 2px solid #5a4234;
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 13px;
+  bottom: 10px;
+  right: 3px;
+  width: 38px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+  font-family: var(--font-pixel), '8bitoperator', monospace !important;
+  font-size: 20px;
   font-weight: bold;
   color: #ffffff;
-  text-shadow: 1px 1px 0 #000;
-  min-width: 18px;
+  text-shadow:
+    1px 0 0 #000,
+    -1px 0 0 #000,
+    0 1px 0 #000,
+    0 -1px 0 #000,
+    1px 1px 0 #000,
+    -1px -1px 0 #000;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
 }
 
 /* ==========================================================================
@@ -4991,8 +4998,17 @@ body {
 }
 
 @keyframes s2ErrorPulse {
-  0%, 100% { transform: scale(1); filter: none; }
-  50% { transform: scale(1.12); filter: drop-shadow(0 0 10px #e63946); }
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 10px #e63946);
+  }
 }
 
 .s2-icon-box {
@@ -5539,21 +5555,35 @@ body {
 
 .market-buy-price-val {
   position: absolute;
-  top: 4px;
-  right: 18px;
+  top: 1px;
+  right: 40px;
   font-family: var(--font-pixel), monospace;
-  font-size: 15px;
+  font-size: 24px;
   font-weight: bold;
   color: #3c2415;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  line-height: 1;
 }
 
 .market-buy-btn.is-bought {
-  background-image: url('../assets/UI/Price-Sold-Btn.png') !important;
+  background-image: url('../assets/UI/SALED.png') !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
   cursor: default;
   pointer-events: none;
-  filter: none !important;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.85)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9)) !important;
   opacity: 1 !important;
+}
+
+.market-card-item .market-buy-btn.is-bought {
+  width: 140px;
+  height: 75px;
+  position: absolute;
+  top: -68px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  z-index: 10;
 }
 
 .market-buy-btn.is-bought::after {
@@ -5567,6 +5597,16 @@ body {
 .market-booster-btn {
   width: 105px;
   height: 63px;
+}
+
+@keyframes boosterBoughtPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); filter: drop-shadow(0 0 16px #ffd166); }
+  100% { transform: scale(1); }
+}
+
+.booster-bought-pulse {
+  animation: boosterBoughtPulse 0.45s ease-out;
 }
 
 /* Левая сторона стола: Колода и Счетчики */
@@ -5619,11 +5659,11 @@ body {
 .market-desk-right {
   position: absolute;
   left: 87.5%;
-  top: 27%;
+  top: 24%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   z-index: 10;
 }
 
@@ -5662,13 +5702,29 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 16px;
   pointer-events: auto !important;
 }
 
+.market-booster-owned-label {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffffff;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  text-align: center;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .market-booster-pack-wrap {
-  width: 98px;
-  height: 128px;
+  width: 104px;
+  height: 165px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5686,7 +5742,6 @@ body {
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
-  border-radius: 4px;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
   pointer-events: none;
 }
