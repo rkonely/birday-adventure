@@ -160,7 +160,7 @@ export const CARDS_DATABASE = [
     hp: 14,
     image: 'assets/Market/Card/Tit - Pyromancer.png',
     abilityName: 'Огненное чириканье',
-    abilityDesc: 'Поджигает выбранную клетку на 3 раунда: босс получает по 5 урона горения в начале хода.'
+    abilityDesc: 'Поджигает клетку на 3 хода (+DoT по боссу) и мгновенно сжигает всю смолу на арене!'
   },
   {
     id: 'starling_musician',
