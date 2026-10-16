@@ -1,5 +1,6 @@
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
+import { EVENT_TEMPLATES } from './boardEventsData.js';
 
 /**
  * Stage2Editor — Интерактивный визуальный Конструктор / Редактор карты настольной игры (Этап 2).
@@ -274,6 +275,54 @@ export class Stage2Editor {
           </div>
 
           <div class="s2-insp-row">
+            <label>Шаблон события (Каталог):</label>
+            <select id="insp-cell-event-template">
+              <option value="">-- Без шаблона (по номеру шага) --</option>
+              <optgroup label="🎁 Награды и Клады">
+                <option value="chest_regular">📦 Обычный Сундук (+6 яиц)</option>
+                <option value="beaver_legendary_chest">👑 Легендарный Сундук Бобра (+3 бустера)</option>
+                <option value="lucky_clover">🍀 Клевер Удачи (+3 кубика)</option>
+                <option value="egg_pouch">🥚 Мешочек Яиц (+5 яиц)</option>
+                <option value="egg_magnet">🧲 Яичный Магнит (x2)</option>
+                <option value="holiday_gift">🎁 Праздничный Подарок (+1 бустер)</option>
+                <option value="magic_oracle">🔮 Магическое Предсказание</option>
+              </optgroup>
+              <optgroup label="🎲 Мини-игры и Азарт">
+                <option value="mystery_boxes">🎁 Коробка с Сюрпризом (4 кубика)</option>
+                <option value="wheel_fortune">🎡 Колесо Лесной Фортуны!</option>
+                <option value="strongman_game">🔨 Проверка Силача! (Силомер)</option>
+                <option value="timestop_game">⏱️ Остановка Времени (Секундомер)</option>
+                <option value="bingo_game">🎱 Птичье Бинго (Лотерея)</option>
+                <option value="toy_claw_machine">🕹️ Автомат с Игрушками (Кран)</option>
+              </optgroup>
+              <optgroup label="🏕️ Квесты и Развилки">
+                <option value="quiz_campfire">🏕️ Отдых у костра (Викторина)</option>
+                <option value="foggy_crossroad">🌫️ Развилка в тумане</option>
+                <option value="mysterious_basement">🚪 Таинственный Подвал</option>
+                <option value="abandoned_cellar">🗝️ Заброшенный Подвал</option>
+                <option value="spring_flask">🧪 Колба с Родниковой Водой</option>
+              </optgroup>
+              <optgroup label="⚠️ Опасности и Ловушки">
+                <option value="spoiled_egg">☣️ Тухлое Яйцо! (Яд 5 ходов)</option>
+                <option value="poison_thorns">🥀 Ядовитые Шипы! (Яд 4 хода)</option>
+                <option value="fox_ambush">🦊 Нападение Хитрой Лисы (-3 яйца)</option>
+                <option value="thunder_strike">⚡ Кара Небесная! (-5 HP)</option>
+                <option value="magic_barrier">🛑 ТЫ НЕ ПРОЙДЕШЬ! (-1 клетка)</option>
+              </optgroup>
+              <optgroup label="💖 Исцеление и Алтари">
+                <option value="divine_healing">💧 Божественное Исцеление</option>
+                <option value="immunity_elixir">🛡️ Эликсир Иммунитета (Щит)</option>
+                <option value="sacrifice_monument">🗿 Монумент Самопожертвования</option>
+                <option value="charity_monument">🤲 Монумент Милосердия</option>
+              </optgroup>
+              <optgroup label="🦫 Сюжетные врата">
+                <option value="start_gate">🚪 Врата Черепа (Старт)</option>
+                <option value="boss_gate">🦫 Логово Бобра (Босс-файт)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="s2-insp-row">
             <label>Номер / Шаг:</label>
             <input type="number" id="insp-cell-index" min="1" max="999">
           </div>
@@ -454,6 +503,38 @@ export class Stage2Editor {
     bindInput('insp-cell-title', 'title');
     bindInput('insp-cell-desc', 'description');
 
+    const tmplSelect = document.getElementById('insp-cell-event-template');
+    if (tmplSelect) {
+      tmplSelect.addEventListener('change', () => {
+        if (!this.selectedCell) return;
+        const tmplKey = tmplSelect.value;
+        this.selectedCell.eventId = tmplKey;
+        if (tmplKey && EVENT_TEMPLATES[tmplKey]) {
+          const tmpl = EVENT_TEMPLATES[tmplKey];
+          this.selectedCell.title = tmpl.title;
+          this.selectedCell.description = tmpl.text;
+          this.selectedCell.icon = tmpl.icon || '🌲';
+
+          if (tmpl.type === 'boss_door') this.selectedCell.type = 'BOSS';
+          else if (tmpl.type === 'info') this.selectedCell.type = 'START';
+          else if (tmpl.type === 'hazard' || tmpl.type === 'hazard_video' || tmpl.type === 'bounce') this.selectedCell.type = 'BAD';
+          else if (tmpl.type === 'reward' || tmpl.type === 'reward_video' || tmpl.type === 'healing') this.selectedCell.type = 'GOOD';
+          else if (['minigame', 'wheel_video', 'mystery_boxes', 'strongman', 'timestop', 'bingo'].includes(tmpl.type)) this.selectedCell.type = 'MINIGAME';
+          else this.selectedCell.type = 'NORMAL';
+
+          const setInputVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+          };
+          setInputVal('insp-cell-type', this.selectedCell.type);
+          setInputVal('insp-cell-icon', this.selectedCell.icon);
+          setInputVal('insp-cell-title', this.selectedCell.title);
+          setInputVal('insp-cell-desc', this.selectedCell.description);
+          audio.playClick();
+        }
+      });
+    }
+
     const shapeSelect = document.getElementById('insp-cell-shape');
     if (shapeSelect) {
       shapeSelect.addEventListener('change', () => {
@@ -585,6 +666,7 @@ export class Stage2Editor {
     };
 
     setVal('insp-cell-shape', cell.shape || 'iso');
+    setVal('insp-cell-event-template', cell.eventId || '');
     setVal('insp-cell-index', cell.index);
     setVal('insp-cell-type', cell.type || 'NORMAL');
     setVal('insp-cell-icon', cell.icon || '🌲');

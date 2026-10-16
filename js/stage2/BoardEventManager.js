@@ -2,7 +2,7 @@
  * BoardEventManager.js — Управление состоянием игрока, инвентарем и событиями Настольной игры
  */
 
-import { BOARD_EVENTS } from './boardEventsData.js';
+import { BOARD_EVENTS, EVENT_TEMPLATES } from './boardEventsData.js';
 import { BoardQuestModal } from './BoardQuestModal.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
@@ -179,16 +179,44 @@ export class BoardEventManager {
   /**
    * Запуск события клетки
    */
-  triggerEventForCell(cellIndex, onComplete) {
-    const evt = BOARD_EVENTS[cellIndex] || {
-      index: cellIndex,
-      title: `Клетка #${cellIndex}`,
-      icon: '🌲',
-      type: 'info',
-      speaker: 'Лесная тропа',
-      text: 'Спокойная поляна среди вековых деревьев. Ничего опасного не замечено.',
-      actions: [{ text: 'ПРОДОЛЖИТЬ ▶', result: null }]
-    };
+  triggerEventForCell(cellOrIndex, onComplete) {
+    let evt = null;
+
+    if (typeof cellOrIndex === 'object' && cellOrIndex !== null) {
+      const eventId = cellOrIndex.eventId;
+      if (eventId && EVENT_TEMPLATES[eventId]) {
+        evt = JSON.parse(JSON.stringify(EVENT_TEMPLATES[eventId]));
+        if (cellOrIndex.title) evt.title = cellOrIndex.title;
+        if (cellOrIndex.description) evt.text = cellOrIndex.description;
+        if (cellOrIndex.icon) evt.icon = cellOrIndex.icon;
+        evt.index = cellOrIndex.index;
+      } else {
+        const idx = cellOrIndex.index;
+        if (BOARD_EVENTS[idx]) {
+          evt = JSON.parse(JSON.stringify(BOARD_EVENTS[idx]));
+          if (cellOrIndex.title && !cellOrIndex.title.startsWith('Клетка #')) evt.title = cellOrIndex.title;
+          if (cellOrIndex.description) evt.text = cellOrIndex.description;
+        }
+      }
+    } else {
+      const idx = Number(cellOrIndex);
+      if (BOARD_EVENTS[idx]) {
+        evt = JSON.parse(JSON.stringify(BOARD_EVENTS[idx]));
+      }
+    }
+
+    if (!evt) {
+      const cellNum = (typeof cellOrIndex === 'object' && cellOrIndex) ? cellOrIndex.index : cellOrIndex;
+      evt = {
+        index: cellNum,
+        title: `Клетка #${cellNum}`,
+        icon: '🌲',
+        type: 'info',
+        speaker: 'Лесная тропа',
+        text: 'Спокойная поляна среди вековых деревьев. Ничего опасного не замечено.',
+        actions: [{ text: 'ПРОДОЛЖИТЬ ▶', result: null }]
+      };
+    }
 
     this.modal.open(evt, (meta) => {
       this.updateHUD();

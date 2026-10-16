@@ -1103,7 +1103,7 @@ export class Stage2Board {
   triggerCellEvent(cell) {
     audio.playSuccess();
     const stepNumber = (cell && typeof cell.index === 'number') ? cell.index : (this.currentCellIndex + 1);
-    this.eventManager.triggerEventForCell(stepNumber, () => {
+    this.eventManager.triggerEventForCell(cell || stepNumber, () => {
       this.resetDiceButtonToRoll();
     });
   }
