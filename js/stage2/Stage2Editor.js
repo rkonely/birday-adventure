@@ -1,6 +1,7 @@
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
 import { EVENT_TEMPLATES } from './boardEventsData.js';
+import { BoardGenerator } from './BoardGenerator.js';
 
 /**
  * Stage2Editor — Интерактивный визуальный Конструктор / Редактор карты настольной игры (Этап 2).
@@ -227,8 +228,11 @@ export class Stage2Editor {
           <button id="btn-s2ed-renumber" class="s2-ed-btn" title="Перенумеровать по порядку (1..N)">
             <span>🔢 НУМЕРАЦИЯ</span>
           </button>
-          <button id="btn-s2ed-board-toggle" class="s2-ed-btn" title="Сменить вариацию доски и карты (Board1 / Board2)">
-            <span id="s2ed-board-btn-text">🗺️ ${this.stage2Board.currentVariationId === 'board2' ? 'ДОСКА: 2 (Board2)' : 'ДОСКА: 1 (Board1)'}</span>
+          <button id="btn-s2ed-gen-board" class="s2-ed-btn" title="Сгенерировать случайные клетки по кругу (Старт и Босс останутся прежними)">
+            <span>⚡ СГЕНЕРИРОВАТЬ</span>
+          </button>
+          <button id="btn-s2ed-toggle-tiles" class="s2-ed-btn" title="Включить / Выключить отрисовку вырезанных клеток из Event - Title">
+            <span id="s2ed-toggle-tiles-text">${this.stage2Board.showTileSprites ? '🎨 ТАЙЛЫ: ВКЛ' : '🎨 ТАЙЛЫ: ВЫКЛ'}</span>
           </button>
         </div>
 
@@ -460,17 +464,36 @@ export class Stage2Editor {
       });
     }
 
-    const btnBoardToggle = document.getElementById('btn-s2ed-board-toggle');
-    if (btnBoardToggle) {
-      btnBoardToggle.addEventListener('click', async () => {
-        const nextVar = await this.stage2Board.toggleBoardVariation();
-        this.cells = JSON.parse(JSON.stringify(this.stage2Board.cells || []));
-        this.boardImage = this.stage2Board.boardImage;
-        this.selectedCell = null;
-        this.hideInspector();
-        const txt = document.getElementById('s2ed-board-btn-text');
-        if (txt) txt.textContent = `🗺️ ${nextVar.id === 'board2' ? 'ДОСКА: 2 (Board2)' : 'ДОСКА: 1 (Board1)'}`;
-        if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+    const btnGen = document.getElementById('btn-s2ed-gen-board');
+    if (btnGen) {
+      btnGen.addEventListener('click', () => {
+        audio.playDiceBounce(0.8);
+        this.saveUndoState();
+        this.cells = BoardGenerator.generate(this.cells);
+        this.stage2Board.cells = JSON.parse(JSON.stringify(this.cells));
+        this.stage2Board.syncPlayerToStart();
+        if (this.selectedCell) {
+          this.selectedCell = this.cells.find(c => c.id === this.selectedCell.id) || null;
+          if (this.selectedCell) this.showInspector(this.selectedCell);
+        }
+        if (typeof this.stage2Board.showToastNotification === 'function') {
+          this.stage2Board.showToastNotification('⚡ Карта сгенерирована! Старт и Босс закреплены.');
+        }
+      });
+    }
+
+    const btnToggleTiles = document.getElementById('btn-s2ed-toggle-tiles');
+    if (btnToggleTiles) {
+      btnToggleTiles.addEventListener('click', () => {
+        audio.playClick();
+        this.stage2Board.showTileSprites = !this.stage2Board.showTileSprites;
+        try {
+          localStorage.setItem('birday_show_tile_sprites', String(this.stage2Board.showTileSprites));
+        } catch (e) {}
+        const txt = document.getElementById('s2ed-toggle-tiles-text');
+        if (txt) {
+          txt.textContent = this.stage2Board.showTileSprites ? '🎨 ТАЙЛЫ: ВКЛ' : '🎨 ТАЙЛЫ: ВЫКЛ';
+        }
       });
     }
 
@@ -1065,7 +1088,14 @@ export class Stage2Editor {
     // 4. Линии связей между клетками
     this.renderTrackLines();
 
-    // 5. Отрисовка клеток
+    // 5. Отрисовка тайлов клеток (если включено)
+    if (this.stage2Board && this.stage2Board.showTileSprites) {
+      for (let i = 0; i < this.cells.length; i++) {
+        this.stage2Board.renderSingleTileSprite(this.cells[i], i);
+      }
+    }
+
+    // 6. Отрисовка клеток
     for (let i = 0; i < this.cells.length; i++) {
       this.renderCell(this.cells[i], i);
     }

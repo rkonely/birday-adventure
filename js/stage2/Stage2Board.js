@@ -18,17 +18,11 @@ import { BoardGenerator } from './BoardGenerator.js';
  */
 export const BOARD_VARIATIONS = [
   {
-    id: 'board1',
-    name: 'Классическая доска',
-    jsonFile: 'Board1.json',
-    textureFile: 'Board.png'
-  },
-  {
-    id: 'board2',
-    name: 'Вариант 2 (Загадочный Лес)',
+    id: 'autumn-board',
+    name: 'Осенняя доска',
     jsonFile: 'Board 2.json',
     altJsonFile: 'Board2.json',
-    textureFile: 'Board-Variant2.png'
+    textureFile: 'autumn-board.png'
   }
 ];
 
@@ -48,12 +42,9 @@ export class Stage2Board {
     this.isActive = false;
     this.isLoaded = false;
 
-    // Ассет карты стола и вариации (Board1.json + Board.png / Board2.json + Board-Variant2.png)
-    const savedTexture = localStorage.getItem('birday_board_texture') || 'Board.png';
-    const savedVarId = localStorage.getItem('birday_board_variation');
-    const initialVar = this.getVariationByIdOrTexture(savedVarId || savedTexture);
-    this.currentVariationId = initialVar.id;
-    this.currentBoardFilename = initialVar.textureFile;
+    // Ассет карты стола — всегда используется autumn-board.png
+    this.currentVariationId = 'autumn-board';
+    this.currentBoardFilename = 'autumn-board.png';
 
     this.boardImage = new Image();
     this.boardImage.src = `assets/Second Level/Main Board/${this.currentBoardFilename}`;
@@ -61,10 +52,6 @@ export class Stage2Board {
       this.isLoaded = true;
       console.log(`🎲 [Stage2Board] Карта настолки ${this.currentBoardFilename} (${this.currentVariationId}) успешно загружена!`);
     };
-
-    events.on('stage2:board_texture_changed', (filename) => {
-      this.setBoardVariation(filename, false);
-    });
 
     // Данные клеток
     this.cells = [];
@@ -135,11 +122,7 @@ export class Stage2Board {
       localStorage.setItem('birday_board_texture', filename);
     } catch (e) { }
     this.boardImage.src = `assets/Second Level/Main Board/${filename}`;
-    const txt = document.getElementById('s2-switch-board-text');
-    if (txt) {
-      txt.textContent = filename === 'Board-Variant2.png' ? 'Вариант 2' : 'Классика';
-    }
-    console.log(`🎲 [Stage2Board] Текстура доски переключена на: ${filename}`);
+    console.log(`🎲 [Stage2Board] Текстура доски: ${filename}`);
   }
 
   async setBoardVariation(variationIdOrTexture, syncPlayer = true) {
@@ -199,9 +182,12 @@ export class Stage2Board {
   }
 
   async loadBoardData() {
-    const curVar = this.getVariationByIdOrTexture(this.currentVariationId);
+    const curVar = this.getVariationByIdOrTexture('autumn-board');
     const loaded = await this.loadBoardVariationData(curVar, true);
-    if (loaded) return;
+    if (loaded) {
+      this.generateRandomBoard(true);
+      return;
+    }
 
     try {
       let resp = await fetch('/api/load-board').catch(() => null);
@@ -266,8 +252,14 @@ export class Stage2Board {
     if (!cell || this.isMoving || this.isRollingDice) return;
     const stepNum = cell.index || (this.cells.indexOf(cell) + 1);
     const title = cell.title || `Клетка #${stepNum}`;
-    const desc = cell.description ? ` — ${cell.description}` : '';
-    this.showToastNotification(`Клетка ${stepNum}: ${title}${desc}`);
+    const desc = cell.description || '';
+
+    let type = 'info';
+    if (cell.type === 'GOOD' || cell.type === 'DICE_BONUS') type = 'good';
+    else if (cell.type === 'BAD') type = 'bad';
+    else if (cell.type === 'MINIGAME') type = 'gold';
+
+    this.showGameToast(`КЛЕТКА ${stepNum}: ${title}`, type, desc);
   }
 
   getFigureImage() {
@@ -359,10 +351,14 @@ export class Stage2Board {
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
 
-        // 1. Если открыта карточка события клетки — подтверждаем по Пробелу
-        if (this.activeEventModal) {
-          this.handleEventAction();
-          return;
+        // 1. Если открыто модальное окно события клетки — подтверждаем по Пробелу
+        const questModal = document.getElementById('board-quest-modal');
+        if (questModal && !questModal.classList.contains('hidden')) {
+          const questBtn = document.querySelector('#board-quest-bottom-bar .btn-quest-main-btn, #board-quest-interactive .btn-board-answer');
+          if (questBtn) {
+            questBtn.click();
+            return;
+          }
         }
 
         // 2. Если кубик уже брошен и лежит на столе — делаем ход
@@ -433,6 +429,14 @@ export class Stage2Board {
     this.isDiceSettled = false;
     this.isRollingDice = false;
     this.isMoving = false;
+
+    // Всегда включаем отображение тайлов в настольном режиме
+    this.showTileSprites = true;
+
+    // Всегда случайно генерируем клетки при входе в настольный режим
+    if (this.cells && this.cells.length > 0) {
+      this.generateRandomBoard(true);
+    }
 
     // 2. Включаем видеоряд босса в центре стола (появление -> случайный цикл IDE1 / IDE2)
     if (this.videoManager) {
@@ -538,27 +542,6 @@ export class Stage2Board {
         </div>
       </div>
 
-      <!-- Кнопка смены стиля доски (Классика / Вариант 2) -->
-      <button id="btn-s2-switch-board" class="s2-switch-board-btn" title="Сменить стиль доски (Классика / Вариант 2)">
-        <span class="s2-switch-board-icon">🗺️</span>
-        <span id="s2-switch-board-text" class="s2-switch-board-text">${this.currentBoardFilename === 'Board-Variant2.png' ? 'Вариант 2' : 'Классика'}</span>
-      </button>
-
-      <!-- Кнопка случайной генерации клеток карты -->
-      <button id="btn-s2-gen-board" class="s2-gen-board-btn" title="Сгенерировать случайные клетки по кругу (Старт и Босс останутся прежними)">
-        <span class="s2-gen-board-icon">⚡</span>
-        <span class="s2-gen-board-text">Сгенерировать карту</span>
-      </button>
-
-      <!-- Переключатель отрисовки вырезанных клеток Event - Title -->
-      <button id="btn-s2-toggle-tiles" class="s2-toggle-tiles-btn" title="Включить / Выключить отрисовку вырезанных клеток из Event - Title">
-        <span class="s2-toggle-tiles-icon">🎨</span>
-        <span id="s2-toggle-tiles-text" class="s2-toggle-tiles-text">${this.showTileSprites ? 'Тайлы: ВКЛ' : 'Тайлы: ВЫКЛ'}</span>
-      </button>
-
-      <!-- Всплывающее уведомление генерации карты -->
-      <div id="s2-toast" class="s2-toast-notification"></div>
-
       <!-- 3D Арена броска кубика прямо на игровое поле -->
       <div id="s2-dice-3d-arena" class="s2-dice-3d-arena hidden">
         <div id="s2-dice-shadow" class="s2-dice-shadow"></div>
@@ -628,43 +611,6 @@ export class Stage2Board {
         } else {
           this.rollDice();
         }
-      });
-    }
-
-    // Переключение стиля доски (Классика / Вариант 2)
-    const btnSwitchBoard = document.getElementById('btn-s2-switch-board');
-    if (btnSwitchBoard) {
-      btnSwitchBoard.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.toggleBoardVariation();
-        if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
-      });
-    }
-
-    // Кнопка генератора случайной карты
-    const btnGenBoard = document.getElementById('btn-s2-gen-board');
-    if (btnGenBoard) {
-      btnGenBoard.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.generateRandomBoard();
-      });
-    }
-
-    // Переключатель тайлов клеток
-    const btnToggleTiles = document.getElementById('btn-s2-toggle-tiles');
-    if (btnToggleTiles) {
-      btnToggleTiles.addEventListener('click', (e) => {
-        e.stopPropagation();
-        audio.playClick();
-        this.showTileSprites = !this.showTileSprites;
-        try {
-          localStorage.setItem('birday_show_tile_sprites', String(this.showTileSprites));
-        } catch (err) { }
-        const txt = document.getElementById('s2-toggle-tiles-text');
-        if (txt) {
-          txt.textContent = this.showTileSprites ? 'Тайлы: ВКЛ' : 'Тайлы: ВЫКЛ';
-        }
-        this.showToastNotification(this.showTileSprites ? '🎨 Отрисовка тайлов: ВКЛ' : '🎨 Отрисовка тайлов: ВЫКЛ');
       });
     }
 
@@ -1522,17 +1468,13 @@ export class Stage2Board {
     keySprites.forEach(name => this.getTileImage(name));
   }
 
-  generateRandomBoard() {
+  generateRandomBoard(silent = false) {
     if (!this.cells || this.cells.length === 0) return;
 
-    audio.playDiceBounce(0.8);
+    if (!silent) audio.playDiceBounce(0.8);
     const newCells = BoardGenerator.generate(this.cells);
     this.cells = newCells;
     this.showTileSprites = true;
-
-    // Обновляем текст кнопки тайлов, если было выключено
-    const txt = document.getElementById('s2-toggle-tiles-text');
-    if (txt) txt.textContent = 'Тайлы: ВКЛ';
 
     // Возвращаем игрока на старт новой доски
     this.syncPlayerToStart();
@@ -1542,23 +1484,42 @@ export class Stage2Board {
       localStorage.setItem('birday_generated_cells', JSON.stringify(this.cells));
     } catch (e) { }
 
-    this.showToastNotification('⚡ Карта сгенерирована! Старт и Босс закреплены.');
+    if (!silent) {
+      this.showToastNotification('⚡ Карта сгенерирована! Старт и Босс закреплены.');
+    }
   }
 
-  showToastNotification(text) {
-    let toast = document.getElementById('s2-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 's2-toast';
-      toast.className = 's2-toast-notification';
-      if (this.uiContainer) this.uiContainer.appendChild(toast);
+  showGameToast(title, type = 'info', sub = '') {
+    if (!title) return;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      const root = document.getElementById('game-container') || document.body;
+      root.appendChild(container);
     }
-    toast.textContent = text;
-    toast.classList.add('show');
-    if (this._toastTimer) clearTimeout(this._toastTimer);
-    this._toastTimer = setTimeout(() => {
-      toast.classList.remove('show');
-    }, 2800);
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    if (sub) {
+      toast.innerHTML = `<span>${title}</span><span class="toast-sub">${sub}</span>`;
+    } else {
+      toast.textContent = title;
+    }
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-12px)';
+      toast.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+      setTimeout(() => toast.remove(), 350);
+    }, 2700);
+  }
+
+  showToastNotification(text, type = 'info', sub = '') {
+    this.showGameToast(text, type, sub);
   }
 
   renderTileSprites() {
@@ -1575,6 +1536,13 @@ export class Stage2Board {
 
   renderSingleTileSprite(cell, index) {
     const spriteName = cell.tileSprite || this.getDefaultTileSprite(cell.type);
+    if (!spriteName) return;
+
+    // Временно исключаем пустые клетки Empty-Tile1, Empty-Tile2, Empty-Tile3 из прорисовки
+    if (spriteName === 'Empty-Tile1.png' || spriteName === 'Empty-Tile2.png' || spriteName === 'Empty-Tile3.png') {
+      return;
+    }
+
     const img = this.getTileImage(spriteName);
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
@@ -1635,7 +1603,7 @@ export class Stage2Board {
       case 'MINIGAME': return 'Wheel of Fortune.png';
       case 'DICE_BONUS': return 'clover.png';
       case 'NORMAL':
-      default: return 'Empty-Tile1.png';
+      default: return null;
     }
   }
 

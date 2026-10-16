@@ -1559,52 +1559,46 @@ export class BoardQuestModal {
   }
 
   /**
-   * Отрисовка графического оповещения об эффекте вместо простого текста «+5 яиц»
+   * Завершение события с показом сочного игрового оповещения в едином стиле игры
+   * (без повторного открытия окна с кнопкой «Продолжить»)
    */
   showOutcomeWithBanner({ isGood = true, icon, label, effectTitle, narrative }) {
-    this.setWindowFrame(isGood ? 'good' : 'bad');
-    if (this.modalEl) this.modalEl.classList.remove('hidden');
+    // 1. Немедленно закрываем модальное окно и завершаем фазу события
+    this.finishEvent();
 
-    this.interactiveContainer.innerHTML = '';
-    this.resultContainer.classList.remove('hidden');
+    // 2. Отображаем статусное уведомление в едином пиксельном стиле игры
+    const toastTitle = effectTitle ? effectTitle : (label || 'СОБЫТИЕ ЗАВЕРШЕНО');
+    const toastSub = narrative || (label && label !== 'Итог события' && label !== 'Сводка события' ? label : '');
+    const toastType = isGood ? 'good' : 'bad';
 
-    const safeIcon = icon || (isGood ? BOARD_ASSET_ICONS.EGG : BOARD_ASSET_ICONS.TILE_BAD);
-    const toneClass = isGood ? 'effect-good' : 'effect-bad';
-
-    this.resultText.innerHTML = `
-      <div class="board-effect-banner ${toneClass}">
-        <div class="board-effect-icon-wrap">
-          <img src="${safeIcon}" alt="Эффект" />
-        </div>
-        <div class="board-effect-info">
-          <span class="board-effect-label">${label || 'Итог события'}</span>
-          <span class="board-effect-title">${effectTitle}</span>
-          ${narrative ? `<span class="board-effect-sub">${narrative}</span>` : ''}
-        </div>
-      </div>
-    `;
-
-    const bottomBar = document.getElementById('board-quest-bottom-bar');
-    if (bottomBar) {
-      bottomBar.innerHTML = '';
-      const btn = document.createElement('button');
-      btn.id = 'btn-quest-continue';
-      btn.className = 'btn-leaf-green btn-quest-main-btn';
-      btn.innerHTML = '<span class="btn-leaf-green-text">ПРОДОЛЖИТЬ</span>';
-      btn.addEventListener('click', () => {
-        audio.playClick();
-        this.finishEvent();
-      });
-      bottomBar.appendChild(btn);
+    if (this.eventManager && this.eventManager.boardGame && typeof this.eventManager.boardGame.showGameToast === 'function') {
+      this.eventManager.boardGame.showGameToast(toastTitle, toastType, toastSub);
+    } else {
+      const container = document.getElementById('toast-container');
+      if (container) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${toastType}`;
+        if (toastSub) {
+          toast.innerHTML = `<span>${toastTitle}</span><span class="toast-sub">${toastSub}</span>`;
+        } else {
+          toast.textContent = toastTitle;
+        }
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.35s';
+          setTimeout(() => toast.remove(), 350);
+        }, 2600);
+      }
     }
   }
 
   showResult(htmlMsg, isGood = true) {
+    const cleanText = htmlMsg ? htmlMsg.replace(/<br\s*\/?>/gi, ' — ').replace(/<[^>]+>/g, '') : '';
     this.showOutcomeWithBanner({
       isGood,
-      icon: isGood ? BOARD_ASSET_ICONS.EGG : BOARD_ASSET_ICONS.TILE_BAD,
-      label: 'Сводка события',
-      effectTitle: htmlMsg.replace(/<br\s*\/?>/gi, ' — '),
+      label: 'ИТОГ',
+      effectTitle: cleanText,
       narrative: ''
     });
   }

@@ -55,9 +55,6 @@ export class SettingsModal {
     // Скины кубика
     this.currentDiceTexture = localStorage.getItem('birday_dice_texture') || 'dice_texture.png';
 
-    // Скины доски настолки (Board.png / Board-Variant2.png)
-    this.currentBoardTexture = localStorage.getItem('birday_board_texture') || 'Board.png';
-
     // Ретро ТВ (CRT сканлайны)
     this.crtOverlay = document.getElementById('crt-overlay') || document.querySelector('.crt-overlay');
     this.btnToggleCrt = document.getElementById('btn-toggle-crt');
@@ -111,13 +108,8 @@ export class SettingsModal {
       });
     }
 
-    // 4. Выбор скинов кубика и стиля доски
+    // 4. Выбор скинов кубика
     this.setupDiceSkinSelectors();
-    this.setupBoardSkinSelectors();
-
-    events.on('stage2:board_texture_changed', (filename) => {
-      this.currentBoardTexture = filename;
-    });
 
     // 5. Кнопки управления окном
     if (this.btnResume) {
@@ -171,46 +163,6 @@ export class SettingsModal {
           cards.forEach(c => c.classList.remove('active'));
           card.classList.add('active');
 
-          if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
-        }
-      });
-    });
-  }
-
-  syncActiveBoardCards() {
-    this.currentBoardTexture = localStorage.getItem('birday_board_texture') || this.currentBoardTexture || 'Board.png';
-    const cards = document.querySelectorAll('.board-skin-card');
-    cards.forEach(card => {
-      const bFile = card.getAttribute('data-board');
-      if (bFile === this.currentBoardTexture) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
-      }
-    });
-  }
-
-  setupBoardSkinSelectors() {
-    events.on('stage2:board_variation_changed', (variation) => {
-      if (variation && variation.textureFile) {
-        this.currentBoardTexture = variation.textureFile;
-        this.syncActiveBoardCards();
-      }
-    });
-
-    const cards = document.querySelectorAll('.board-skin-card');
-    this.syncActiveBoardCards();
-
-    cards.forEach(card => {
-      card.addEventListener('click', () => {
-        const selectedBoard = card.getAttribute('data-board');
-        if (selectedBoard) {
-          this.currentBoardTexture = selectedBoard;
-          try {
-            localStorage.setItem('birday_board_texture', selectedBoard);
-          } catch (e) {}
-          this.syncActiveBoardCards();
-          events.emit('stage2:board_texture_changed', selectedBoard);
           if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
         }
       });

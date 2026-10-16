@@ -906,20 +906,21 @@ body {
 /* Toast сообщения (Без рамки и фона, только чистый пиксельный текст) */
 #toast-container {
   position: absolute;
-  top: 105px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  z-index: 1000;
+  gap: 10px;
+  z-index: 99999;
   pointer-events: none;
+  max-width: 90vw;
 }
 
 .toast {
   font-family: var(--font-pixel), '8bitoperator', monospace !important;
-  font-size: 22px;
+  font-size: 21px;
   font-weight: bold;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -927,7 +928,7 @@ body {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 4px 8px;
+  padding: 4px 14px;
   text-align: center;
   text-shadow:
     2px 0 0 #000,
@@ -939,15 +940,73 @@ body {
     2px -2px 0 #000,
     -2px 2px 0 #000,
     0 4px 12px rgba(0, 0, 0, 0.95);
-  animation: fadeInDown 0.3s ease-out;
+  animation: fadeInDown 0.28s ease-out;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-@keyframes fadeIn {
+.toast.toast-good,
+.toast.toast-success {
+  color: #00f5d4 !important;
+  text-shadow:
+    2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+    2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    0 0 16px rgba(0, 245, 212, 0.75), 0 4px 14px rgba(0, 0, 0, 0.95);
+}
+
+.toast.toast-bad,
+.toast.toast-danger {
+  color: #ff4d6d !important;
+  text-shadow:
+    2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+    2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    0 0 16px rgba(255, 77, 109, 0.85), 0 4px 14px rgba(0, 0, 0, 0.95);
+}
+
+.toast.toast-gold {
+  color: #ffd166 !important;
+  text-shadow:
+    2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+    2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    0 0 16px rgba(255, 209, 102, 0.65), 0 4px 14px rgba(0, 0, 0, 0.95);
+}
+
+.toast.toast-info {
+  color: #caf0f8 !important;
+  text-shadow:
+    2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+    2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    0 0 14px rgba(202, 240, 248, 0.5), 0 4px 14px rgba(0, 0, 0, 0.95);
+}
+
+.toast .toast-sub {
+  display: block;
+  font-size: 13px;
+  font-weight: normal;
+  letter-spacing: 0.8px;
+  text-transform: none;
+  color: #f1faee;
+  margin-top: 3px;
+  max-width: 620px;
+  line-height: 1.35;
+  text-shadow:
+    1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000,
+    1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+    0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes fadeInDown {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-12px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
   to {
     opacity: 1;
@@ -3598,14 +3657,21 @@ body {
   pointer-events: none !important;
 }
 
-.s2-dice-3d-arena.settled .s2-dice-cube,
+.s2-dice-3d-arena.settled .s2-dice-cube {
+  pointer-events: auto !important;
+  cursor: grab !important;
+}
+
 .s2-dice-3d-arena.settled .s2-dice-result-badge {
   pointer-events: auto !important;
   cursor: pointer !important;
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.s2-dice-3d-arena.settled .s2-dice-cube:hover,
+.s2-dice-3d-arena.settled .s2-dice-cube:hover .dice-face {
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.28), 0 0 14px rgba(255, 183, 3, 0.95);
+}
+
 .s2-dice-3d-arena.settled .s2-dice-result-badge:hover {
   filter: brightness(1.2) drop-shadow(0 0 10px rgba(255, 183, 3, 0.9));
 }

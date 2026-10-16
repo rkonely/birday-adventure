@@ -8,7 +8,7 @@ import { EVENT_TEMPLATES } from './boardEventsData.js';
 
 export const TILE_SPRITES = {
   START: 'Empty-Tile4.png',
-  NORMAL: 'Empty-Tile1.png',
+  NORMAL: 'campfire.png',
   GOOD: 'Regular Chest.png',
   BAD: 'Sharp spikes.png',
   MINIGAME: 'Wheel of Fortune.png',
@@ -66,13 +66,6 @@ export const EVENT_POOLS = {
       tileSprite: 'crystal ball.png',
       weight: 7,
       maxPerBoard: 2
-    },
-    {
-      eventId: null,
-      title: 'Спокойная Просека',
-      description: 'Мягкий мох под лапами и мерный шум сосновых верхушек. Путь свободен.',
-      tileSprite: 'Empty-Tile1.png',
-      weight: 14
     }
   ],
 
