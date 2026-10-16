@@ -227,6 +227,9 @@ export class Stage2Editor {
           <button id="btn-s2ed-renumber" class="s2-ed-btn" title="Перенумеровать по порядку (1..N)">
             <span>🔢 НУМЕРАЦИЯ</span>
           </button>
+          <button id="btn-s2ed-board-toggle" class="s2-ed-btn" title="Сменить текстуру доски (Board.png / Board-Variant2.png)">
+            <span id="s2ed-board-btn-text">🗺️ ${this.stage2Board.currentBoardFilename === 'Board-Variant2.png' ? 'ДОСКА: 2' : 'ДОСКА: 1'}</span>
+          </button>
         </div>
 
         <div class="s2-ed-tool-group">
@@ -454,6 +457,18 @@ export class Stage2Editor {
       btnRenumber.addEventListener('click', () => {
         this.renumberCells();
         audio.playSuccess();
+      });
+    }
+
+    const btnBoardToggle = document.getElementById('btn-s2ed-board-toggle');
+    if (btnBoardToggle) {
+      btnBoardToggle.addEventListener('click', () => {
+        const cur = this.stage2Board.currentBoardFilename || 'Board.png';
+        const next = cur === 'Board-Variant2.png' ? 'Board.png' : 'Board-Variant2.png';
+        this.stage2Board.setBoardTexture(next);
+        const txt = document.getElementById('s2ed-board-btn-text');
+        if (txt) txt.textContent = `🗺️ ${next === 'Board-Variant2.png' ? 'ДОСКА: 2' : 'ДОСКА: 1'}`;
+        audio.playClick();
       });
     }
 

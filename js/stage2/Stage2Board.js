@@ -28,13 +28,18 @@ export class Stage2Board {
     this.isActive = false;
     this.isLoaded = false;
 
-    // Ассет карты стола
+    // Ассет карты стола (поддержка Board.png и Board-Variant2.png)
+    this.currentBoardFilename = localStorage.getItem('birday_board_texture') || 'Board.png';
     this.boardImage = new Image();
-    this.boardImage.src = 'assets/Second Level/Main Board/Board.png';
+    this.boardImage.src = `assets/Second Level/Main Board/${this.currentBoardFilename}`;
     this.boardImage.onload = () => {
       this.isLoaded = true;
-      console.log('🎲 [Stage2Board] Карта настолки Board.png успешно загружена!');
+      console.log(`🎲 [Stage2Board] Карта настолки ${this.currentBoardFilename} успешно загружена!`);
     };
+
+    events.on('stage2:board_texture_changed', (filename) => {
+      this.setBoardTexture(filename);
+    });
 
     // Данные клеток
     this.cells = [];
@@ -83,6 +88,20 @@ export class Stage2Board {
 
     this.bindEvents();
     this.loadBoardData();
+  }
+
+  setBoardTexture(filename) {
+    if (!filename) return;
+    this.currentBoardFilename = filename;
+    try {
+      localStorage.setItem('birday_board_texture', filename);
+    } catch (e) {}
+    this.boardImage.src = `assets/Second Level/Main Board/${filename}`;
+    const txt = document.getElementById('s2-switch-board-text');
+    if (txt) {
+      txt.textContent = filename === 'Board-Variant2.png' ? 'Вариант 2' : 'Классика';
+    }
+    console.log(`🎲 [Stage2Board] Текстура доски переключена на: ${filename}`);
   }
 
   async loadBoardData() {
@@ -396,6 +415,12 @@ export class Stage2Board {
         </div>
       </div>
 
+      <!-- Кнопка смены стиля доски (Классика / Вариант 2) -->
+      <button id="btn-s2-switch-board" class="s2-switch-board-btn" title="Сменить стиль доски (Классика / Вариант 2)">
+        <span class="s2-switch-board-icon">🗺️</span>
+        <span id="s2-switch-board-text" class="s2-switch-board-text">${this.currentBoardFilename === 'Board-Variant2.png' ? 'Вариант 2' : 'Классика'}</span>
+      </button>
+
       <!-- 3D Арена броска кубика прямо на игровое поле -->
       <div id="s2-dice-3d-arena" class="s2-dice-3d-arena hidden">
         <div id="s2-dice-shadow" class="s2-dice-shadow"></div>
@@ -465,6 +490,18 @@ export class Stage2Board {
         } else {
           this.rollDice();
         }
+      });
+    }
+
+    // Переключение стиля доски (Классика / Вариант 2)
+    const btnSwitchBoard = document.getElementById('btn-s2-switch-board');
+    if (btnSwitchBoard) {
+      btnSwitchBoard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nextBoard = this.currentBoardFilename === 'Board-Variant2.png' ? 'Board.png' : 'Board-Variant2.png';
+        this.setBoardTexture(nextBoard);
+        if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+        events.emit('stage2:board_texture_changed', nextBoard);
       });
     }
 

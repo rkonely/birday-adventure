@@ -4871,7 +4871,74 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* 3. Кнопки действий (Продолжить / В Меню / Закрыть) */
+/* 4. Выбор стиля доски настолки (Board.png / Board-Variant2.png) */
+.board-skin-section {
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.board-skins-grid {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.board-skin-card {
+  width: 125px;
+  background: rgba(85, 45, 18, 0.12);
+  border: 2px solid #8d6b4f;
+  border-radius: 8px;
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.board-skin-card:hover {
+  transform: translateY(-3px);
+  border-color: #ffb703;
+  background: rgba(255, 183, 3, 0.15);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.board-skin-card.active {
+  border-color: #d48b00;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.25), rgba(184, 115, 51, 0.3));
+  box-shadow: 0 0 14px rgba(255, 183, 3, 0.7), inset 0 0 6px rgba(255, 215, 0, 0.4);
+  transform: scale(1.04);
+}
+
+.board-preview-box {
+  width: 110px;
+  height: 60px;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.board-preview-box.board-skin-1 {
+  background-image: url('../assets/Second Level/Main Board/Board.png');
+}
+
+.board-preview-box.board-skin-2 {
+  background-image: url('../assets/Second Level/Main Board/Board-Variant2.png');
+}
+
+.board-skin-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #3b1e08;
+  letter-spacing: 0.5px;
+}
+
+/* 5. Кнопки действий (Продолжить / В Меню / Закрыть) */
 .pause-actions-row {
   display: flex;
   gap: 20px;
@@ -4957,6 +5024,39 @@ body {
   flex-direction: column;
   box-sizing: border-box;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+}
+
+/* Кнопка смены стиля доски под статусной картой */
+.s2-switch-board-btn {
+  position: absolute;
+  top: 318px;
+  right: 24px;
+  width: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(43, 27, 18, 0.88);
+  border: 2px solid #b87333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #ffd166;
+  font-family: '8bitoperator', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease-out;
+  z-index: 50;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.s2-switch-board-btn:hover {
+  background: rgba(65, 40, 25, 0.98);
+  border-color: #ffd166;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(255, 209, 102, 0.35);
 }
 
 .s2-status-header {

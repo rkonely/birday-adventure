@@ -55,6 +55,9 @@ export class SettingsModal {
     // Скины кубика
     this.currentDiceTexture = localStorage.getItem('birday_dice_texture') || 'dice_texture.png';
 
+    // Скины доски настолки (Board.png / Board-Variant2.png)
+    this.currentBoardTexture = localStorage.getItem('birday_board_texture') || 'Board.png';
+
     // Ретро ТВ (CRT сканлайны)
     this.crtOverlay = document.getElementById('crt-overlay') || document.querySelector('.crt-overlay');
     this.btnToggleCrt = document.getElementById('btn-toggle-crt');
@@ -108,8 +111,13 @@ export class SettingsModal {
       });
     }
 
-    // 4. Выбор скинов кубика
+    // 4. Выбор скинов кубика и стиля доски
     this.setupDiceSkinSelectors();
+    this.setupBoardSkinSelectors();
+
+    events.on('stage2:board_texture_changed', (filename) => {
+      this.currentBoardTexture = filename;
+    });
 
     // 5. Кнопки управления окном
     if (this.btnResume) {
@@ -163,6 +171,32 @@ export class SettingsModal {
           cards.forEach(c => c.classList.remove('active'));
           card.classList.add('active');
 
+          if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+        }
+      });
+    });
+  }
+
+  setupBoardSkinSelectors() {
+    const cards = document.querySelectorAll('.board-skin-card');
+    cards.forEach(card => {
+      const bFile = card.getAttribute('data-board');
+      if (bFile === this.currentBoardTexture) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+
+      card.addEventListener('click', () => {
+        const selectedBoard = card.getAttribute('data-board');
+        if (selectedBoard) {
+          this.currentBoardTexture = selectedBoard;
+          try {
+            localStorage.setItem('birday_board_texture', selectedBoard);
+          } catch (e) {}
+          cards.forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          events.emit('stage2:board_texture_changed', selectedBoard);
           if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
         }
       });
@@ -231,6 +265,16 @@ export class SettingsModal {
     const cards = document.querySelectorAll('.dice-skin-card');
     cards.forEach(card => {
       if (card.getAttribute('data-texture') === this.currentDiceTexture) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    });
+
+    // Синхронизируем активный стиль доски
+    const boardCards = document.querySelectorAll('.board-skin-card');
+    boardCards.forEach(card => {
+      if (card.getAttribute('data-board') === this.currentBoardTexture) {
         card.classList.add('active');
       } else {
         card.classList.remove('active');
