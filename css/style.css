@@ -5059,6 +5059,104 @@ body {
   box-shadow: 0 6px 14px rgba(255, 209, 102, 0.35);
 }
 
+/* Кнопка генератора карты */
+.s2-gen-board-btn {
+  position: absolute;
+  top: 366px;
+  right: 24px;
+  width: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(20, 60, 50, 0.92), rgba(10, 40, 35, 0.95));
+  border: 2px solid #2ec4b6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #cbf3f0;
+  font-family: '8bitoperator', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease-out;
+  z-index: 50;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.s2-gen-board-btn:hover {
+  background: linear-gradient(135deg, rgba(30, 85, 75, 0.98), rgba(20, 65, 55, 0.98));
+  border-color: #ffffff;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(46, 196, 182, 0.4);
+}
+
+.s2-gen-board-btn:active {
+  transform: translateY(0);
+}
+
+/* Кнопка переключения отрисовки тайлов Event - Title */
+.s2-toggle-tiles-btn {
+  position: absolute;
+  top: 414px;
+  right: 24px;
+  width: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(35, 30, 45, 0.9);
+  border: 2px solid #9d4edd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e0aaff;
+  font-family: '8bitoperator', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease-out;
+  z-index: 50;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.s2-toggle-tiles-btn:hover {
+  background: rgba(50, 40, 65, 0.98);
+  border-color: #ffd166;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(157, 78, 221, 0.4);
+}
+
+/* Всплывающее уведомление генерации */
+.s2-toast-notification {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(18, 22, 28, 0.95);
+  border: 2px solid #2ec4b6;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: #cbf3f0;
+  font-family: '8bitoperator', monospace;
+  font-size: 15px;
+  font-weight: bold;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(46, 196, 182, 0.4);
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.s2-toast-notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .s2-status-header {
   height: 46px;
   display: flex;

@@ -2,6 +2,7 @@ import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
 import { gameState } from '../core/GameState.js';
 import { BoardEventManager } from './BoardEventManager.js';
+import { BoardGenerator } from './BoardGenerator.js';
 
 /**
  * Stage2Board — Игровой уровень Настольной Игры (Этап 2).
@@ -106,6 +107,14 @@ export class Stage2Board {
 
     // Анимации и время
     this.animTime = 0;
+
+    // Спрайты клеток из assets/Second Level/Event - Title
+    this.tileImages = {};
+    const savedTilesToggle = localStorage.getItem('birday_show_tile_sprites');
+    this.showTileSprites = savedTilesToggle !== null ? savedTilesToggle === 'true' : true;
+    this.tileTargetWidth = 64;   // целевая ширина клетки на столе (под ромб 60-64px)
+    this.tileAnchorBottom = 38;  // отступ в px от низа картинки до центра ромба основания
+    this.preloadTileSprites();
 
     // DOM UI элементы настолки
     this.uiContainer = null;
@@ -510,6 +519,21 @@ export class Stage2Board {
         <span id="s2-switch-board-text" class="s2-switch-board-text">${this.currentBoardFilename === 'Board-Variant2.png' ? 'Вариант 2' : 'Классика'}</span>
       </button>
 
+      <!-- Кнопка случайной генерации клеток карты -->
+      <button id="btn-s2-gen-board" class="s2-gen-board-btn" title="Сгенерировать случайные клетки по кругу (Старт и Босс останутся прежними)">
+        <span class="s2-gen-board-icon">⚡</span>
+        <span class="s2-gen-board-text">Сгенерировать карту</span>
+      </button>
+
+      <!-- Переключатель отрисовки вырезанных клеток Event - Title -->
+      <button id="btn-s2-toggle-tiles" class="s2-toggle-tiles-btn" title="Включить / Выключить отрисовку вырезанных клеток из Event - Title">
+        <span class="s2-toggle-tiles-icon">🎨</span>
+        <span id="s2-toggle-tiles-text" class="s2-toggle-tiles-text">${this.showTileSprites ? 'Тайлы: ВКЛ' : 'Тайлы: ВЫКЛ'}</span>
+      </button>
+
+      <!-- Всплывающее уведомление генерации карты -->
+      <div id="s2-toast" class="s2-toast-notification"></div>
+
       <!-- 3D Арена броска кубика прямо на игровое поле -->
       <div id="s2-dice-3d-arena" class="s2-dice-3d-arena hidden">
         <div id="s2-dice-shadow" class="s2-dice-shadow"></div>
@@ -589,6 +613,33 @@ export class Stage2Board {
         e.stopPropagation();
         await this.toggleBoardVariation();
         if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+      });
+    }
+
+    // Кнопка генератора случайной карты
+    const btnGenBoard = document.getElementById('btn-s2-gen-board');
+    if (btnGenBoard) {
+      btnGenBoard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.generateRandomBoard();
+      });
+    }
+
+    // Переключатель тайлов клеток
+    const btnToggleTiles = document.getElementById('btn-s2-toggle-tiles');
+    if (btnToggleTiles) {
+      btnToggleTiles.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.playClick();
+        this.showTileSprites = !this.showTileSprites;
+        try {
+          localStorage.setItem('birday_show_tile_sprites', String(this.showTileSprites));
+        } catch (err) {}
+        const txt = document.getElementById('s2-toggle-tiles-text');
+        if (txt) {
+          txt.textContent = this.showTileSprites ? 'Тайлы: ВКЛ' : 'Тайлы: ВЫКЛ';
+        }
+        this.showToastNotification(this.showTileSprites ? '🎨 Отрисовка тайлов: ВКЛ' : '🎨 Отрисовка тайлов: ВЫКЛ');
       });
     }
 
@@ -1262,7 +1313,12 @@ export class Stage2Board {
       this.ctx.drawImage(this.boardImage, 0, 0, this.boardWidth, this.boardHeight);
     }
 
-    // 3. Отладочные контуры, клетки и иконки (отображаются только в режиме отладки/настройки)
+    // 3. Отрисовка динамических спрайтов клеток из Event - Title (01.png, 02.png, 03.png, 04.png)
+    if (this.showTileSprites && this.cells.length > 0) {
+      this.renderTileSprites();
+    }
+
+    // 4. Отладочные контуры, клетки и иконки (отображаются в режиме отладки/настройки)
     if (this.showDebugCells) {
       this.renderTrackLines();
       for (let i = 0; i < this.cells.length; i++) {
@@ -1270,8 +1326,140 @@ export class Stage2Board {
       }
     }
 
-    // 4. Отрисовка фишки игрока (в игре видны только пешка и поле)
+    // 5. Отрисовка фишки игрока
     this.renderPlayerPawn();
+  }
+
+  /* ==========================================================================
+     Отрисовка и Предзагрузка Спрайтов Клеток (Event - Title)
+     ========================================================================== */
+  preloadTileSprites() {
+    const sprites = ['01.png', '02.png', '03.png', '04.png'];
+    sprites.forEach(filename => {
+      const img = new Image();
+      img.src = `assets/Second Level/Event - Title/${filename}`;
+      img.onload = () => {
+        this.tileImages[filename] = img;
+      };
+      this.tileImages[filename] = img;
+    });
+  }
+
+  generateRandomBoard() {
+    if (!this.cells || this.cells.length === 0) return;
+
+    audio.playDiceBounce(0.8);
+    const newCells = BoardGenerator.generate(this.cells);
+    this.cells = newCells;
+    this.showTileSprites = true;
+
+    // Обновляем текст кнопки тайлов, если было выключено
+    const txt = document.getElementById('s2-toggle-tiles-text');
+    if (txt) txt.textContent = 'Тайлы: ВКЛ';
+
+    // Возвращаем игрока на старт новой доски
+    this.syncPlayerToStart();
+
+    // Сохраняем сгенерированную карту в localStorage
+    try {
+      localStorage.setItem('birday_generated_cells', JSON.stringify(this.cells));
+    } catch (e) {}
+
+    this.showToastNotification('⚡ Карта сгенерирована! Старт и Босс закреплены.');
+  }
+
+  showToastNotification(text) {
+    let toast = document.getElementById('s2-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 's2-toast';
+      toast.className = 's2-toast-notification';
+      if (this.uiContainer) this.uiContainer.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.classList.add('show');
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
+  }
+
+  renderTileSprites() {
+    // В изометрии (2.5D) сортируем клетки по Y-центру (от дальнего края стола к ближнему),
+    // чтобы высокие объекты (до 260px) задних клеток не перекрывали передние
+    const sortedIndices = this.cells
+      .map((c, i) => ({ cell: c, index: i, cy: this.getCellCenter(c).y }))
+      .sort((a, b) => a.cy - b.cy);
+
+    for (const item of sortedIndices) {
+      this.renderSingleTileSprite(item.cell, item.index);
+    }
+  }
+
+  renderSingleTileSprite(cell, index) {
+    const spriteName = cell.tileSprite || this.getDefaultTileSprite(cell.type);
+    const img = this.tileImages[spriteName];
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+
+    const center = this.getCellCenter(cell);
+    const isHovered = this.hoveredCell && this.hoveredCell.id === cell.id;
+    const isCurrent = this.currentCellIndex === index;
+
+    // Масштабирование ширины: приводим ширину тайла к размеру клетки (~64px)
+    const targetW = this.tileTargetWidth || 64;
+    const scale = targetW / img.naturalWidth;
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+
+    // Якорная точка (Pivot):
+    // По X: строго центр (drawW / 2)
+    // По Y: ромб основания находится снизу с отступом anchorBottom (38px).
+    // Благодаря этому, если картинка увеличена по высоте (154px -> 260px),
+    // основание ромба ВСЕГДА стоит на одном месте на столе, а объекты растут вверх!
+    const anchorBottom = this.tileAnchorBottom || 38;
+    const pivotY = img.naturalHeight - anchorBottom;
+
+    const drawX = center.x - drawW / 2;
+    const hoverLift = isHovered ? -4 : 0;
+    const drawY = center.y - (pivotY * scale) + hoverLift;
+
+    this.ctx.save();
+
+    // Эффект свечения для текущей клетки или при наведении курсора
+    if (isCurrent) {
+      const pulse = Math.sin(this.animTime * 5) * 4;
+      this.ctx.shadowColor = '#2ec4b6';
+      this.ctx.shadowBlur = 18 + pulse;
+    } else if (isHovered) {
+      this.ctx.shadowColor = '#ffd166';
+      this.ctx.shadowBlur = 14;
+    }
+
+    this.ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+    // Подсказка номера шага при наведении
+    if (isHovered || this.showDebugCells) {
+      this.ctx.shadowColor = 'transparent';
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = 'bold 11px "8bitoperator", monospace';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(String(cell.index || index + 1), center.x, drawY - 4);
+    }
+
+    this.ctx.restore();
+  }
+
+  getDefaultTileSprite(type) {
+    switch (type) {
+      case 'GOOD': return '02.png';
+      case 'BAD': return '03.png';
+      case 'BOSS':
+      case 'MINIGAME':
+      case 'DICE_BONUS': return '04.png';
+      case 'START':
+      case 'NORMAL':
+      default: return '01.png';
+    }
   }
 
   renderTrackLines() {
