@@ -1,43 +1,237 @@
 /**
- * BoardQuestModal.js — Интерактивное модальное окно квестов, видео и диалогов
- * Использует:
- * - Big Frame.png (1039 x 678) для диалогов и заданий
- * - Cut-Scene-Boardgame.png (615 x 410) для обрамления видео кат-сцен
- * - Boardgame-UI-Answer.png (196 x 54) для кнопок вариантов ответов
- * - Leaf Green Button.png для кнопок подтверждения и продолжения
+ * BoardQuestModal.js — Интерактивное модальное окно заданий, мини-игр и уведомлений
+ * Использует фирменную графику проекта:
+ * - Big Frame.png / Good / Bad рамки
+ * - Cut-Scene-Boardgame.png для обрамления видео
+ * - Boardgame-UI-Answer.png и Leaf Green Button.png для кнопок
+ * - Иконки ресурсов из assets/ для графических оповещений об эффектах
  */
 
 import { audio } from '../core/AudioManager.js';
-import { ANIMAL_QUIZ_QUESTIONS } from './boardEventsData.js';
+import { ANIMAL_QUIZ_QUESTIONS, BOARD_ASSET_ICONS } from './boardEventsData.js';
 
 export class BoardQuestModal {
- constructor(eventManager) {
- this.eventManager = eventManager;
- this.modalEl = null;
- this.currentEvent = null;
- this.onCompleteCallback = null;
+  constructor(eventManager) {
+    this.eventManager = eventManager;
+    this.modalEl = null;
+    this.currentEvent = null;
+    this.onCompleteCallback = null;
 
- // Ссылки на под-элементы
- this.videoEl = null;
- this.videoWrapper = null;
- this.dialogueWrapper = null;
- this.titleText = null;
- this.speakerText = null;
- this.descText = null;
- this.optionsContainer = null;
- this.resultBadge = null;
+    this.strongmanAnimId = null;
+    this.timestopTimerId = null;
+    this.clawAnimId = null;
+    this.lockpickAnimId = null;
 
- // Внутреннее состояние мини-игр
- this.strongmanAnimId = null;
- this.timestopTimerId = null;
- this.timestopStartTime = 0;
- this.isTimestopRunning = false;
+    this.injectCustomStyles();
+    this.createDOM();
+  }
 
- this.createDOM();
- }
+  /**
+   * Встроенные стили для новых мини-игр и плашек оповещений в стилистике пергамента и дерева
+   */
+  injectCustomStyles() {
+    if (document.getElementById('board-quest-enhanced-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'board-quest-enhanced-styles';
+    style.textContent = `
+      /* Карточка оповещения о полученном эффекте */
+      .board-effect-banner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin: 10px auto 6px;
+        padding: 12px 22px;
+        max-width: 520px;
+        border-radius: 10px;
+        border: 2px solid #8c6d46;
+        background: linear-gradient(180deg, rgba(44, 33, 22, 0.94) 0%, rgba(26, 19, 12, 0.98) 100%);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,220,160,0.25);
+        animation: effectBannerPop 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      }
+      .board-effect-banner.effect-good {
+        border-color: #2ec4b6;
+        box-shadow: 0 6px 20px rgba(46, 196, 182, 0.25), inset 0 0 12px rgba(46, 196, 182, 0.15);
+      }
+      .board-effect-banner.effect-bad {
+        border-color: #e63946;
+        box-shadow: 0 6px 20px rgba(230, 57, 70, 0.28), inset 0 0 12px rgba(230, 57, 70, 0.18);
+      }
+      .board-effect-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .board-effect-icon-wrap img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+      .board-effect-info {
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .board-effect-label {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #cbb89d;
+      }
+      .board-effect-title {
+        font-size: 17px;
+        font-weight: bold;
+        color: #ffd166;
+      }
+      .board-effect-banner.effect-bad .board-effect-title {
+        color: #ff6b6b;
+      }
+      .board-effect-sub {
+        font-size: 13px;
+        color: #e9dfd0;
+      }
+      @keyframes effectBannerPop {
+        0% { transform: scale(0.86) translateY(8px); opacity: 0; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+      }
 
- createDOM() {
-    // 1. Создаем отдельный полноэкранный оверлей для катсцены
+      /* Мини-игра: Колесо Фортуны */
+      .wheel-minigame-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      .wheel-stage-box {
+        position: relative;
+        width: 210px;
+        height: 210px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .wheel-pointer-arrow {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 11px solid transparent;
+        border-right: 11px solid transparent;
+        border-top: 20px solid #ffd166;
+        filter: drop-shadow(0 3px 4px rgba(0,0,0,0.7));
+        z-index: 5;
+      }
+      .wheel-disc {
+        width: 196px;
+        height: 196px;
+        border-radius: 50%;
+        border: 6px solid #5c3d1e;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.55), inset 0 0 12px rgba(0,0,0,0.5);
+        position: relative;
+        transition: transform 3.4s cubic-bezier(0.14, 0.88, 0.22, 1);
+        background: conic-gradient(
+          #2a6f4e 0deg 60deg,
+          #7c4d25 60deg 120deg,
+          #1f5c7a 120deg 180deg,
+          #8f2d38 180deg 240deg,
+          #9c6b19 240deg 300deg,
+          #4f3b6b 300deg 360deg
+        );
+      }
+      .wheel-center-hub {
+        position: absolute;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #ffd166 0%, #9c6b19 100%);
+        border: 3px solid #3d2610;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+      }
+      .wheel-legend-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px 12px;
+        font-size: 12px;
+        color: #3a2615;
+        background: rgba(58, 38, 21, 0.08);
+        padding: 6px 12px;
+        border-radius: 6px;
+      }
+
+      /* Мини-игра: Механический кран и Взлом замка */
+      .claw-track-box, .lockpick-track-box {
+        width: 100%;
+        max-width: 440px;
+        margin: 8px auto;
+        padding: 12px;
+        background: rgba(34, 24, 15, 0.85);
+        border: 2px solid #7c5832;
+        border-radius: 10px;
+        color: #f4ece1;
+      }
+      .claw-rail {
+        position: relative;
+        height: 58px;
+        background: rgba(0,0,0,0.4);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+      .claw-target-zone {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: rgba(46, 196, 182, 0.25);
+        border-left: 2px dashed #2ec4b6;
+        border-right: 2px dashed #2ec4b6;
+      }
+      .claw-head {
+        position: absolute;
+        top: 6px;
+        width: 28px;
+        height: 44px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #ffd166 0%, #b57c1e 100%);
+        border: 2px solid #2b1d0e;
+        border-radius: 4px;
+      }
+      .lockpick-pins-row {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .lockpick-pin-badge {
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+      }
+      .lockpick-pin-badge.locked {
+        background: rgba(46, 196, 182, 0.3);
+        border-color: #2ec4b6;
+        color: #a8fff7;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  createDOM() {
     let existingCutscene = document.getElementById('board-fullscreen-cutscene');
     if (existingCutscene) existingCutscene.remove();
 
@@ -53,7 +247,6 @@ export class BoardQuestModal {
     document.getElementById('ui-layer').appendChild(this.fullscreenWrapper);
     this.fullscreenVideo = document.getElementById('board-fullscreen-cutscene-video');
 
-    // 2. Создаем квестовое окно Big Frame (только пергамент, диалог, кнопки и заголовок)
     let existing = document.getElementById('board-quest-modal');
     if (existing) existing.remove();
 
@@ -63,38 +256,31 @@ export class BoardQuestModal {
 
     this.modalEl.innerHTML = `
       <div class="board-quest-window" id="board-quest-window">
-        <!-- Верхняя плашка с заголовком ивента -->
         <div class="board-quest-title-header">
           <span id="board-quest-title" class="board-quest-title-text">СОБЫТИЕ</span>
         </div>
 
-        <!-- Тело квеста на пергаменте -->
         <div class="board-quest-content">
-          <!-- 1. Блок повествования и диалогов -->
           <div id="board-dialogue-block" class="board-dialogue-block">
             <div class="board-speaker-row">
-              <span id="board-quest-speaker" class="board-speaker-name">Рассказчик</span>
+              <span id="board-quest-speaker" class="board-speaker-name">Летописец</span>
             </div>
             <div id="board-quest-desc" class="board-quest-desc">Описание события...</div>
           </div>
 
-          <!-- 2. Интерактивная зона (Варианты ответов / Мини-игры) -->
           <div id="board-quest-interactive" class="board-quest-interactive"></div>
 
-          <!-- 3. Итоговый результат / Награда -->
           <div id="board-quest-result" class="board-quest-result hidden">
-            <div id="board-quest-result-text" class="board-result-text">+5 ЯИЦ!</div>
+            <div id="board-quest-result-text" class="board-result-text"></div>
           </div>
         </div>
 
-        <!-- 4. Нижняя панель действий (кнопка за пределами нижней границы рамки) -->
         <div id="board-quest-bottom-bar" class="board-quest-bottom-bar"></div>
       </div>
     `;
 
     document.getElementById('ui-layer').appendChild(this.modalEl);
 
-    // Привязываем элементы
     this.titleText = document.getElementById('board-quest-title');
     this.speakerText = document.getElementById('board-quest-speaker');
     this.descText = document.getElementById('board-quest-desc');
@@ -104,7 +290,7 @@ export class BoardQuestModal {
     this.resultText = document.getElementById('board-quest-result-text');
   }
 
-   setWindowFrame(type) {
+  setWindowFrame(type) {
     const win = document.getElementById('board-quest-window');
     if (!win) return;
     win.classList.remove('frame-big', 'frame-good', 'frame-bad');
@@ -117,21 +303,21 @@ export class BoardQuestModal {
     }
   }
 
-  /**
-   * Открыть модальное окно для конкретного ивента
-   */
   open(eventData, onComplete) {
     this.currentEvent = eventData;
     this.onCompleteCallback = onComplete;
-    this.pendingResult = null;
 
-        if (!this.modalEl) this.createDOM();
+    if (!this.modalEl) this.createDOM();
 
-    // Выбираем тип рамки: Big Frame для квизов, развилок и мини-игр; Good/Bad Frame для небольших эффектов
-    const choiceTypes = ['quiz', 'choice', 'choice_video', 'mystery_boxes', 'strongman', 'timestop', 'bingo', 'charity', 'wheel_video', 'boss_door'];
-    if (choiceTypes.includes(eventData.type)) {
+    const bigFrameTypes = [
+      'quiz', 'choice', 'choice_video', 'mystery_boxes', 'strongman',
+      'timestop', 'bingo', 'charity', 'wheel_game', 'claw_game',
+      'lockpick_game', 'thimbles_game', 'boss_door'
+    ];
+
+    if (bigFrameTypes.includes(eventData.type)) {
       this.setWindowFrame('big');
-    } else if (eventData.type === 'hazard' || eventData.type === 'hazard_video' || eventData.type === 'bounce') {
+    } else if (['hazard', 'hazard_video', 'bounce'].includes(eventData.type)) {
       this.setWindowFrame('bad');
     } else {
       this.setWindowFrame('good');
@@ -141,13 +327,11 @@ export class BoardQuestModal {
     this.speakerText.textContent = eventData.speaker || 'Лесной Путник';
     this.descText.textContent = eventData.text || '';
 
-    // Сброс видимости секций
     this.resultContainer.classList.add('hidden');
     const bb = document.getElementById('board-quest-bottom-bar');
     if (bb) bb.innerHTML = '';
     this.interactiveContainer.innerHTML = '';
 
-    // Если есть видео и это НЕ выбор (ловушки, сундуки, мешочки, шипы) — играем ролик на весь экран
     if (eventData.video && !eventData.playVideoAfterChoice) {
       this.modalEl.classList.add('hidden');
       this.playCutscene(eventData.video, () => {
@@ -155,27 +339,19 @@ export class BoardQuestModal {
         this.renderEventStage(eventData);
       });
     } else {
-      // События с выбором (Алтарь, развилка, подвал и т.д.) сразу показывают варианты
       this.modalEl.classList.remove('hidden');
       this.renderEventStage(eventData);
     }
   }
 
- /**
- * Запуск видео в рамке Cut-Scene-Boardgame.png
- */
- playCutscene(videoSrc, onFinish) {
+  playCutscene(videoSrc, onFinish) {
     if (!videoSrc) {
       if (onFinish) onFinish();
       return;
     }
 
     if (!this.fullscreenWrapper) this.createDOM();
-
-    // Скрываем окно квеста на время полноэкранного ролика
-    if (this.modalEl) {
-      this.modalEl.classList.add('hidden');
-    }
+    if (this.modalEl) this.modalEl.classList.add('hidden');
 
     this.fullscreenWrapper.classList.remove('hidden');
     this.fullscreenVideo.src = videoSrc;
@@ -197,97 +373,402 @@ export class BoardQuestModal {
     this.fullscreenVideo.ontimeupdate = () => {
       if (this.fullscreenVideo.duration > 0) {
         const progress = this.fullscreenVideo.currentTime / this.fullscreenVideo.duration;
-        if (progress >= 0.85 && !hasAdvanced) {
-          advance();
-        }
+        if (progress >= 0.88 && !hasAdvanced) advance();
       }
     };
 
-    // Клик на экран пропускает/завершает ролик
     this.fullscreenWrapper.onclick = (e) => {
       e.stopPropagation();
       advance();
     };
 
-    this.fullscreenVideo.play().catch(err => {
-      console.warn('⚠️ [BoardQuestModal] Автоплей видео не удался:', err);
-      advance();
-    });
-  }
-
- /**
- * Отрисовка интерактивной части после видео
- */
- renderWheel(evt) {
-    this.descText.textContent = evt.text || 'Перед вами огромное Колесо Лесной Фортуны!';
-    const bottomBar = document.getElementById('board-quest-bottom-bar');
-    if (bottomBar) {
-      bottomBar.innerHTML = '';
-      const btn = document.createElement('button');
-      btn.className = 'btn-leaf-green btn-quest-main-btn';
-      btn.innerHTML = '<span class="btn-leaf-green-text">КРУТИТЬ КОЛЕСО!</span>';
-      btn.addEventListener('click', () => {
-        audio.playClick();
-        this.playCutscene('assets/videos/Event-30.mp4', () => {
-          audio.playSuccess();
-          this.eventManager.addEggs(10, 'Колесо Фортуны');
-          this.showResult('СТРЕЛКА ОСТАНОВИЛАСЬ!<br>Колесо чуть не сорвало джекпот, но щедро одарило вас +10 яйцами!');
-        });
-      });
-      bottomBar.appendChild(btn);
-    }
+    this.fullscreenVideo.play().catch(() => advance());
   }
 
   renderEventStage(evt) {
- this.interactiveContainer.innerHTML = '';
- this.descText.textContent = evt.text || '';
+    this.interactiveContainer.innerHTML = '';
+    this.descText.textContent = evt.text || '';
 
- switch (evt.type) {
- case 'quiz':
- this.renderQuiz(evt);
- break;
- case 'choice':
- case 'choice_video':
- this.renderChoice(evt);
- break;
- case 'mystery_boxes':
- this.renderMysteryBoxes(evt);
- break;
- case 'strongman':
- this.renderStrongman(evt);
- break;
- case 'timestop':
- this.renderTimeStop(evt);
- break;
- case 'bingo':
- this.renderBingo(evt);
- break;
- case 'charity':
- this.renderCharity(evt);
- break;
- case 'wheel_video':
-        this.renderWheel(evt);
+    switch (evt.type) {
+      case 'quiz':
+        this.renderQuiz(evt);
         break;
-
-      case 'healing':
-      case 'reward_video':
-      case 'hazard_video':
-      case 'reward':
-      case 'hazard':
-      case 'boss_door':
-      case 'bounce':
+      case 'choice':
+      case 'choice_video':
+        this.renderChoice(evt);
+        break;
+      case 'mystery_boxes':
+        this.renderMysteryBoxes(evt);
+        break;
+      case 'strongman':
+        this.renderStrongman(evt);
+        break;
+      case 'timestop':
+        this.renderTimeStop(evt);
+        break;
+      case 'bingo':
+        this.renderBingo(evt);
+        break;
+      case 'charity':
+        this.renderCharity(evt);
+        break;
+      case 'wheel_game':
+      case 'wheel_video':
+        this.renderWheelGame(evt);
+        break;
+      case 'claw_game':
+        this.renderClawGame(evt);
+        break;
+      case 'lockpick_game':
+        this.renderLockpickGame(evt);
+        break;
+      case 'thimbles_game':
+        this.renderThimblesGame(evt);
+        break;
       default:
         this.renderSimpleAction(evt);
         break;
- }
- }
+    }
+  }
 
- /**
- * 1. Викторина о лесных зверях (Cell 2 & 34)
- */
- renderQuiz(evt) {
+  /**
+   * 1. Интерактивное Колесо Фортуны (без видео-заглушки)
+   */
+  renderWheelGame(evt) {
+    const sectors = [
+      { label: 'Запас +5 яиц', type: 'eggs', val: 5, good: true },
+      { label: 'Бустер карт', type: 'booster', val: 1, good: true },
+      { label: 'Запас +12 яиц', type: 'eggs', val: 12, good: true },
+      { label: 'Пошлина -2 яйца', type: 'loseEggs', val: 2, good: false },
+      { label: 'Джекпот +20 яиц', type: 'eggs', val: 20, good: true },
+      { label: 'Кубики переброса +2', type: 'reroll', val: 2, good: true }
+    ];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'wheel-minigame-wrap';
+    wrap.innerHTML = `
+      <div class="wheel-stage-box">
+        <div class="wheel-pointer-arrow"></div>
+        <div id="wheel-interactive-disc" class="wheel-disc">
+          <div class="wheel-center-hub"></div>
+        </div>
+      </div>
+      <div class="wheel-legend-grid">
+        <span>1: +5 Яиц</span>
+        <span>2: Бустер карт</span>
+        <span>3: +12 Яиц</span>
+        <span>4: Штраф -2</span>
+        <span>5: Джекпот +20</span>
+        <span>6: +2 Кубика</span>
+      </div>
+    `;
+    this.interactiveContainer.appendChild(wrap);
+
+    const bottomBar = document.getElementById('board-quest-bottom-bar');
+    if (!bottomBar) return;
+    bottomBar.innerHTML = '';
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-leaf-green btn-quest-main-btn';
+    btn.innerHTML = '<span class="btn-leaf-green-text">ВРАЩАТЬ КОЛЕСО</span>';
+
+    let spinning = false;
+    btn.addEventListener('click', () => {
+      if (spinning) return;
+      spinning = true;
+      btn.disabled = true;
+      audio.playClick();
+
+      const chosenIndex = Math.floor(Math.random() * sectors.length);
+      const chosen = sectors[chosenIndex];
+      const sectorAngle = 360 / sectors.length;
+      const targetDeg = 360 * 5 + (360 - (chosenIndex * sectorAngle + sectorAngle / 2));
+
+      const disc = document.getElementById('wheel-interactive-disc');
+      if (disc) {
+        disc.style.transform = `rotate(${targetDeg}deg)`;
+      }
+
+      setTimeout(() => {
+        if (chosen.type === 'eggs') {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(chosen.val, 'Колесо Фортуны');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Выигрыш на Колесе Фортуны',
+            effectTitle: `Пополнение запасов: +${gained} яиц`,
+            narrative: 'Колесо плавно замедляет ход, и стрелка замирает на щедром секторе.'
+          });
+        } else if (chosen.type === 'booster') {
+          audio.playSuccess();
+          this.eventManager.addBoosterPacks(chosen.val);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.BOOSTER,
+            label: 'Редкий сектор Колеса',
+            effectTitle: 'Тактический резерв: +1 Бустер карт',
+            narrative: 'Из призового желоба выпадает запечатанный набор бойцов для битвы с Боссом.'
+          });
+        } else if (chosen.type === 'reroll') {
+          audio.playSuccess();
+          this.eventManager.addRerollDice(chosen.val);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.DICE,
+            label: 'Благословение Фортуны',
+            effectTitle: 'Контроль судьбы: +2 кубика переброса',
+            narrative: 'Механизм отсчитывает вам две дополнительные кости для будущих ходов.'
+          });
+        } else {
+          audio.playImpact();
+          const lost = this.eventManager.loseEggs(chosen.val, 'Штрафной сектор');
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.TILE_BAD,
+            label: 'Сектор неудачи',
+            effectTitle: lost > 0 ? `Утрачено припасов: -${lost} яйца` : 'Щит отразил потерю припасов',
+            narrative: 'Стрелка остановилась на тёмном секторе ярмарочного колеса.'
+          });
+        }
+      }, 3450);
+    });
+
+    bottomBar.appendChild(btn);
+  }
+
+  /**
+   * 2. Мини-игра: Механический Захват (Кран-автомат на тайминг)
+   */
+  renderClawGame(evt) {
+    const box = document.createElement('div');
+    box.className = 'claw-track-box';
+    box.innerHTML = `
+      <div style="margin-bottom:6px; font-size:13px; text-align:center;">
+        Поймайте каретку крана в центральной бирюзовой зоне
+      </div>
+      <div class="claw-rail">
+        <div class="claw-target-zone" style="left: 38%; width: 24%;"></div>
+        <div id="claw-moving-head" class="claw-head" style="left: 10%;"></div>
+      </div>
+    `;
+    this.interactiveContainer.appendChild(box);
+
+    const head = document.getElementById('claw-moving-head');
+    let pos = 10;
+    let dir = 1.45;
+    let finished = false;
+
+    const loop = () => {
+      if (finished) return;
+      pos += dir;
+      if (pos >= 92 || pos <= 8) dir = -dir;
+      if (head) head.style.left = `${pos}%`;
+      this.clawAnimId = requestAnimationFrame(loop);
+    };
+    this.clawAnimId = requestAnimationFrame(loop);
+
+    const bottomBar = document.getElementById('board-quest-bottom-bar');
+    if (!bottomBar) return;
+    bottomBar.innerHTML = '';
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-leaf-green btn-quest-main-btn';
+    btn.innerHTML = '<span class="btn-leaf-green-text">ОПУСТИТЬ ЗАХВАТ</span>';
+
+    btn.addEventListener('click', () => {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(this.clawAnimId);
+      audio.playClick();
+
+      if (pos >= 38 && pos <= 62) {
+        audio.playSuccess();
+        const winBooster = Math.random() < 0.45;
+        if (winBooster) {
+          this.eventManager.addBoosterPacks(1);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.BOOSTER,
+            label: 'Точный захват',
+            effectTitle: 'Получен набор: +1 Бустер карт',
+            narrative: 'Стальные лапки клешни надёжно сомкнулись вокруг главной призовой капсулы.'
+          });
+        } else {
+          const gained = this.eventManager.addEggs(8, 'Механический кран');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Точный захват',
+            effectTitle: `Призовая капсула: +${gained} яиц`,
+            narrative: 'Кран аккуратно доставил увесистую капсулу с запасом яиц в лоток выдачи.'
+          });
+        }
+      } else {
+        audio.playImpact();
+        const gained = this.eventManager.addEggs(2, 'Утешительный улов');
+        this.showOutcomeWithBanner({
+          isGood: true,
+          icon: BOARD_ASSET_ICONS.EGG,
+          label: 'Касательный захват',
+          effectTitle: `Малый улов: +${gained} яйца`,
+          narrative: 'Клешня соскользнула с главного приза, но зацепила малый мешочек у края витрины.'
+        });
+      }
+    });
+
+    bottomBar.appendChild(btn);
+  }
+
+  /**
+   * 3. Мини-игра: Взлом Запертого Погреба (3 штифта)
+   */
+  renderLockpickGame(evt) {
+    const box = document.createElement('div');
+    box.className = 'lockpick-track-box';
+    box.innerHTML = `
+      <div class="lockpick-pins-row">
+        <span id="lp-pin-0" class="lockpick-pin-badge">Штифт I</span>
+        <span id="lp-pin-1" class="lockpick-pin-badge">Штифт II</span>
+        <span id="lp-pin-2" class="lockpick-pin-badge">Штифт III</span>
+      </div>
+      <div class="claw-rail">
+        <div id="lp-target-zone" class="claw-target-zone" style="left: 35%; width: 30%;"></div>
+        <div id="lp-runner" class="claw-head" style="left: 5%;"></div>
+      </div>
+    `;
+    this.interactiveContainer.appendChild(box);
+
+    const runner = document.getElementById('lp-runner');
+    const zone = document.getElementById('lp-target-zone');
+
+    let currentPin = 0;
+    let pos = 10;
+    let speed = 1.3;
+    let active = true;
+    let zoneMin = 35;
+    let zoneMax = 65;
+
+    const moveLoop = () => {
+      if (!active) return;
+      pos += speed;
+      if (pos >= 94 || pos <= 6) speed = -speed;
+      if (runner) runner.style.left = `${pos}%`;
+      this.lockpickAnimId = requestAnimationFrame(moveLoop);
+    };
+    this.lockpickAnimId = requestAnimationFrame(moveLoop);
+
+    const bottomBar = document.getElementById('board-quest-bottom-bar');
+    if (!bottomBar) return;
+    bottomBar.innerHTML = '';
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-leaf-green btn-quest-main-btn';
+    btn.innerHTML = '<span class="btn-leaf-green-text">ЗАФИКСИРОВАТЬ ШТИФТ</span>';
+
+    btn.addEventListener('click', () => {
+      if (!active) return;
+      audio.playClick();
+
+      if (pos >= zoneMin && pos <= zoneMax) {
+        const pinBadge = document.getElementById(`lp-pin-${currentPin}`);
+        if (pinBadge) pinBadge.classList.add('locked');
+        currentPin++;
+
+        if (currentPin >= 3) {
+          active = false;
+          cancelAnimationFrame(this.lockpickAnimId);
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(9, 'Тайник в погребе');
+          this.eventManager.addRerollDice(1);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Замок взломан',
+            effectTitle: `Тайник открыт: +${gained} яиц и +1 кубик`,
+            narrative: 'Последний штифт с глухим щелчком встал на место. Внутри погреба обнаружились нетронутые запасы.'
+          });
+        } else {
+          // Усложняем следующий штифт
+          speed = (speed > 0 ? 1 : -1) * (Math.abs(speed) + 0.35);
+          zoneMin = 22 + Math.floor(Math.random() * 40);
+          zoneMax = zoneMin + 24;
+          if (zone) {
+            zone.style.left = `${zoneMin}%`;
+            zone.style.width = `${zoneMax - zoneMin}%`;
+          }
+        }
+      } else {
+        active = false;
+        cancelAnimationFrame(this.lockpickAnimId);
+        audio.playImpact();
+        this.showOutcomeWithBanner({
+          isGood: false,
+          icon: BOARD_ASSET_ICONS.TILE_BAD,
+          label: 'Срыв отмычки',
+          effectTitle: 'Механизм заблокирован',
+          narrative: 'Пружина сорвалась на последнем витке. Придётся оставить погреб и двигаться дальше.'
+        });
+      }
+    });
+
+    bottomBar.appendChild(btn);
+  }
+
+  /**
+   * 4. Мини-игра: Игра в Скорлупки (Напёрстки)
+   */
+  renderThimblesGame(evt) {
+    const grid = document.createElement('div');
+    grid.className = 'board-answers-grid';
+
+    const winningShell = Math.floor(Math.random() * 3);
+    const labels = ['Левая скорлупка', 'Средняя скорлупка', 'Правая скорлупка'];
+    const LETTERS = ['A', 'B', 'C'];
+
+    labels.forEach((label, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-board-answer';
+      btn.innerHTML = `
+        <span class="btn-board-answer-letter">${LETTERS[idx]}</span>
+        <span class="btn-board-answer-text">${label}</span>
+      `;
+      btn.addEventListener('click', () => {
+        audio.playClick();
+        if (idx === winningShell) {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(8, 'Игра в скорлупки');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Безупречная внимательность',
+            effectTitle: `Выигрыш: +${gained} яиц`,
+            narrative: 'Под выбранной ореховой скорлупкой действительно оказалось золочёное яйцо.'
+          });
+        } else {
+          audio.playImpact();
+          this.eventManager.addRerollDice(1);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.DICE,
+            label: 'Поощрение за партию',
+            effectTitle: 'Получено: +1 кубик переброса',
+            narrative: 'Золотое яйцо оказалось под соседней скорлупкой, но бурундук подарил вам счастливую кость за игру.'
+          });
+        }
+      });
+      grid.appendChild(btn);
+    });
+
+    this.interactiveContainer.appendChild(grid);
+  }
+
+  /**
+   * 5. Викторина о лесных зверях
+   */
+  renderQuiz(evt) {
     const qData = ANIMAL_QUIZ_QUESTIONS[Math.floor(Math.random() * ANIMAL_QUIZ_QUESTIONS.length)];
-    this.descText.innerHTML = `<em>«${qData.question}»</em><br><small style="color:#a89f91;">(${qData.hint})</small>`;
+    this.descText.innerHTML = `<em>«${qData.question}»</em><br><small style="color:#8c7b65;">Подсказка: ${qData.hint}</small>`;
 
     const grid = document.createElement('div');
     grid.className = 'board-answers-grid';
@@ -297,22 +778,34 @@ export class BoardQuestModal {
 
     const LETTERS = ['A', 'B', 'C', 'D'];
     answers.forEach((item, idx) => {
-      const letter = LETTERS[idx] || (idx + 1);
       const btn = document.createElement('button');
       btn.className = 'btn-board-answer';
       btn.innerHTML = `
-        <span class="btn-board-answer-letter">${letter}</span>
+        <span class="btn-board-answer-letter">${LETTERS[idx]}</span>
         <span class="btn-board-answer-text">${item.text}</span>
       `;
       btn.addEventListener('click', () => {
         audio.playClick();
         if (item.isCorrect) {
           audio.playSuccess();
-          this.eventManager.addEggs(evt.rewardEggs || 5, 'Викторина лесных друзей');
-          this.showResult(`ВЕРНО!<br>Мышонок пожимает крыло и дарит +${evt.rewardEggs || 5} яиц!`);
+          const reward = evt.rewardEggs || 6;
+          const gained = this.eventManager.addEggs(reward, 'Лесная викторина');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Верный ответ',
+            effectTitle: `Награда за наблюдательность: +${gained} яиц`,
+            narrative: 'Хранитель летописи с уважением кивает и передаёт вам заслуженный паёк.'
+          });
         } else {
           audio.playImpact();
-          this.showResult('УВЫ, НЕВЕРНО!<br>Мышонок вздыхает, но угощает вас чаем.');
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.TILE_NORMAL,
+            label: 'Неточность в расчётах',
+            effectTitle: 'Припасы не изменились',
+            narrative: 'Записи не сошлись, однако горячий травяной чай у костра восстановил бодрость духа.'
+          });
         }
       });
       grid.appendChild(btn);
@@ -321,20 +814,19 @@ export class BoardQuestModal {
     this.interactiveContainer.appendChild(grid);
   }
 
- /**
- * 2. Выбор из нескольких вариантов (Cell 10, 11, 13, 16, 24)
- */
- renderChoice(evt) {
+  /**
+   * 6. События с выбором
+   */
+  renderChoice(evt) {
     const grid = document.createElement('div');
     grid.className = 'board-answers-grid';
 
     const LETTERS = ['A', 'B', 'C', 'D'];
     (evt.options || []).forEach((opt, idx) => {
-      const letter = LETTERS[idx] || (idx + 1);
       const btn = document.createElement('button');
       btn.className = 'btn-board-answer';
       btn.innerHTML = `
-        <span class="btn-board-answer-letter">${letter}</span>
+        <span class="btn-board-answer-letter">${LETTERS[idx]}</span>
         <span class="btn-board-answer-text">${opt.text}</span>
       `;
       btn.addEventListener('click', () => {
@@ -347,120 +839,162 @@ export class BoardQuestModal {
     this.interactiveContainer.appendChild(grid);
   }
 
- handleChoiceKey(key, evt) {
+  handleChoiceKey(key, evt) {
     if (key === 'pass') {
-      this.showResult('Вы решили не рисковать и спокойно продолжили путь.');
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.TILE_NORMAL,
+        label: 'Осторожное решение',
+        effectTitle: 'Путь продолжен без риска',
+        narrative: 'Вы предпочли сохранить имеющиеся ресурсы и двинулись дальше по маршруту.'
+      });
       return;
     }
 
-    // Cell 10: Ориентир (развилка в тумане)
     if (key === 'left' || key === 'right') {
-      const isCorrect = Math.random() < 0.5;
+      const isCorrect = Math.random() < 0.55;
       this.playCutscene('assets/videos/Event-10.mp4', () => {
         if (isCorrect) {
           audio.playSuccess();
-          this.showResult('ВЫ УГАДАЛИ ТРОПУ!<br>Туман рассеялся, тропа ведёт прямо вперёд!');
+          this.eventManager.addRerollDice(1);
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.DICE,
+            label: 'Верный ориентир',
+            effectTitle: 'Короткая тропа: +1 кубик переброса',
+            narrative: 'Туман расступился, открывая прямую дорогу и тайник со счастливой костью.'
+          });
         } else {
           audio.playImpact();
           this.eventManager.setReverseNextMove(true);
-          this.showResult('ТУМАН ЗАВЁЛ В ТУПИК!<br>Вы потеряли ориентир: следующий бросок кубика сделает шаг НАЗАД!');
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.TILE_BAD,
+            label: 'Потеря ориентации',
+            effectTitle: 'Эффект: Следующий ход направит вас назад',
+            narrative: 'Тропа сделала крутую петлю в густом тумане и развернула вас в обратную сторону.'
+          });
         }
       });
       return;
     }
 
-    // Cell 11: Жертвоприношение монументу (Видео только если пожертвовали яйца!)
     if (key === 'sacrifice_2') {
       if (this.eventManager.stats.eggs >= 2) {
         audio.playSuccess();
-        this.eventManager.loseEggs(2, 'Жертва Монументу', true);
+        this.eventManager.loseEggs(2, 'Дар Алтарю', true);
         this.eventManager.setImmunity(true);
         this.playCutscene('assets/videos/Event-11.mp4', () => {
-          this.showResult('ДАР ПРИНЯТ!<br>Вы пожертвовали 2 яйца и получили ЩИТ ИММУНИТЕТА к несчастьям!');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.TILE_GOOD,
+            label: 'Благословение Монолита',
+            effectTitle: 'Активирован: Щит Неуязвимости',
+            narrative: 'Алтарь принял дар и окутал вас защитным куполом от следующей ловушки или отравления.'
+          });
         });
       } else {
         audio.playImpact();
-        this.showResult('У вас недостаточно яиц для пожертвования.');
+        this.showOutcomeWithBanner({
+          isGood: false,
+          icon: BOARD_ASSET_ICONS.EGG,
+          label: 'Нехватка ресурсов',
+          effectTitle: 'Требуется минимум 2 яйца',
+          narrative: 'В вашем саквояже недостаточно припасов для совершения подношения.'
+        });
       }
       return;
     }
 
     if (key === 'drink_water') {
- audio.playSuccess();
- this.eventManager.setMysteriousBuff('Благословение Чистого Ручья');
- this.showResult('ПРОХЛАДА И БОДРОСТЬ! <br>Вы чувствуете прилив сил. В статус-баре появился загадочный бафф!');
- return;
- }
+      audio.playSuccess();
+      this.eventManager.setMysteriousBuff('Благословение Чистого Ручья');
+      const gained = this.eventManager.addEggs(3, 'Родниковая роса');
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.EGG,
+        label: 'Эффект родника',
+        effectTitle: `Прилив сил: +${gained} яйца и Особый тонус`,
+        narrative: 'Кристальная влага мгновенно сняла дорожную усталость и укрепила ваш дух.'
+      });
+      return;
+    }
 
- // Cell 16: Спуститься в подвал (курица)
- if (key === 'enter_basement') {
- const isGood = Math.random() < 0.7; // 70% добрая курица
- if (isGood) {
- this.playCutscene('assets/videos/Event-16-1.mp4', () => {
- this.eventManager.addEggs(2, 'Добрая курочка в подвале');
- this.showResult('ТИХИЙ КУРЯТНИК! <br>Ласковая курочка протягивает вам +2 свежих яйца!');
- });
- } else {
- this.playCutscene('assets/videos/Event-16-2.mp4', () => {
- this.eventManager.loseEggs(2, 'Агрессивная курица');
- this.showResult('КУРИНЫЙ БОЕЦ! <br>Агрессивная курица набросилась и отняла 2 яйца!');
- });
- }
- return;
- }
+    if (key === 'enter_basement') {
+      const isGood = Math.random() < 0.7;
+      if (isGood) {
+        this.playCutscene('assets/videos/Event-16-1.mp4', () => {
+          const gained = this.eventManager.addEggs(4, 'Подземный тайник');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Удачная разведка',
+            effectTitle: `Найдено в подвале: +${gained} яйца`,
+            narrative: 'Обитательница тёплого подвала дружелюбно поделилась с вами свежими запасами.'
+          });
+        });
+      } else {
+        this.playCutscene('assets/videos/Event-16-2.mp4', () => {
+          const lost = this.eventManager.loseEggs(2, 'Страж подвала');
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.TILE_BAD,
+            label: 'Неожиданная стычка',
+            effectTitle: lost > 0 ? `Потеря при отступлении: -${lost} яйца` : 'Щит предотвратил потерю яиц',
+            narrative: 'В темноте вас встретила разъярённая наседка. Пришлось спешно ретироваться по ступеням.'
+          });
+        });
+      }
+      return;
+    }
 
- // Cell 9: Автомат с игрушками
- if (key === 'play_claw') {
- if (this.eventManager.stats.eggs >= 1) {
- this.eventManager.loseEggs(1, 'Жетоны автомата', true);
- const winBooster = Math.random() < 0.35;
- if (winBooster) {
- audio.playSuccess();
- this.eventManager.addBoosterPacks(1);
- this.showResult('ДЖЕКПОТ АВТОМАТА! карт<br>Клешня подцепила редкий БУСТЕР КАРТ ДЛЯ БОССА!');
- } else {
- audio.playSuccess();
- this.eventManager.addEggs(3, 'Приз из автомата');
- this.showResult('УДАЧНЫЙ УЛОВ! яиц<br>Клешня вытащила капсулу с +3 яйцами!');
- }
- } else {
- this.showResult('Не хватает яиц, чтобы опустить в монетоприёмник.');
- }
- return;
- }
+    if (key === 'buy_booster_4') {
+      if (this.eventManager.stats.eggs >= 4) {
+        audio.playSuccess();
+        this.eventManager.loseEggs(4, 'Обмен у Сороки', true);
+        this.eventManager.addBoosterPacks(1);
+        this.showOutcomeWithBanner({
+          isGood: true,
+          icon: BOARD_ASSET_ICONS.BOOSTER,
+          label: 'Успешная сделка',
+          effectTitle: 'Приобретено: +1 Бустер карт (за 4 яйца)',
+          narrative: 'Сорока ловко пересчитала яйца и сбросила вам запечатанный свёрток с картами.'
+        });
+      } else {
+        audio.playImpact();
+        this.showOutcomeWithBanner({
+          isGood: false,
+          icon: BOARD_ASSET_ICONS.EGG,
+          label: 'Сделка сорвалась',
+          effectTitle: 'Недостаточно яиц для обмена (нужно 4)',
+          narrative: 'Сорока недовольно застрекотала и перелетела на соседнюю ветку.'
+        });
+      }
+    }
+  }
 
- // Cell 24: Заброшенный подвал
- if (key === 'try_open') {
- audio.playImpact();
- this.showResult('ЗАМОК НЕ ПОДДАЁТСЯ! <br>Ржавый замок намертво заклинил. В подвал не проникнуть.');
- return;
- }
- }
-
- /**
- * 3. Коробка с 4 сюрпризами (Cell 17 & 25)
- */
- renderMysteryBoxes(evt) {
+  /**
+   * 7. Четыре шкатулки Иллюзиониста
+   */
+  renderMysteryBoxes(evt) {
     const boxContainer = document.createElement('div');
     boxContainer.className = 'board-answers-grid mystery-boxes-row';
 
     const boxes = [
-      { id: 1, name: 'Кубик 1', video: 'assets/videos/Event-17-1.mp4', type: 'glove' },
-      { id: 2, name: 'Кубик 2', video: 'assets/videos/Event-17-2.mp4', type: 'booster' },
-      { id: 3, name: 'Кубик 3', video: 'assets/videos/Event-17-3.mp4', type: 'reroll' },
-      { id: 4, name: 'Кубик 4', video: 'assets/videos/Event-17-4.mp4', type: 'golden' }
+      { id: 1, video: 'assets/videos/Event-17-1.mp4', type: 'glove' },
+      { id: 2, video: 'assets/videos/Event-17-2.mp4', type: 'booster' },
+      { id: 3, video: 'assets/videos/Event-17-3.mp4', type: 'reroll' },
+      { id: 4, video: 'assets/videos/Event-17-4.mp4', type: 'golden' }
     ];
-
     boxes.sort(() => Math.random() - 0.5);
 
     const LETTERS = ['A', 'B', 'C', 'D'];
     boxes.forEach((box, i) => {
-      const letter = LETTERS[i] || (i + 1);
       const btn = document.createElement('button');
       btn.className = 'btn-board-answer mystery-box-btn';
       btn.innerHTML = `
-        <span class="btn-board-answer-letter">${letter}</span>
-        <span class="btn-board-answer-text">Шкатулка #${i + 1}</span>
+        <span class="btn-board-answer-letter">${LETTERS[i]}</span>
+        <span class="btn-board-answer-text">Ларец #${i + 1}</span>
       `;
       btn.addEventListener('click', () => {
         audio.playClick();
@@ -469,20 +1003,44 @@ export class BoardQuestModal {
         this.playCutscene(box.video, () => {
           if (box.type === 'glove') {
             audio.playImpact();
-            this.eventManager.loseEggs(4, 'Боксёрская перчатка');
-            this.showResult('БАМ! БОКСЁРСКИЙ ТУМАК!<br>Из коробки вылетела перчатка на пружине! Потеряно -4 яйца!');
+            const lost = this.eventManager.loseEggs(4, 'Пружинная ловушка');
+            this.showOutcomeWithBanner({
+              isGood: false,
+              icon: BOARD_ASSET_ICONS.TILE_BAD,
+              label: 'Коварный механизм',
+              effectTitle: lost > 0 ? `Удар пружины: -${lost} яйца` : 'Защитный щит поглотил удар',
+              narrative: 'Под крышкой сработала тугая пружина с боксёрской перчаткой.'
+            });
           } else if (box.type === 'booster') {
             audio.playSuccess();
             this.eventManager.addBoosterPacks(1);
-            this.showResult('БУСТЕР КАРТ!<br>Вы достали отличный набор карт с пернатым героем!');
+            this.showOutcomeWithBanner({
+              isGood: true,
+              icon: BOARD_ASSET_ICONS.BOOSTER,
+              label: 'Ценная находка',
+              effectTitle: 'Арсенал пополнен: +1 Бустер карт',
+              narrative: 'На бархатной подушечке внутри шкатулки лежал набор боевых карт.'
+            });
           } else if (box.type === 'reroll') {
             audio.playSuccess();
-            this.eventManager.addRerollDice(1);
-            this.showResult('КУБИК УДАЧИ!<br>Вы нашли +1 дополнительный кубик переброса!');
-          } else if (box.type === 'golden') {
+            this.eventManager.addRerollDice(2);
+            this.showOutcomeWithBanner({
+              isGood: true,
+              icon: BOARD_ASSET_ICONS.DICE,
+              label: 'Дар Иллюзиониста',
+              effectTitle: 'Получено: +2 кубика переброса',
+              narrative: 'Внутри ларца оказались две кости из резного костяного дерева.'
+            });
+          } else {
             audio.playSuccess();
-            this.eventManager.addEggs(10, 'Золотое Яйцо');
-            this.showResult('ЗОЛОТОЕ ЯЙЦО ДЖЕКПОТ!<br>Невероятная редкость! Вы получаете +10 яиц!');
+            const gained = this.eventManager.addEggs(10, 'Золотой запас');
+            this.showOutcomeWithBanner({
+              isGood: true,
+              icon: BOARD_ASSET_ICONS.EGG,
+              label: 'Главный приз',
+              effectTitle: `Золотая кладка: +${gained} яиц`,
+              narrative: 'Вы открыли самый богатый ларец из четырёх!'
+            });
           }
         });
       });
@@ -492,190 +1050,238 @@ export class BoardQuestModal {
     this.interactiveContainer.appendChild(boxContainer);
   }
 
- /**
- * 4. Аттракцион Силомер (Cell 19)
- */
- renderStrongman(evt) {
- const wrap = document.createElement('div');
- wrap.className = 'strongman-game-wrap';
+  /**
+   * 8. Аттракцион Силомер
+   */
+  renderStrongman(evt) {
+    const wrap = document.createElement('div');
+    wrap.className = 'strongman-game-wrap';
+    wrap.innerHTML = `
+      <div class="strongman-gauge-track">
+        <div class="zone zone-green">Слабо (0)</div>
+        <div class="zone zone-yellow">Точно (+4)</div>
+        <div class="zone zone-red">ПИК СИЛЫ (+10)</div>
+        <div id="strongman-pointer" class="strongman-pointer"></div>
+      </div>
+      <button id="btn-strongman-hit" class="btn-leaf-green">
+        <span class="btn-leaf-green-text">НАНЕСТИ УДАР (ПРОБЕЛ)</span>
+      </button>
+    `;
+    this.interactiveContainer.appendChild(wrap);
 
- wrap.innerHTML = `
- <div class="strongman-gauge-track">
- <div class="zone zone-green">Обычный (0)</div>
- <div class="zone zone-yellow">Средний (+3)</div>
- <div class="zone zone-red">МАКСИМУМ (+10)</div>
- <div id="strongman-pointer" class="strongman-pointer"></div>
- </div>
- <button id="btn-strongman-hit" class="btn-leaf-green">
- <span class="btn-leaf-green-text">УДАРИТЬ! (ПРОБЕЛ)</span>
- </button>
- `;
+    const pointer = document.getElementById('strongman-pointer');
+    const btnHit = document.getElementById('btn-strongman-hit');
 
- this.interactiveContainer.appendChild(wrap);
+    let position = 0;
+    let speed = 1.65;
+    let isFinished = false;
 
- const pointer = document.getElementById('strongman-pointer');
- const btnHit = document.getElementById('btn-strongman-hit');
+    const animate = () => {
+      if (isFinished) return;
+      position += speed;
+      if (position >= 100 || position <= 0) speed = -speed;
+      if (pointer) pointer.style.left = `${Math.min(100, Math.max(0, position))}%`;
+      this.strongmanAnimId = requestAnimationFrame(animate);
+    };
+    this.strongmanAnimId = requestAnimationFrame(animate);
 
- let position = 0;
- let speed = 1.6;
- let isFinished = false;
+    const strike = () => {
+      if (isFinished) return;
+      isFinished = true;
+      cancelAnimationFrame(this.strongmanAnimId);
 
- const animate = () => {
- if (isFinished) return;
- position += speed;
- if (position >= 100 || position <= 0) speed = -speed;
- if (pointer) pointer.style.left = `${Math.min(100, Math.max(0, position))}%`;
- this.strongmanAnimId = requestAnimationFrame(animate);
- };
- this.strongmanAnimId = requestAnimationFrame(animate);
+      this.playCutscene(evt.video || 'assets/videos/Event-19.mp4', () => {
+        if (position >= 75) {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(10, 'Силомер: Пик силы');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Сокрушительный удар',
+            effectTitle: `Максимальная награда: +${gained} яиц`,
+            narrative: 'Гиря взлетела до самой вершины столба и ударила в медный гонг!'
+          });
+        } else if (position >= 40) {
+          audio.playClick();
+          const gained = this.eventManager.addEggs(4, 'Силомер: Средний удар');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Крепкий замах',
+            effectTitle: `Заработано: +${gained} яйца`,
+            narrative: 'Удар вышел уверенным, хоть и немного не дотянул до вершины шкалы.'
+          });
+        } else {
+          audio.playImpact();
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.TILE_NORMAL,
+            label: 'Скользящий удар',
+            effectTitle: 'Награда не получена',
+            narrative: 'Молот опустился слишком рано, и бегунок едва оторвался от основания.'
+          });
+        }
+      });
+    };
 
- const strike = () => {
- if (isFinished) return;
- isFinished = true;
- cancelAnimationFrame(this.strongmanAnimId);
+    btnHit.addEventListener('click', strike);
+    const keyHandler = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        window.removeEventListener('keydown', keyHandler);
+        strike();
+      }
+    };
+    window.addEventListener('keydown', keyHandler, { once: true });
+  }
 
- this.playCutscene(evt.video || 'assets/videos/Event-19.mp4', () => {
- // Red zone: 75% to 100%
- if (position >= 75) {
- audio.playSuccess();
- this.eventManager.addEggs(10, 'Силомер - Суперудар');
- this.showResult('БОГАТЫРСКИЙ УДАР! <br>Колокол звенит на весь лес! Вы получаете ДЖЕКПОТ +10 яиц яиц!');
- } else if (position >= 40) {
- audio.playClick();
- this.eventManager.addEggs(3, 'Силомер - Средний');
- this.showResult('ХОРОШИЙ УДАР! <br>Неплохая сила: вы получаете +3 яиц яйца!');
- } else {
- audio.playImpact();
- this.showResult('СЛАБОВАТО! <br>Молот едва коснулся наковальни. Награды нет.');
- }
- });
- };
+  /**
+   * 9. Хронометр Часовщика (Остановка времени)
+   */
+  renderTimeStop(evt) {
+    const wrap = document.createElement('div');
+    wrap.className = 'timestop-game-wrap';
+    wrap.innerHTML = `
+      <div class="timestop-target-selector">
+        <button id="btn-target-5" class="btn-board-answer"><span class="btn-board-answer-letter">A</span><span class="btn-board-answer-text">Рубеж: 05.00 сек</span></button>
+        <button id="btn-target-8" class="btn-board-answer"><span class="btn-board-answer-letter">B</span><span class="btn-board-answer-text">Рубеж: 08.00 сек</span></button>
+      </div>
+      <div id="timestop-display" class="timestop-clock">00.00 с</div>
+      <button id="btn-timestop-action" class="btn-leaf-green" style="display:none;">
+        <span class="btn-leaf-green-text" id="timestop-btn-text">ЗАПУСТИТЬ ОТСЧЁТ</span>
+      </button>
+    `;
+    this.interactiveContainer.appendChild(wrap);
 
- btnHit.addEventListener('click', strike);
- const keyHandler = (e) => {
- if (e.code === 'Space') {
- e.preventDefault();
- window.removeEventListener('keydown', keyHandler);
- strike();
- }
- };
- window.addEventListener('keydown', keyHandler, { once: true });
- }
+    let targetSeconds = 5;
+    const clock = document.getElementById('timestop-display');
+    const btnAction = document.getElementById('btn-timestop-action');
+    const btnText = document.getElementById('timestop-btn-text');
 
- /**
- * 5. Челлендж Остановка Времени (Cell 20)
- */
- renderTimeStop(evt) {
- const wrap = document.createElement('div');
- wrap.className = 'timestop-game-wrap';
+    const selectTarget = (sec) => {
+      audio.playClick();
+      targetSeconds = sec;
+      const sel = wrap.querySelector('.timestop-target-selector');
+      if (sel) sel.style.display = 'none';
+      btnAction.style.display = 'inline-flex';
+      clock.textContent = `Цель: ${sec.toFixed(2)} с`;
+    };
 
- wrap.innerHTML = `
- <div class="timestop-target-selector">
- <button id="btn-target-5" class="btn-board-answer"><span class="btn-board-answer-text">Цель: 05:00 с</span></button>
- <button id="btn-target-10" class="btn-board-answer"><span class="btn-board-answer-text">Цель: 10:00 с</span></button>
- </div>
- <div id="timestop-display" class="timestop-clock">00:00.00</div>
- <button id="btn-timestop-action" class="btn-leaf-green" style="display:none;">
- <span class="btn-leaf-green-text" id="timestop-btn-text">СТАРТ</span>
- </button>
- `;
+    document.getElementById('btn-target-5').addEventListener('click', () => selectTarget(5));
+    document.getElementById('btn-target-8').addEventListener('click', () => selectTarget(8));
 
- this.interactiveContainer.appendChild(wrap);
+    let isRunning = false;
+    let startTime = 0;
 
- let targetSeconds = 5;
- const clock = document.getElementById('timestop-display');
- const btnAction = document.getElementById('btn-timestop-action');
- const btnText = document.getElementById('timestop-btn-text');
- const btn5 = document.getElementById('btn-target-5');
- const btn10 = document.getElementById('btn-target-10');
+    btnAction.addEventListener('click', () => {
+      audio.playClick();
+      if (!isRunning) {
+        isRunning = true;
+        btnText.textContent = 'ОСТАНОВИТЬ ХОД';
+        startTime = performance.now();
 
- const selectTarget = (sec) => {
- targetSeconds = sec;
- document.querySelector('.timestop-target-selector').style.display = 'none';
- btnAction.style.display = 'inline-flex';
- clock.textContent = `Цель: ${sec.toFixed(2)} с`;
- };
+        const updateClock = () => {
+          if (!isRunning) return;
+          const elapsed = (performance.now() - startTime) / 1000;
+          clock.textContent = elapsed.toFixed(2) + ' с';
+          this.timestopTimerId = requestAnimationFrame(updateClock);
+        };
+        this.timestopTimerId = requestAnimationFrame(updateClock);
+      } else {
+        isRunning = false;
+        cancelAnimationFrame(this.timestopTimerId);
+        const finalTime = (performance.now() - startTime) / 1000;
+        const diff = Math.abs(finalTime - targetSeconds);
+        btnAction.style.display = 'none';
 
- btn5.addEventListener('click', () => selectTarget(5));
- btn10.addEventListener('click', () => selectTarget(10));
+        if (diff <= 0.10) {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(25, 'Хронометр: Идеал');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: `Результат: ${finalTime.toFixed(2)} с (погрешность ${diff.toFixed(2)} с)`,
+            effectTitle: `Ювелирная точность: +${gained} яиц`,
+            narrative: 'Стрелка замерла почти идеально на контрольном делении циферблата!'
+          });
+        } else if (diff <= 0.30) {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(12, 'Хронометр: Точно');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: `Результат: ${finalTime.toFixed(2)} с (погрешность ${diff.toFixed(2)} с)`,
+            effectTitle: `Отличное чувство ритма: +${gained} яиц`,
+            narrative: 'Часовщик одобрительно кивает вашей выдержке.'
+          });
+        } else if (diff <= 0.65) {
+          audio.playSuccess();
+          const gained = this.eventManager.addEggs(5, 'Хронометр: Близко');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: `Результат: ${finalTime.toFixed(2)} с`,
+            effectTitle: `Малая награда: +${gained} яиц`,
+            narrative: 'Вы остановили маятник достаточно близко к заданной отметке.'
+          });
+        } else {
+          audio.playImpact();
+          const gained = this.eventManager.addEggs(1, 'Хронометр: Утешение');
+          this.showOutcomeWithBanner({
+            isGood: false,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: `Результат: ${finalTime.toFixed(2)} с`,
+            effectTitle: `Поощрительный приз: +${gained} яйцо`,
+            narrative: 'Маятник ушёл слишком далеко от контрольного рубежа.'
+          });
+        }
+      }
+    });
+  }
 
- let isRunning = false;
- let startTime = 0;
-
- btnAction.addEventListener('click', () => {
- audio.playClick();
- if (!isRunning) {
- isRunning = true;
- btnText.textContent = 'СТОП! (ПРОБЕЛ)';
- startTime = performance.now();
-
- const updateClock = () => {
- if (!isRunning) return;
- const elapsed = (performance.now() - startTime) / 1000;
- clock.textContent = elapsed.toFixed(2) + ' s';
- this.timestopTimerId = requestAnimationFrame(updateClock);
- };
- this.timestopTimerId = requestAnimationFrame(updateClock);
- } else {
- isRunning = false;
- cancelAnimationFrame(this.timestopTimerId);
- const finalTime = (performance.now() - startTime) / 1000;
- clock.textContent = finalTime.toFixed(2) + ' s';
-
- const diff = Math.abs(finalTime - targetSeconds);
- btnAction.style.display = 'none';
-
- if (diff <= 0.08) {
- audio.playSuccess();
- this.eventManager.addEggs(30, 'Остановка времени - Джекпот');
- this.showResult(`ИДЕАЛЬНАЯ ТОЧНОСТЬ! ️<br>Вы остановили время на ${finalTime.toFixed(2)}с (разница всего ${diff.toFixed(2)}с)!<br>Награда: ДЖЕКПОТ +30 яиц яиц!`);
- } else if (diff <= 0.25) {
- audio.playSuccess();
- this.eventManager.addEggs(15, 'Остановка времени - Отлично');
- this.showResult(`ОТЛИЧНЫЙ ГЛАЗОМЕР! ️<br>Время: ${finalTime.toFixed(2)}с (разница ${diff.toFixed(2)}с).<br>Награда: +15 яиц яиц!`);
- } else if (diff <= 0.50) {
- audio.playSuccess();
- this.eventManager.addEggs(5, 'Остановка времени - Хорошо');
- this.showResult(`ХОРОШАЯ РЕАКЦИЯ! ️<br>Время: ${finalTime.toFixed(2)}с. Награда: +5 яиц яиц!`);
- } else {
- audio.playClick();
- this.eventManager.addEggs(1, 'Остановка времени - Утешительный');
- this.showResult(`ВРЕМЯ УБЕЖАЛО! ️<br>Вы остановились на ${finalTime.toFixed(2)}с.<br>Утешительный приз: +1 яиц яйцо!`);
- }
- }
- });
- }
-
- /**
- * 6. Птичье Бинго (Cell 32)
- */
- renderBingo(evt) {
+  /**
+   * 10. Лесной Розыгрыш (Бинго)
+   */
+  renderBingo(evt) {
     const wrap = document.createElement('div');
     wrap.className = 'board-answers-grid bingo-tickets-grid';
 
     const numbers = [7, 13, 21, 42];
     const LETTERS = ['A', 'B', 'C', 'D'];
     numbers.forEach((num, idx) => {
-      const letter = LETTERS[idx] || (idx + 1);
       const btn = document.createElement('button');
       btn.className = 'btn-board-answer bingo-ticket-btn';
       btn.innerHTML = `
-        <span class="btn-board-answer-letter">${letter}</span>
-        <span class="btn-board-answer-text">Билет #${num}</span>
+        <span class="btn-board-answer-letter">${LETTERS[idx]}</span>
+        <span class="btn-board-answer-text">Билет №${num}</span>
       `;
       btn.addEventListener('click', () => {
         audio.playClick();
         wrap.remove();
 
         this.playCutscene(evt.video || 'assets/videos/Event-32.mp4', () => {
-          const winningNumber = Math.random() < 0.45 ? num : numbers[(numbers.indexOf(num) + 1) % numbers.length];
+          const isWin = Math.random() < 0.5;
+          const winningNumber = isWin ? num : numbers[(idx + 1) % numbers.length];
           if (winningNumber === num) {
             audio.playSuccess();
-            this.eventManager.addEggs(30, 'Победа в Бинго');
-            this.showResult(`БИНГО! ВЫПАЛО ЧИСЛО ${winningNumber}!<br>Ваш билет оказался счастливым! Выигрыш: +30 яиц!`);
+            const gained = this.eventManager.addEggs(24, 'Победа в тираже');
+            this.showOutcomeWithBanner({
+              isGood: true,
+              icon: BOARD_ASSET_ICONS.EGG,
+              label: `Выпал шар №${winningNumber}`,
+              effectTitle: `Счастливый билет: +${gained} яиц`,
+              narrative: 'Ваш номер совпал с главным шаром лотерейного барабана!'
+            });
           } else {
             audio.playImpact();
-            this.showResult(`ВЫПАЛО ЧИСЛО ${winningNumber}!<br>К сожалению, ваш билет #${num} не выиграл. Идём дальше!`);
+            this.eventManager.addRerollDice(1);
+            this.showOutcomeWithBanner({
+              isGood: true,
+              icon: BOARD_ASSET_ICONS.DICE,
+              label: `Выпал шар №${winningNumber}`,
+              effectTitle: 'Утешительный жетон: +1 кубик переброса',
+              narrative: `Главный приз достался номеру ${winningNumber}, но крупье вручил вам запасную кость.`
+            });
           }
         });
       });
@@ -685,10 +1291,10 @@ export class BoardQuestModal {
     this.interactiveContainer.appendChild(wrap);
   }
 
- /**
- * 7. Монумент благотворительности больным (Cell 21)
- */
- renderCharity(evt) {
+  /**
+   * 11. Чаша Возмездия и Щедрости
+   */
+  renderCharity(evt) {
     const grid = document.createElement('div');
     grid.className = 'board-answers-grid';
 
@@ -699,23 +1305,42 @@ export class BoardQuestModal {
     btnPay.className = 'btn-board-answer';
     btnPay.innerHTML = `
       <span class="btn-board-answer-letter">A</span>
-      <span class="btn-board-answer-text">Пожертвовать 2 яйца</span>
+      <span class="btn-board-answer-text">Внести 2 яйца в чашу</span>
     `;
     btnPay.addEventListener('click', () => {
       audio.playClick();
       if (this.eventManager.stats.eggs >= 2) {
-        this.eventManager.loseEggs(2, 'Пожертвование Монументу', true);
+        this.eventManager.loseEggs(2, 'Дар Тотему', true);
         if (potentialGain > 0) {
           audio.playSuccess();
-          this.eventManager.addEggs(potentialGain, 'Возврат потерянных яиц x10');
-          this.showResult(`ВЕЛИКОЕ ЧУДО МИЛОСЕРДИЯ!<br>Вы пожертвовали 2 яйца. Тотем умножил все ${lost} потерянных вами яиц на 10!<br>Получено: +${potentialGain} яиц!`);
+          const gained = this.eventManager.addEggs(potentialGain, 'Возмещение потерь x10');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: `Возмещено потерь: ${lost} x 10`,
+            effectTitle: `Дар Тотема: +${gained} яиц`,
+            narrative: 'Древний тотем многократно вернул все припасы, отнятые у вас ловушками на этом пути.'
+          });
         } else {
           audio.playSuccess();
-          this.eventManager.addEggs(10, 'Благодарность монумента');
-          this.showResult('БЛАГОСЛОВЕНИЕ ТОТЕМА!<br>Вы не теряли яиц на карте, но за доброту получаете +10 яиц!');
+          const gained = this.eventManager.addEggs(10, 'Благословение Тотема');
+          this.showOutcomeWithBanner({
+            isGood: true,
+            icon: BOARD_ASSET_ICONS.EGG,
+            label: 'Чистый путь без потерь',
+            effectTitle: `Награда за щедрость: +${gained} яиц`,
+            narrative: 'Вы ещё не теряли яиц на карте, поэтому тотем одарил вас из собственного резерва.'
+          });
         }
       } else {
-        this.showResult('Недостаточно яиц для пожертвования.');
+        audio.playImpact();
+        this.showOutcomeWithBanner({
+          isGood: false,
+          icon: BOARD_ASSET_ICONS.EGG,
+          label: 'Недостаточно припасов',
+          effectTitle: 'Для обряда требуется 2 яйца',
+          narrative: 'Чаша осталась пустой. Вы продолжили движение по тропе.'
+        });
       }
     });
 
@@ -723,11 +1348,11 @@ export class BoardQuestModal {
     btnPass.className = 'btn-board-answer';
     btnPass.innerHTML = `
       <span class="btn-board-answer-letter">B</span>
-      <span class="btn-board-answer-text">Пройти мимо</span>
+      <span class="btn-board-answer-text">Пройти мимо тотема</span>
     `;
     btnPass.addEventListener('click', () => {
       audio.playClick();
-      this.showResult('Вы почтительно поклонились монументу и пошли дальше.');
+      this.finishEvent();
     });
 
     grid.appendChild(btnPay);
@@ -735,133 +1360,229 @@ export class BoardQuestModal {
     this.interactiveContainer.appendChild(grid);
   }
 
- /**
- * 8. Простое действие (Сундуки, Мешочки, Яд, Босс, Отскок)
- */
- renderSimpleAction(evt) {
+  /**
+   * 12. Прямые события (Награды, Ловушки, Врата)
+   */
+  renderSimpleAction(evt) {
     const bottomBar = document.getElementById('board-quest-bottom-bar');
-    if (bottomBar) {
-      bottomBar.innerHTML = '';
-      const actions = evt.actions || [{ text: 'ПРОДОЛЖИТЬ', result: null }];
+    if (!bottomBar) return;
+    bottomBar.innerHTML = '';
 
-      actions.forEach(act => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-leaf-green btn-quest-main-btn';
-        btn.innerHTML = `<span class="btn-leaf-green-text">${act.text}</span>`;
-        btn.addEventListener('click', () => {
-          audio.playClick();
-          this.applyActionResult(act.result, evt);
-        });
-        bottomBar.appendChild(btn);
+    const actions = evt.actions || [{ text: 'ПРОДОЛЖИТЬ', result: null }];
+    actions.forEach(act => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-leaf-green btn-quest-main-btn';
+      btn.innerHTML = `<span class="btn-leaf-green-text">${act.text}</span>`;
+      btn.addEventListener('click', () => {
+        audio.playClick();
+        this.applyActionResult(act.result, evt);
       });
-    }
+      bottomBar.appendChild(btn);
+    });
   }
 
- applyActionResult(res, evt) {
- if (!res) {
- this.finishEvent();
- return;
- }
-
- if (res.eggs) {
- audio.playSuccess();
- this.eventManager.addEggs(res.eggs, evt.title);
- this.showResult(`ПОЛУЧЕНО: +${res.eggs} ЯИЦ!`);
- return;
- }
-
- if (res.loseEggs) {
- audio.playImpact();
- this.eventManager.loseEggs(res.loseEggs, evt.title);
- this.showResult(`ПОТЕРЯНО: -${res.loseEggs} ЯИЦ!`);
- return;
- }
-
- if (res.poison) {
- audio.playImpact();
- this.eventManager.addPoison(res.poison);
- this.showResult(`ВЫ ОТРАВЛЕНЫ НА ${res.poison} ХОДОВ!<br>Каждый ход вы будете терять по 1 яйцу.`);
- return;
- }
-
- if (res.rerollDice) {
- audio.playSuccess();
- this.eventManager.addRerollDice(res.rerollDice);
- this.showResult(`ПОЛУЧЕНО: +${res.rerollDice} КУБИКА ПЕРЕБРОСА!`);
- return;
- }
-
- if (res.boosterPacks) {
- audio.playSuccess();
- this.eventManager.addBoosterPacks(res.boosterPacks);
- this.showResult(`ПОЛУЧЕНО: +${res.boosterPacks} БУСТЕРА КАРТ ДЛЯ БОССА!`);
- return;
- }
-
- if (res.magnet) {
- audio.playSuccess();
- this.eventManager.setMagnet(res.magnet);
- this.showResult('ЯИЧНЫЙ МАГНИТ ВКЛЮЧЁН! <br>Следующее получение яиц умножится на 2 (x2)!');
- return;
- }
-
- if (res.heal) {
- audio.playSuccess();
- const restored = this.eventManager.cleanseAndRestore();
- this.showResult(`ПОЛНОЕ ИСЦЕЛЕНИЕ! <br>Яд снят! Возвращено ${restored} потерянных яиц!`);
- return;
- }
-
- if (res.isImmune) {
- audio.playSuccess();
- this.eventManager.setImmunity(true);
- this.showResult('ЩИТ ИММУНИТЕТА АКТИВИРОВАН!<br>Вы защищены от следующей потери яиц или яда.');
- return;
- }
-
- if (res.bossHpPenalty) {
- audio.playImpact();
- this.eventManager.setBossHpPenalty(res.bossHpPenalty);
- this.showResult('КАРА НЕБЕСНАЯ! <br>В финальной битве ваше максимальное HP будет 95 вместо 100!');
- return;
- }
-
- if (res.stepBack) {
- audio.playImpact();
- this.eventManager.stepBack(1);
- this.showResult('БАРЬЕР ОТБРОСИЛ ВАС НАЗАД! <br>Вы возвращаетесь прямо к логову Бобра!');
- return;
- }
-
- if (res.bossBattle) {
- this.finishEvent({ startBoss: true });
- return;
- }
-
- this.finishEvent();
- }
-
- /**
- * Показ карточки результата перед закрытием
- */
- showResult(htmlMsg, isGood = null) {
-    if (isGood === null) {
-      const lower = htmlMsg.toLowerCase();
-      if (lower.includes('увы') || lower.includes('неверно') || lower.includes('потеряно') || 
-          lower.includes('отравлены') || lower.includes('тупик') || lower.includes('урон') || 
-          lower.includes('кара') || lower.includes('слабовато') || lower.includes('тумак') || 
-          lower.includes('бам')) {
-        isGood = false;
-      } else {
-        isGood = true;
-      }
+  applyActionResult(res, evt) {
+    if (!res) {
+      this.finishEvent();
+      return;
     }
-    this.setWindowFrame(isGood ? 'good' : 'bad');
 
+    if (res.bossBattle) {
+      this.finishEvent({ startBoss: true });
+      return;
+    }
+
+    if (res.eggs && res.rerollDice) {
+      audio.playSuccess();
+      const gained = this.eventManager.addEggs(res.eggs, evt.title);
+      this.eventManager.addRerollDice(res.rerollDice);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.EGG,
+        label: 'Двойная находка',
+        effectTitle: `Получено: +${gained} яиц и +${res.rerollDice} кубик`,
+        narrative: 'Все найденные трофеи аккуратно упакованы в ваш походный инвентарь.'
+      });
+      return;
+    }
+
+    if (res.steamProphecy) {
+      audio.playSuccess();
+      const gained = res.eggs ? this.eventManager.addEggs(res.eggs, evt.title) : 0;
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.BOOSTER,
+        label: 'Праздничное пророчество',
+        effectTitle: gained > 0 ? `Знамение принято (+${gained} яйца)` : 'Знамение Оракула активировано',
+        narrative: 'Оракул предрёк имениннику отличное настроение и скорое пополнение игровой коллекции.'
+      });
+      return;
+    }
+
+    if (res.eggs) {
+      audio.playSuccess();
+      const gained = this.eventManager.addEggs(res.eggs, evt.title);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.EGG,
+        label: 'Пополнение припасов',
+        effectTitle: `Добавлено в инвентарь: +${gained} яиц`,
+        narrative: 'Ваши запасы для покупки бустеров карт успешно увеличены.'
+      });
+      return;
+    }
+
+    if (res.loseEggs) {
+      audio.playImpact();
+      const hadShield = this.eventManager.stats.isImmune;
+      const lost = this.eventManager.loseEggs(res.loseEggs, evt.title);
+      this.showOutcomeWithBanner({
+        isGood: hadShield,
+        icon: hadShield ? BOARD_ASSET_ICONS.TILE_GOOD : BOARD_ASSET_ICONS.TILE_BAD,
+        label: hadShield ? 'Сработала защита' : 'Потеря ресурсов',
+        effectTitle: hadShield ? 'Щит отразил потерю яиц' : `Утрачено запасов: -${lost} яиц`,
+        narrative: hadShield
+          ? 'Защитный эликсир принял удар на себя и сохранил ваши яйца в целости.'
+          : 'Часть припасов была потеряна. Будьте осторожнее на лесных тропах.'
+      });
+      return;
+    }
+
+    if (res.poison) {
+      audio.playImpact();
+      const hadShield = this.eventManager.stats.isImmune;
+      this.eventManager.addPoison(res.poison);
+      this.showOutcomeWithBanner({
+        isGood: hadShield,
+        icon: BOARD_ASSET_ICONS.TILE_BAD,
+        label: hadShield ? 'Нейтрализация токсина' : 'Негативный статус',
+        effectTitle: hadShield ? 'Щит нейтрализовал отравление' : `Токсичное отравление (${res.poison} хода)`,
+        narrative: hadShield
+          ? 'Янтарный барьер рассеял ядовитые споры без вреда для здоровья.'
+          : 'В начале каждого следующего броска вы будете терять по 1 яйцу, пока действие токсина не иссякнет.'
+      });
+      return;
+    }
+
+    if (res.rerollDice) {
+      audio.playSuccess();
+      this.eventManager.addRerollDice(res.rerollDice);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.DICE,
+        label: 'Бонус тактики',
+        effectTitle: `Кубики переброса: +${res.rerollDice} шт.`,
+        narrative: 'Используйте их после любого броска, если захотите изменить выпавшее число.'
+      });
+      return;
+    }
+
+    if (res.boosterPacks) {
+      audio.playSuccess();
+      this.eventManager.addBoosterPacks(res.boosterPacks);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.BOOSTER,
+        label: 'Усиление колоды',
+        effectTitle: `Получено бустеров карт: +${res.boosterPacks}`,
+        narrative: 'Вы сможете вскрыть эти паки перед началом сражения на арене Босса.'
+      });
+      return;
+    }
+
+    if (res.magnet) {
+      audio.playSuccess();
+      this.eventManager.setMagnet(res.magnet);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.EGG,
+        label: 'Активный артефакт',
+        effectTitle: `Магнитное поле x${res.magnet} активировано`,
+        narrative: 'Следующее получение яиц на доске будет автоматически удвоено.'
+      });
+      return;
+    }
+
+    if (res.heal) {
+      audio.playSuccess();
+      const restored = this.eventManager.cleanseAndRestore();
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.TILE_GOOD,
+        label: 'Очищение и возврат',
+        effectTitle: restored > 0 ? `Токсины сняты, возвращено +${restored} яиц` : 'Все негативные эффекты сняты',
+        narrative: 'Целебный источник полностью восстановил ваше состояние.'
+      });
+      return;
+    }
+
+    if (res.isImmune) {
+      audio.playSuccess();
+      this.eventManager.setImmunity(true);
+      this.showOutcomeWithBanner({
+        isGood: true,
+        icon: BOARD_ASSET_ICONS.TILE_GOOD,
+        label: 'Защитный барьер',
+        effectTitle: 'Активирован: Щит Неуязвимости (1 заряд)',
+        narrative: 'Следующая ловушка или отравление будут полностью заблокированы.'
+      });
+      return;
+    }
+
+    if (res.bossHpPenalty) {
+      audio.playImpact();
+      this.eventManager.setBossHpPenalty(res.bossHpPenalty);
+      this.showOutcomeWithBanner({
+        isGood: false,
+        icon: BOARD_ASSET_ICONS.TILE_BAD,
+        label: 'Последствие разряда',
+        effectTitle: `Штраф к запасу здоровья на арене: -${res.bossHpPenalty} HP`,
+        narrative: 'Грозовой удар оставил след, который скажется в начале битвы с Бобром.'
+      });
+      return;
+    }
+
+    if (res.stepBack) {
+      audio.playImpact();
+      this.eventManager.stepBack(res.stepBack);
+      this.showOutcomeWithBanner({
+        isGood: false,
+        icon: BOARD_ASSET_ICONS.TILE_BAD,
+        label: 'Отбрасывающий импульс',
+        effectTitle: 'Перемещение на 1 клетку назад',
+        narrative: 'Зачарованный барьер возвращает вас ко входу в Цитадель Плотины.'
+      });
+      return;
+    }
+
+    this.finishEvent();
+  }
+
+  /**
+   * Отрисовка графического оповещения об эффекте вместо простого текста «+5 яиц»
+   */
+  showOutcomeWithBanner({ isGood = true, icon, label, effectTitle, narrative }) {
+    this.setWindowFrame(isGood ? 'good' : 'bad');
     if (this.modalEl) this.modalEl.classList.remove('hidden');
+
     this.interactiveContainer.innerHTML = '';
     this.resultContainer.classList.remove('hidden');
-    this.resultText.innerHTML = htmlMsg;
+
+    const safeIcon = icon || (isGood ? BOARD_ASSET_ICONS.EGG : BOARD_ASSET_ICONS.TILE_BAD);
+    const toneClass = isGood ? 'effect-good' : 'effect-bad';
+
+    this.resultText.innerHTML = `
+      <div class="board-effect-banner ${toneClass}">
+        <div class="board-effect-icon-wrap">
+          <img src="${safeIcon}" alt="Эффект" />
+        </div>
+        <div class="board-effect-info">
+          <span class="board-effect-label">${label || 'Итог события'}</span>
+          <span class="board-effect-title">${effectTitle}</span>
+          ${narrative ? `<span class="board-effect-sub">${narrative}</span>` : ''}
+        </div>
+      </div>
+    `;
 
     const bottomBar = document.getElementById('board-quest-bottom-bar');
     if (bottomBar) {
@@ -878,15 +1599,25 @@ export class BoardQuestModal {
     }
   }
 
- finishEvent(meta = {}) {
- this.close();
- if (this.onCompleteCallback) {
- this.onCompleteCallback(meta);
- this.onCompleteCallback = null;
- }
- }
+  showResult(htmlMsg, isGood = true) {
+    this.showOutcomeWithBanner({
+      isGood,
+      icon: isGood ? BOARD_ASSET_ICONS.EGG : BOARD_ASSET_ICONS.TILE_BAD,
+      label: 'Сводка события',
+      effectTitle: htmlMsg.replace(/<br\s*\/?>/gi, ' — '),
+      narrative: ''
+    });
+  }
 
- close() {
+  finishEvent(meta = {}) {
+    this.close();
+    if (this.onCompleteCallback) {
+      this.onCompleteCallback(meta);
+      this.onCompleteCallback = null;
+    }
+  }
+
+  close() {
     if (this.fullscreenVideo) {
       this.fullscreenVideo.pause();
       this.fullscreenVideo.removeAttribute('src');
@@ -897,6 +1628,8 @@ export class BoardQuestModal {
     }
     if (this.strongmanAnimId) cancelAnimationFrame(this.strongmanAnimId);
     if (this.timestopTimerId) cancelAnimationFrame(this.timestopTimerId);
+    if (this.clawAnimId) cancelAnimationFrame(this.clawAnimId);
+    if (this.lockpickAnimId) cancelAnimationFrame(this.lockpickAnimId);
 
     const bb = document.getElementById('board-quest-bottom-bar');
     if (bb) bb.innerHTML = '';

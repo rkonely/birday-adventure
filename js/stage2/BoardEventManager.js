@@ -147,7 +147,7 @@ export class BoardEventManager {
   }
 
   /**
-   * Снятие яда и возврат потерянных яиц (Cell 8)
+   * Снятие яда и возврат потерянных яиц
    */
   cleanseAndRestore() {
     this.stats.poisonTurns = 0;
@@ -166,6 +166,11 @@ export class BoardEventManager {
       this.stats.poisonTurns--;
       this.loseEggs(1, 'Отравление', true);
       audio.playImpact();
+      if (this.boardGame && typeof this.boardGame.showToastNotification === 'function') {
+        this.boardGame.showToastNotification(
+          `Действие токсина: -1 яйцо (осталось ходов: ${this.stats.poisonTurns})`
+        );
+      }
     }
     this.updateHUD();
   }
@@ -188,7 +193,6 @@ export class BoardEventManager {
         evt = JSON.parse(JSON.stringify(EVENT_TEMPLATES[eventId]));
         if (cellOrIndex.title) evt.title = cellOrIndex.title;
         if (cellOrIndex.description) evt.text = cellOrIndex.description;
-        if (cellOrIndex.icon) evt.icon = cellOrIndex.icon;
         evt.index = cellOrIndex.index;
       } else {
         const idx = cellOrIndex.index;
@@ -209,12 +213,11 @@ export class BoardEventManager {
       const cellNum = (typeof cellOrIndex === 'object' && cellOrIndex) ? cellOrIndex.index : cellOrIndex;
       evt = {
         index: cellNum,
-        title: `Клетка #${cellNum}`,
-        icon: '🌲',
+        title: `Лесная просека #${cellNum}`,
         type: 'info',
-        speaker: 'Лесная тропа',
-        text: 'Спокойная поляна среди вековых деревьев. Ничего опасного не замечено.',
-        actions: [{ text: 'ПРОДОЛЖИТЬ ▶', result: null }]
+        speaker: 'Спокойная тропа',
+        text: 'Мягкий мох и тихий шелест сосновых крон. На этом участке пути нет ни ловушек, ни преград.',
+        actions: [{ text: 'ДВИГАТЬСЯ ДАЛЬШЕ', result: null }]
       };
     }
 
@@ -238,6 +241,6 @@ export class BoardEventManager {
     if (elEggs) elEggs.textContent = this.stats.eggs;
     if (elCards) elCards.textContent = this.stats.boosterPacks;
     if (elDice) elDice.textContent = this.stats.rerollDice;
-    if (elLastTurn) elLastTurn.textContent = this.stats.lastRoll || '5';
+    if (elLastTurn) elLastTurn.textContent = this.stats.lastRoll || '-';
   }
 }

@@ -113,7 +113,7 @@ export class Stage2Board {
     const savedTilesToggle = localStorage.getItem('birday_show_tile_sprites');
     this.showTileSprites = savedTilesToggle !== null ? savedTilesToggle === 'true' : true;
     this.tileTargetWidth = 64;   // целевая ширина клетки на столе (под ромб 60-64px)
-    this.tileAnchorBottom = 38;  // отступ в px от низа картинки до центра ромба основания
+    this.tileAnchorBottom = 78;  // отступ в px от низа картинки до центра ромба (для 260px высоты)
     this.preloadTileSprites();
 
     // DOM UI элементы настолки
@@ -133,7 +133,7 @@ export class Stage2Board {
     this.currentBoardFilename = filename;
     try {
       localStorage.setItem('birday_board_texture', filename);
-    } catch (e) {}
+    } catch (e) { }
     this.boardImage.src = `assets/Second Level/Main Board/${filename}`;
     const txt = document.getElementById('s2-switch-board-text');
     if (txt) {
@@ -150,7 +150,7 @@ export class Stage2Board {
     try {
       localStorage.setItem('birday_board_variation', variation.id);
       localStorage.setItem('birday_board_texture', variation.textureFile);
-    } catch (e) {}
+    } catch (e) { }
 
     this.setBoardTexture(variation.textureFile);
     await this.loadBoardVariationData(variation, syncPlayer);
@@ -232,7 +232,7 @@ export class Stage2Board {
           this.syncPlayerToStart();
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Если данных ещё нет — дефолтный набор
@@ -252,12 +252,22 @@ export class Stage2Board {
   }
 
   getFigureDirectionKey(stepNumber) {
-    // Нормализуем номер клетки в диапазон 1..36
-    const step = ((stepNumber - 1) % 36 + 36) % 36 + 1;
-    if (step >= 1 && step <= 9) return 'backRight';
-    if (step >= 10 && step <= 18) return 'upRight';
-    if (step >= 19 && step <= 27) return 'upLeft';
+    const total = Math.max(4, this.cells.length || 54);
+    const quarter = total / 4;
+    const step = Math.max(1, Math.min(total, stepNumber));
+
+    if (step <= quarter) return 'backRight';
+    if (step <= quarter * 2) return 'upRight';
+    if (step <= quarter * 3) return 'upLeft';
     return 'backLeft';
+  }
+
+  showCellInfoCard(cell) {
+    if (!cell || this.isMoving || this.isRollingDice) return;
+    const stepNum = cell.index || (this.cells.indexOf(cell) + 1);
+    const title = cell.title || `Клетка #${stepNum}`;
+    const desc = cell.description ? ` — ${cell.description}` : '';
+    this.showToastNotification(`Клетка ${stepNum}: ${title}${desc}`);
   }
 
   getFigureImage() {
@@ -313,7 +323,7 @@ export class Stage2Board {
       const xi = points[i].x, yi = points[i].y;
       const xj = points[j].x, yj = points[j].y;
       const intersect = ((yi > py) !== (yj > py)) &&
-          (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
       if (intersect) inside = !inside;
     }
     return inside;
@@ -634,7 +644,7 @@ export class Stage2Board {
         this.showTileSprites = !this.showTileSprites;
         try {
           localStorage.setItem('birday_show_tile_sprites', String(this.showTileSprites));
-        } catch (err) {}
+        } catch (err) { }
         const txt = document.getElementById('s2-toggle-tiles-text');
         if (txt) {
           txt.textContent = this.showTileSprites ? 'Тайлы: ВКЛ' : 'Тайлы: ВЫКЛ';
@@ -1333,16 +1343,27 @@ export class Stage2Board {
   /* ==========================================================================
      Отрисовка и Предзагрузка Спрайтов Клеток (Event - Title)
      ========================================================================== */
-  preloadTileSprites() {
-    const sprites = ['01.png', '02.png', '03.png', '04.png'];
-    sprites.forEach(filename => {
+  getTileImage(spriteName) {
+    if (!spriteName) return null;
+    if (!this.tileImages[spriteName]) {
       const img = new Image();
-      img.src = `assets/Second Level/Event - Title/${filename}`;
-      img.onload = () => {
-        this.tileImages[filename] = img;
-      };
-      this.tileImages[filename] = img;
-    });
+      img.src = `assets/Second Level/Event - Title/${spriteName}`;
+      this.tileImages[spriteName] = img;
+    }
+    return this.tileImages[spriteName];
+  }
+
+  preloadTileSprites() {
+    const keySprites = [
+      'Empty-Tile1.png', 'Empty-Tile2.png', 'Empty-Tile3.png', 'Empty-Tile4.png',
+      'Regular Chest.png', 'Legendary Chest.png', 'campfire.png', 'clover.png',
+      'Sharp spikes.png', 'poisonous egg.png', 'Wheel of Fortune.png', 'bingo machine.png',
+      'force gauge.png', 'Hourglass.png', 'Random-box.png', 'Cunning Fox.png',
+      'Boss Room.png', 'portal to the abyss.png', 'Gift Box.png', 'God Bless.png',
+      'Bless-Elixire.png', 'bottle of water.png', 'crystal ball.png', 'bag of eggs.png',
+      'Magnet.png', 'Landmark.png', 'Toy Vending Machine.png', 'basement hatch.png'
+    ];
+    keySprites.forEach(name => this.getTileImage(name));
   }
 
   generateRandomBoard() {
@@ -1363,7 +1384,7 @@ export class Stage2Board {
     // Сохраняем сгенерированную карту в localStorage
     try {
       localStorage.setItem('birday_generated_cells', JSON.stringify(this.cells));
-    } catch (e) {}
+    } catch (e) { }
 
     this.showToastNotification('⚡ Карта сгенерирована! Старт и Босс закреплены.');
   }
@@ -1398,7 +1419,7 @@ export class Stage2Board {
 
   renderSingleTileSprite(cell, index) {
     const spriteName = cell.tileSprite || this.getDefaultTileSprite(cell.type);
-    const img = this.tileImages[spriteName];
+    const img = this.getTileImage(spriteName);
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     const center = this.getCellCenter(cell);
@@ -1413,10 +1434,9 @@ export class Stage2Board {
 
     // Якорная точка (Pivot):
     // По X: строго центр (drawW / 2)
-    // По Y: ромб основания находится снизу с отступом anchorBottom (38px).
-    // Благодаря этому, если картинка увеличена по высоте (154px -> 260px),
-    // основание ромба ВСЕГДА стоит на одном месте на столе, а объекты растут вверх!
-    const anchorBottom = this.tileAnchorBottom || 38;
+    // По Y: ромб основания находится снизу с отступом anchorBottom (78px для 260px высоты).
+    // Благодаря этому основание ромба ВСЕГДА стоит на одном месте на столе, а объекты растут вверх!
+    const anchorBottom = this.tileAnchorBottom || 78;
     const pivotY = img.naturalHeight - anchorBottom;
 
     const drawX = center.x - drawW / 2;
@@ -1451,14 +1471,15 @@ export class Stage2Board {
 
   getDefaultTileSprite(type) {
     switch (type) {
-      case 'GOOD': return '02.png';
-      case 'BAD': return '03.png';
-      case 'BOSS':
-      case 'MINIGAME':
-      case 'DICE_BONUS': return '04.png';
-      case 'START':
+      case 'START': return 'Empty-Tile4.png';
+      case 'GOOD': return 'Regular Chest.png';
+      case 'BAD': return 'Sharp spikes.png';
+      case 'BOSS': return 'Boss Room.png';
+      case 'FINISH': return 'portal to the abyss.png';
+      case 'MINIGAME': return 'Wheel of Fortune.png';
+      case 'DICE_BONUS': return 'clover.png';
       case 'NORMAL':
-      default: return '01.png';
+      default: return 'Empty-Tile1.png';
     }
   }
 

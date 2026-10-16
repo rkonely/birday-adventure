@@ -1,226 +1,295 @@
 /**
  * BoardGenerator.js — Процедурный генератор клеток второго уровня (Этап 2 Настолка).
+ * Поддерживает 54 клетки (и произвольные размеры сетки).
+ * Тексты и шаблоны очищены от эмодзи и синхронизированы с EVENT_TEMPLATES.
  */
 
 import { EVENT_TEMPLATES } from './boardEventsData.js';
 
 export const TILE_SPRITES = {
-  NORMAL: '01.png',   // Тропа, ориентиры, костры, загадки
-  GOOD: '02.png',     // Сундуки, мешочки яиц, магниты, сокровища
-  BAD: '03.png',      // Шипы, яд, тухлые яйца, лисицы, опасности
-  MINIGAME: '04.png'  // Колесо фортуны, бинго, силач, клевер, мини-игры
+  START: 'Empty-Tile4.png',
+  NORMAL: 'Empty-Tile1.png',
+  GOOD: 'Regular Chest.png',
+  BAD: 'Sharp spikes.png',
+  MINIGAME: 'Wheel of Fortune.png',
+  BOSS: 'Boss Room.png',
+  BARRIER: 'portal to the abyss.png'
 };
 
-/**
- * Пул событий для генерации промежуточных клеток (2..34).
- * Добавлены параметры баланса:
- * - weight: относительный шанс выпадения внутри категории (по умолчанию 10)
- * - maxPerBoard: лимит таких клеток на всю доску (Infinity по умолчанию)
- * - minStep: минимальный индекс клетки, с которого может появиться событие
- */
 export const EVENT_POOLS = {
   NORMAL: [
     {
       eventId: 'quiz_campfire',
-      title: 'Отдых у костра с лесными Друзьями',
-      description: 'Мышонок-путник угощает ягодным чаем и спрашивает про лесных зверей.',
-      icon: '🏕️',
+      title: 'Привал у Лесного Костра',
+      description: 'Мышонок-летописец сверяет записи об обитателях первого леса.',
+      tileSprite: 'campfire.png',
       weight: 10,
       maxPerBoard: 3
     },
     {
-      eventId: 'trail_fork_left_right',
-      title: 'Ориентир: Развилка в тумане',
-      description: 'Кто-то пытается сбить вас с курса! Выберите верную тропу.',
-      icon: '🧭',
+      eventId: 'forest_riddle_owl',
+      title: 'Дозор Старого Филина',
+      description: 'Мудрый страж ветвей приготовил вопрос для внимательного путника.',
+      tileSprite: 'Library.png',
+      weight: 9,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'foggy_crossroad',
+      title: 'Развилка в Тумане',
+      description: 'Густая пелена скрыла указатели. Выберите верное направление.',
+      tileSprite: 'Landmark.png',
       weight: 8,
       maxPerBoard: 3
     },
     {
-      eventId: 'mystic_flask',
-      title: 'Загадочная родниковая колба',
-      description: 'Чистейшая ключевая вода в хрустальном сосуде. Испейте для бодрости духа.',
-      icon: '🧪',
-      weight: 10
+      eventId: 'spring_flask',
+      title: 'Сосуд с Живой Росой',
+      description: 'Хрустальная колба с ключевой водой на каменном выступе.',
+      tileSprite: 'bottle of water.png',
+      weight: 10,
+      maxPerBoard: 3
     },
     {
-      eventId: 'crystal_ball_vision',
-      title: 'Стеклянный Шар Предсказаний',
-      description: 'В хрустальных переливах шара мелькают загагадочные знаки грядущего!',
-      icon: '🔮',
+      eventId: 'smuggler_deal',
+      title: 'Сделка с Сорокой',
+      description: 'Лесная торговка предлагает обменять припасы на редкий набор карт.',
+      tileSprite: 'map bag.png',
       weight: 8,
+      maxPerBoard: 2,
+      minStep: 8
+    },
+    {
+      eventId: 'magic_oracle',
+      title: 'Видение Оракула',
+      description: 'В глубине хрустальной сферы мелькают знаки будущих побед.',
+      tileSprite: 'crystal ball.png',
+      weight: 7,
       maxPerBoard: 2
     },
     {
       eventId: null,
-      title: 'Лесная Тропа Пернатых',
-      description: 'Мягкий зеленый мох и шелест крон вековых сосен. Путь свободен.',
-      icon: '🌲',
-      weight: 16 // Обычная тропа встречается чуть чаще сюжетных ивентов
+      title: 'Спокойная Просека',
+      description: 'Мягкий мох под лапами и мерный шум сосновых верхушек. Путь свободен.',
+      tileSprite: 'Empty-Tile1.png',
+      weight: 14
     }
   ],
 
   GOOD: [
     {
       eventId: 'chest_regular',
-      title: 'Обычный Сундук',
-      description: 'Старинный ларец с золочеными яйцами внутри! (+6 яиц)',
-      icon: '📦',
+      title: 'Окованный Ларец',
+      description: 'Деревянный сундучок с запасом яиц среди корней старого дуба.',
+      tileSprite: 'Regular Chest.png',
       weight: 15
     },
     {
       eventId: 'beaver_legendary_chest',
-      title: 'Легендарный Сундук Бобра',
-      description: 'Кованый ларь Плотины с редчайшими бустерами карт на следующий этап!',
-      icon: '👑',
-      weight: 3,       // Редкий шанс
-      maxPerBoard: 1,  // Не более 1 легендарного сундука на карту
-      minStep: 12      // Только ближе к середине/концу доски
+      title: 'Кованый Ларь Архитектора',
+      description: 'Элитный резерв плотины с наборами карт для финальной битвы.',
+      tileSprite: 'Legendary Chest.png',
+      weight: 4,
+      maxPerBoard: 2,
+      minStep: 14
     },
     {
-      eventId: 'egg_sack',
-      title: 'Мешочек Лесных Яиц',
-      description: 'Аккуратный холщовый мешочек, полный отборных яиц! (+5 яиц)',
-      icon: '💰',
+      eventId: 'egg_pouch',
+      title: 'Походный Саквояж',
+      description: 'Кожаная сумка с отборными яйцами, оставленная на ветвях.',
+      tileSprite: 'bag of eggs.png',
       weight: 18
     },
     {
+      eventId: 'merchant_stash',
+      title: 'Привал Контрабандиста',
+      description: 'Повозка с припасами и запасным кубиком переброса.',
+      tileSprite: 'Golden Compas.png',
+      weight: 10,
+      maxPerBoard: 3
+    },
+    {
       eventId: 'egg_magnet',
-      title: 'Яичный Магнит',
-      description: 'Магический артефакт: следующая награда яйцами будет умножена на 2!',
-      icon: '🧲',
-      weight: 8,
-      maxPerBoard: 2
+      title: 'Магнитный Оберег',
+      description: 'Реликвия кузницы, удваивающая следующую находку яиц.',
+      tileSprite: 'Magnet.png',
+      weight: 9,
+      maxPerBoard: 3
     },
     {
       eventId: 'divine_healing',
-      title: 'Божественное Исцеление',
-      description: 'Светлый луч снимает яд и возвращает все потерянные на карте яйца!',
-      icon: '✨',
-      weight: 5,
-      maxPerBoard: 1,
-      minStep: 10 // На первых клетках нечего лечить и возвращать
+      title: 'Чистый Источник',
+      description: 'Ключевая вода снимает отравление и возвращает утраченные припасы.',
+      tileSprite: 'God Bless.png',
+      weight: 6,
+      maxPerBoard: 2,
+      minStep: 10
     },
     {
-      eventId: 'booster_gift',
-      title: 'Подарочный Сверток',
-      description: 'Праздничная коробка с лентой — внутри лежит ценный бустер карт!',
-      icon: '🎁',
+      eventId: 'holiday_gift',
+      title: 'Именной Свёрток',
+      description: 'Праздничная коробка с боевым бустером карт внутри.',
+      tileSprite: 'Gift Box.png',
+      weight: 8,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'immunity_elixir',
+      title: 'Янтарный Эликсир',
+      description: 'Защитный настой, оберегающий от одной ловушки или яда.',
+      tileSprite: 'Bless-Elixire.png',
+      weight: 10,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'sacrifice_monument',
+      title: 'Алтарь Стража',
+      description: 'Древний монолит, дарующий защиту в обмен на скромное подношение.',
+      tileSprite: 'Monument.png',
       weight: 7,
       maxPerBoard: 2
     },
     {
-      eventId: 'immunity_elixir',
-      title: 'Эликсир Неуязвимости',
-      description: 'Защитное зелье дарует щит от одной потери яиц или ловушки.',
-      icon: '🛡️',
-      weight: 10,
-      maxPerBoard: 2
+      eventId: 'charity_monument',
+      title: 'Чаша Возмездия и Щедрости',
+      description: 'Тотем, способный многократно возместить потерянные в пути яйца.',
+      tileSprite: 'The Cursed Monument.png',
+      weight: 5,
+      maxPerBoard: 2,
+      minStep: 16
     }
   ],
 
   BAD: [
     {
-      eventId: 'hazard_spikes',
-      title: 'Коварные Шипы Плотины',
-      description: 'Острые еловые колья отравляют ядом на 4 хода (-1 яйцо за ход).',
-      icon: '🌵',
+      eventId: 'poison_thorns',
+      title: 'Заросли Чёрного Терновника',
+      description: 'Колючие плети отравляют путника токсином на 4 хода.',
+      tileSprite: 'Sharp spikes.png',
       weight: 12
     },
     {
-      eventId: 'rotten_egg',
-      title: 'Тухлое Яйцо-Ловушка',
-      description: 'Едкий токсичный дым накладывает отравление на 5 ходов!',
-      icon: '🤢',
+      eventId: 'spoiled_egg',
+      title: 'Болотная Испарина',
+      description: 'Ядовитые споры ослабляют здоровье в течение 5 ходов.',
+      tileSprite: 'poisonous egg.png',
       weight: 10
     },
     {
-      eventId: 'cunning_fox_theft',
-      title: 'Нападение Хитрой Лисы',
-      description: 'Рыжая разбойница выскакивает из кустов и похищает ваши яйца!',
-      icon: '🦊',
-      weight: 10,
-      minStep: 5 // Даем игроку сначала набрать немного яиц
+      eventId: 'fox_ambush',
+      title: 'Лисья Засада',
+      description: 'Рыжая плутовка охотится за содержимым вашего походного мешка.',
+      tileSprite: 'Cunning Fox.png',
+      weight: 11,
+      minStep: 5
     },
     {
-      eventId: 'secret_basement',
-      title: 'Таинственный Подвал',
-      description: 'Спуск в темноту... Найдёте ли вы курятник или сердитую наседку?',
-      icon: '🚪',
-      weight: 8,
-      maxPerBoard: 2
+      eventId: 'beaver_patrol_tax',
+      title: 'Застава Дровосеков',
+      description: 'Механический часовой плотины взимает пошлину за проход.',
+      tileSprite: 'Wooden Totem.png',
+      weight: 10,
+      minStep: 6
+    },
+    {
+      eventId: 'mysterious_basement',
+      title: 'Подземелье под Корнями',
+      description: 'Тёмный люк под корнями: внутри ждёт либо награда, либо засада.',
+      tileSprite: 'basement hatch.png',
+      weight: 9,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'thunder_strike',
+      title: 'Грозовой Разряд',
+      description: 'Штормовая молния, ослабляющая запас сил перед боем с Боссом.',
+      tileSprite: 'Devil-Dmg.png',
+      weight: 6,
+      maxPerBoard: 2,
+      minStep: 18
     }
   ],
 
   MINIGAME: [
     {
       eventId: 'lucky_clover',
-      title: 'Клевер Удачи',
-      description: 'Изумрудный четырёхлистник дарует +3 кубика на переброс бросков!',
-      icon: '🍀',
+      title: 'Четырёхлистник Судьбы',
+      description: 'Редкий росток, дарующий дополнительные кубики для переброса.',
+      tileSprite: 'clover.png',
       weight: 10,
-      maxPerBoard: 2
+      maxPerBoard: 3
     },
     {
-      eventId: 'fortune_wheel_spin',
+      eventId: 'wheel_fortune',
       title: 'Колесо Лесной Фортуны',
-      description: 'Испытайте удачу! Раскрутите лесное колесо и сорвите куш яиц!',
-      icon: '🎡',
+      description: 'Раскрутите ярмарочное колесо и заберите приз выпавшего сектора.',
+      tileSprite: 'Wheel of Fortune.png',
+      weight: 14,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'bingo_game',
+      title: 'Лесной Розыгрыш',
+      description: 'Выберите билет и испытайте удачу у лотерейного барабана.',
+      tileSprite: 'bingo machine.png',
+      weight: 9,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'strongman_game',
+      title: 'Наковальня Лесоруба',
+      description: 'Остановите бегунок на пике мощности и ударьте молотом.',
+      tileSprite: 'force gauge.png',
       weight: 12,
-      maxPerBoard: 2
+      maxPerBoard: 3
     },
     {
-      eventId: 'bingo_drum_game',
-      title: 'Лесное Бинго',
-      description: 'Выберите счастливый билет и крутите барабан ради супер-приза +30 яиц!',
-      icon: '🎰',
-      weight: 8,
-      maxPerBoard: 1
-    },
-    {
-      eventId: 'strength_meter_test',
-      title: 'Силомер Лесоруба',
-      description: 'Зажмите Пробел и ударьте точно в красную зону ради х10 яиц!',
-      icon: '🔨',
-      weight: 10,
-      maxPerBoard: 2
-    },
-    {
-      eventId: 'time_freeze_challenge',
-      title: 'Хронометр: Остановка Времени',
-      description: 'Остановите таймер ровно на миллисекунде, чтобы забрать до 30 яиц!',
-      icon: '⏱️',
-      weight: 10,
-      maxPerBoard: 2
-    },
-    {
-      eventId: 'mystery_box_4',
-      title: 'Коробка с Сюрпризом',
-      description: 'Выбор из 4 коробок: Боксерская перчатка, бустер, кубик или 10 золотых яиц!',
-      icon: '🎁',
+      eventId: 'timestop_game',
+      title: 'Хронометр Часовщика',
+      description: 'Остановите отсчёт времени точно на заданной секунде.',
+      tileSprite: 'Hourglass.png',
       weight: 12,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'mystery_boxes',
+      title: 'Ларцы Иллюзиониста',
+      description: 'Четыре запечатанные шкатулки с наградами и ловушкой.',
+      tileSprite: 'Random-box.png',
+      weight: 11,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'toy_claw_machine',
+      title: 'Механический Захват',
+      description: 'Опустите клешню в нужный момент, чтобы вытащить капсулу с призом.',
+      tileSprite: 'Toy Vending Machine.png',
+      weight: 11,
+      maxPerBoard: 3
+    },
+    {
+      eventId: 'abandoned_cellar',
+      title: 'Запертый Погреб',
+      description: 'Взломайте три штифта замка, чтобы добраться до тайника.',
+      tileSprite: 'stairway to cellar.png',
+      weight: 10,
       maxPerBoard: 2
     },
     {
-      eventId: 'gacha_toy_machine',
-      title: 'Автомат с Игрушками',
-      description: 'Поймайте механической лапой яйцо или редкий боевой бустер!',
-      icon: '🕹️',
-      weight: 10,
-      maxPerBoard: 2
+      eventId: 'forest_thimbles',
+      title: 'Игра в Скорлупки',
+      description: 'Уследите за перемещением ореховых скорлупок и найдите золотое яйцо.',
+      tileSprite: 'empty bowl.png',
+      weight: 11,
+      maxPerBoard: 3
     }
   ]
 };
 
 export class BoardGenerator {
-  /**
-   * Сгенерировать новый набор клеток, сохраняя исходные координаты слотов
-   * @param {Array} baseCells — исходные 36 клеток с изометрическими координатами
-   * @returns {Array} сгенерированный массив клеток
-   */
   static generate(baseCells) {
     if (!Array.isArray(baseCells) || baseCells.length === 0) {
-      console.warn('⚠️ [BoardGenerator] Передан пустой массив базовых клеток');
+      console.warn('[BoardGenerator] Передан пустой массив базовых клеток');
       return baseCells;
     }
 
@@ -229,66 +298,71 @@ export class BoardGenerator {
 
     const categoryWeights = [
       { cat: 'GOOD', weight: 0.30 },
-      { cat: 'NORMAL', weight: 0.30 },
-      { cat: 'MINIGAME', weight: 0.22 },
+      { cat: 'NORMAL', weight: 0.28 },
+      { cat: 'MINIGAME', weight: 0.24 },
       { cat: 'BAD', weight: 0.18 }
     ];
 
     let consecutiveBadCount = 0;
-    let lastEventKey = null; // Защита от двух одинаковых событий подряд
-    const eventCounts = {};  // Счетчик выпавших событий для соблюдения maxPerBoard
+    let lastEventKey = null;
+    const eventCounts = {};
 
     for (let i = 0; i < totalCells; i++) {
       const base = baseCells[i];
       const stepIndex = i + 1;
 
-      // 1. Слот 1: СТАРТ
+      // 1. Первая клетка: СТАРТ
       if (stepIndex === 1) {
-        newCells.push(this.createFixedCell(base, 1, {
+        newCells.push({
+          ...base,
+          index: 1,
           type: 'START',
           eventId: 'start_gate',
           title: 'Врата Черепа',
-          description: 'Стартовая площадка! Приключение на доске начинается. Бросайте кубик!',
-          icon: '🚪',
-          tileSprite: TILE_SPRITES.NORMAL
-        }));
+          description: 'Стартовая площадка приключения. Бросайте кубик, чтобы начать путь.',
+          icon: '',
+          tileSprite: TILE_SPRITES.START
+        });
         continue;
       }
 
-      // 2. Слот 35 (или предпоследний): БОСС
+      // 2. Предпоследняя клетка (Босс)
       if (stepIndex === totalCells - 1) {
-        newCells.push(this.createFixedCell(base, stepIndex, {
+        newCells.push({
+          ...base,
+          index: stepIndex,
           type: 'BOSS',
           eventId: 'boss_gate',
-          title: 'Логово Бобра-Строителя!',
-          description: 'Огромные дубовые ворота плотины со скрипом отворяются. За ними трон Бобра!',
-          icon: '🦫',
-          tileSprite: TILE_SPRITES.MINIGAME
-        }));
+          title: 'Цитадель Плотины',
+          description: 'Главные ворота плотины Бобра-Дровосека. Финальное испытание.',
+          icon: '',
+          tileSprite: TILE_SPRITES.BOSS
+        });
         continue;
       }
 
-      // 3. Слот 36 (или последний): БАРЬЕР / ФИНИШ
+      // 3. Последняя клетка (Барьер)
       if (stepIndex === totalCells) {
-        newCells.push(this.createFixedCell(base, stepIndex, {
+        newCells.push({
+          ...base,
+          index: stepIndex,
           type: 'BAD',
           eventId: 'magic_barrier',
-          title: 'ТЫ НЕ ПРОЙДЕШЬ!',
-          description: 'Глухая стена из зачарованных брёвен преграждает путь! Ударная волна отбрасывает вас к Боссу.',
-          icon: '🛑',
-          tileSprite: TILE_SPRITES.BAD
-        }));
+          title: 'Зачарованный Завал',
+          description: 'Непреодолимая преграда из брёвен отбрасывает назад к воротам плотины.',
+          icon: '',
+          tileSprite: TILE_SPRITES.BARRIER
+        });
         continue;
       }
 
-      // 4. Слоты 2..(totalCells - 2): Процедурная генерация
+      // 4. Промежуточные клетки (2 .. totalCells - 2)
       let chosenCat = this.pickWeightedCategory(categoryWeights);
 
-      // Защита от скопления ловушек (не более 2 подряд)
       if (chosenCat === 'BAD') {
         consecutiveBadCount++;
         if (consecutiveBadCount > 2) {
-          chosenCat = Math.random() < 0.6 ? 'GOOD' : 'NORMAL';
+          chosenCat = Math.random() < 0.55 ? 'GOOD' : 'MINIGAME';
           consecutiveBadCount = 0;
         }
       } else {
@@ -306,56 +380,36 @@ export class BoardGenerator {
       eventCounts[eventKey] = (eventCounts[eventKey] || 0) + 1;
       lastEventKey = eventKey;
 
-      // Опциональная синхронизация с EVENT_TEMPLATES, если там есть расширенные данные
-      const templateData = selectedEvent.eventId && EVENT_TEMPLATES?.[selectedEvent.eventId]
-        ? EVENT_TEMPLATES[selectedEvent.eventId]
-        : null;
+      const template = selectedEvent.eventId ? EVENT_TEMPLATES[selectedEvent.eventId] : null;
 
       newCells.push({
         ...base,
         index: stepIndex,
         type: selectedEvent.type || chosenCat,
         eventId: selectedEvent.eventId,
-        title: selectedEvent.title || templateData?.title,
-        description: selectedEvent.description || templateData?.description,
-        icon: selectedEvent.icon || templateData?.icon || '❓',
+        title: selectedEvent.title || template?.title || `Клетка #${stepIndex}`,
+        description: selectedEvent.description || template?.text || '',
+        icon: '',
         tileSprite: selectedEvent.tileSprite || TILE_SPRITES[chosenCat] || TILE_SPRITES.NORMAL
       });
     }
 
-    console.log(`🎲 [BoardGenerator] Сгенерирована карта из ${newCells.length} клеток!`, eventCounts);
+    console.log(`[BoardGenerator] Сгенерирована карта на ${newCells.length} клеток.`);
     return newCells;
   }
 
-  /**
-   * Вспомогательный метод для создания фиксированных сюжетных клеток
-   */
-  static createFixedCell(base, index, overrides) {
-    return {
-      ...base,
-      index,
-      ...overrides
-    };
-  }
-
-  /**
-   * Умный выбор события из пула с учётом весов, лимитов на карту, minStep и защиты от повторов подряд
-   */
   static pickEventFromPool(category, stepIndex, eventCounts, lastEventKey) {
     const rawPool = EVENT_POOLS[category] || EVENT_POOLS.NORMAL;
 
-    // Фильтруем доступные события по условиям
     let validPool = rawPool.filter(ev => {
       const key = ev.eventId || ev.title;
       const count = eventCounts[key] || 0;
       const withinLimit = ev.maxPerBoard ? count < ev.maxPerBoard : true;
       const meetsMinStep = ev.minStep ? stepIndex >= ev.minStep : true;
-      const notRepeatedImmediately = key !== lastEventKey;
-
-      return withinLimit && meetsMinStep && notRepeatedImmediately;
+      const notRepeated = key !== lastEventKey;
+      return withinLimit && meetsMinStep && notRepeated;
     });
 
-    // Fallback 1: если из-за жестких фильтров пул опустел, разрешаем повтор, но соблюдаем лимит
     if (validPool.length === 0) {
       validPool = rawPool.filter(ev => {
         const key = ev.eventId || ev.title;
@@ -363,37 +417,27 @@ export class BoardGenerator {
       });
     }
 
-    // Fallback 2: если вообще все лимиты категории исчерпаны, берем весь пул категории
     if (validPool.length === 0) {
       validPool = rawPool;
     }
 
-    // Взвешенный рандом внутри отфильтрованного пула
     const totalWeight = validPool.reduce((sum, ev) => sum + (ev.weight ?? 10), 0);
     let roll = Math.random() * totalWeight;
 
     for (const ev of validPool) {
       roll -= (ev.weight ?? 10);
-      if (roll <= 0) {
-        return ev;
-      }
+      if (roll <= 0) return ev;
     }
 
     return validPool[validPool.length - 1];
   }
 
-  /**
-   * Выбор категории с учётом вероятностей
-   */
   static pickWeightedCategory(weights) {
     const totalWeight = weights.reduce((sum, item) => sum + item.weight, 0);
     let roll = Math.random() * totalWeight;
-
     for (const item of weights) {
       roll -= item.weight;
-      if (roll <= 0) {
-        return item.cat;
-      }
+      if (roll <= 0) return item.cat;
     }
     return 'NORMAL';
   }

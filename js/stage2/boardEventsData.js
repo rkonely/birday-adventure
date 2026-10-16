@@ -1,339 +1,353 @@
 /**
- * boardEventsData.js — База данных шаблонов событий и квестов настольной игры
- * Каталог уникальных сущностей (EVENT_TEMPLATES) и привязка к клеткам (BOARD_EVENTS).
+ * boardEventsData.js — База данных шаблонов событий, мини-игр и квестов настольной игры.
+ * Адаптировано под расширенную доску (54 клетки) без использования эмодзи.
  */
+
+export const BOARD_ASSET_ICONS = {
+  EGG: 'assets/First-Level/Item/Egg/Default-Egg.png',
+  BOOSTER: 'assets/UI/Status-Icon-CardCount.png',
+  DICE: 'assets/UI/Status-Icon-DiceCount.png',
+  TILE_NORMAL: 'assets/Second Level/Event - Title/01.png',
+  TILE_GOOD: 'assets/Second Level/Event - Title/02.png',
+  TILE_BAD: 'assets/Second Level/Event - Title/03.png',
+  TILE_MINIGAME: 'assets/Second Level/Event - Title/04.png'
+};
 
 export const ANIMAL_QUIZ_QUESTIONS = [
   {
     question: 'Сколько мудрых сов пряталось среди ветвей в первом лесу?',
     answers: ['5 сов', '3 совы', '2 совы', '7 сов'],
     correctIndex: 0,
-    hint: 'Совы сидели тихо на верхних ярусах дубов.'
+    hint: 'Вспомните верхние ярусы вековых дубов во время полёта.'
   },
   {
     question: 'Сколько колючих ежей шуршало в осенней траве?',
-    answers: ['3 ёжика', '1 ёжик', '5 ежей', '2 ёжика'],
+    answers: ['3 ежа', '1 ёж', '5 ежей', '2 ежа'],
     correctIndex: 0,
-    hint: 'Они собирали грибы и яблоки возле пеньков.'
+    hint: 'Они собирали запасы возле старых пней.'
   },
   {
     question: 'Сколько бурых медведей дремало на опушке бора?',
     answers: ['1 медведь', '2 медведя', 'Ни одного', '3 медведя'],
     correctIndex: 0,
-    hint: 'Один могучий косолапый сторожил лесную чащу.'
+    hint: 'Косолапый хозяин чащи предпочитает одиночество.'
   },
   {
     question: 'Сколько быстрых ланей промелькнуло между стволов?',
     answers: ['1 лань', '3 лани', '2 лани', '4 лани'],
     correctIndex: 0,
-    hint: 'Грациозная лань встретилась на середине пути.'
+    hint: 'Грациозный силуэт показался ровно на середине маршрута.'
   },
   {
     question: 'Сколько хитрых лисиц выслеживало птичьи гнёзда?',
     answers: ['1 лиса', '3 лисы', '2 лисы', '5 лисиц'],
     correctIndex: 0,
-    hint: 'Рыжий хвост мелькал у подножия сосен.'
+    hint: 'Рыжий хвост мелькнул у самого подножия сосен.'
   },
   {
     question: 'Сколько трудяг-дятлов стучало по стволам деревьев?',
     answers: ['1 дятел', '2 дятла', '4 дятла', '3 дятла'],
     correctIndex: 0,
-    hint: 'Красноголовый санитар леса усердно искал жучков.'
+    hint: 'Лесной барабанщик работал в гордом одиночестве.'
   },
   {
     question: 'Сколько полосатых енотов полоскало лапки у ручья?',
     answers: ['1 енот', '2 енота', '3 енота', 'Ни одного'],
     correctIndex: 0,
-    hint: 'Любопытный енот прятался в дупле у воды.'
+    hint: 'Любопытный зверёк выглядывал из дупла у самой воды.'
   },
   {
     question: 'Сколько осторожных барсуков вырыло нору под корнями?',
     answers: ['1 барсук', '2 барсука', '3 барсука', '4 барсука'],
     correctIndex: 0,
-    hint: 'Скромный барсук показался всего один раз.'
+    hint: 'Полосатая мордочка показалась из-под корней всего раз.'
   },
   {
     question: 'Сколько пугливых кроликов улепетывало при виде тени?',
     answers: ['1 кролик', '2 кролика', '5 кроликов', '3 кролика'],
     correctIndex: 0,
-    hint: 'Белый пушистый комочек нырнул под куст.'
+    hint: 'Белый комочек стремительно нырнул под раскидистый куст.'
   },
   {
     question: 'Сколько грозных ястребов кружило высоко в небе?',
     answers: ['1 ястреб', '2 ястреба', '4 ястреба', '3 ястреба'],
     correctIndex: 0,
-    hint: 'Один зоркий хищник парил над верхушками крон.'
+    hint: 'В вышине над кронами парил единственный зоркий страж.'
   }
 ];
 
-/**
- * Единый Каталог Шаблонов Событий (Event Templates)
- * Позволяет переиспользовать сущности на разных клетках и картах,
- * а также настраивать и выбирать их прямо в Stage2Editor.
- */
 export const EVENT_TEMPLATES = {
-  // 1. Старт и Сюжетные врата
+  // 1. Сюжетные врата
   start_gate: {
     id: 'start_gate',
     category: 'gate',
     title: 'Врата Черепа',
-    icon: '🚪',
     type: 'info',
-    speaker: 'Хранитель Врат',
-    text: 'Старт настольного приключения! Бросайте кубик, собирайте яйца и готовьтесь к решающей дуэли с Бобром!',
-    actions: [{ text: 'В ПУТЬ! 🚀', result: null }]
+    speaker: 'Хранитель Тропы',
+    text: 'Древние каменные створы расступаются перед вами. Впереди лежит извилистая тропа через Загадочный Лес к плотине Бобра-Дровосека. Соберите как можно больше ресурсов и карт перед финальным штурмом.',
+    actions: [{ text: 'НАЧАТЬ ПУТЬ', result: null }]
   },
 
   boss_gate: {
     id: 'boss_gate',
     category: 'gate',
-    title: 'Логово Бобра-Строителя!',
-    icon: '🦫',
+    title: 'Цитадель Плотины',
     type: 'boss_door',
-    speaker: 'Бобёр-Архитектор',
-    text: 'Огромные дубовые ворота плотины со скрипом отворяются. За ними возвышается трон Бобра! Пора развернуть веер карт и вступить в грандиозную битву!',
-    actions: [{ text: 'В БОЙ С БОБРОМ! ⚔️', result: { bossBattle: true } }]
+    speaker: 'Бобёр-Дровосек',
+    text: 'Массивные дубовые ворота содрогаются от гула лесопилки. За ними возвышается трон главного инженера плотины. Приготовьте собранную колоду — отступать больше некуда.',
+    actions: [{ text: 'ШТУРМОВАТЬ ПЛОТИНУ', result: { bossBattle: true } }]
   },
 
   magic_barrier: {
     id: 'magic_barrier',
     category: 'hazard',
-    title: 'ТЫ НЕ ПРОЙДЕШЬ!',
-    icon: '🛑',
+    title: 'Зачарованный Завал',
     type: 'bounce',
     video: 'assets/videos/Event-36.mp4',
-    speaker: 'Магический Барьер',
-    text: 'Глухая стена из зачарованных брёвен преграждает путь! Могучая ударная волна отбрасывает вас на 1 клетку назад — прямо в Логово Бобра!',
-    actions: [{ text: 'ОТСТУПИТЬ К БОССУ (-1 КЛЕТКА)', result: { stepBack: 1 } }]
+    speaker: 'Рунный Барьер',
+    text: 'Стена из вековых брёвен скреплена древней печатью леса. Мощный импульс отбрасывает вас на шаг назад — прямо к главным воротам плотины.',
+    actions: [{ text: 'ВЕРНУТЬСЯ К ВОРОТАМ', result: { stepBack: 1 } }]
   },
 
-  // 2. Викторины и Квесты
+  // 2. Квесты и Встречи
   quiz_campfire: {
     id: 'quiz_campfire',
     category: 'quest',
-    title: 'Отдых у костра с лесными Друзьями',
-    icon: '🏕️',
+    title: 'Привал у Лесного Костра',
     type: 'quiz',
     video: 'assets/videos/Event-2.mp4',
-    speaker: 'Мышонок-путник',
-    text: 'Приветствую, крылатый путник! Присядь к костру, отведай горячего чая из лесных ягод. Проверим, насколько ты был внимателен во время полёта через первый лес?',
-    rewardEggs: 5
+    speaker: 'Мышонок-летописец',
+    text: 'Путник, присядь к огню и переведи дух. Я веду перепись всех обитателей нашей чащи. Поможешь мне сверить записи о тех, кого ты повстречал с высоты птичьего полёта?',
+    rewardEggs: 6
   },
 
-  // 3. Награды и Клады
+  forest_riddle_owl: {
+    id: 'forest_riddle_owl',
+    category: 'quest',
+    title: 'Дозор Старого Филина',
+    type: 'quiz',
+    speaker: 'Старый Филин',
+    text: 'Ночной страж внимательно смотрит на вас с сухой ветви. Ответьте верно на вопрос о лесных тропах, и он укажет на спрятанный в дупле запас.',
+    rewardEggs: 7
+  },
+
+  // 3. Награды и Находки
   chest_regular: {
     id: 'chest_regular',
     category: 'reward',
-    title: 'Обычный Сундук',
-    icon: '📦',
+    title: 'Окованный Ларец',
     type: 'reward_video',
     video: 'assets/videos/Event-3.mp4',
-    speaker: 'Тайник в дупле',
-    text: 'Среди замшелых корней векового дуба припрятан старинный деревянный ларец. Кажется, замок слегка подался... Рискнёте откинуть кованую крышку?',
-    rewardEggs: 6,
-    actions: [{ text: 'ОТКРЫТЬ ЛАРЕЦ 🗝️', result: { eggs: 6 } }]
+    speaker: 'Лесной тайник',
+    text: 'Между мшистых корней старого дуба скрыт деревянный сундучок с бронзовыми накладками. Замок давно проржавел и легко поддаётся.',
+    actions: [{ text: 'ОТПЕРЕТЬ КРЫШКУ', result: { eggs: 6 } }]
   },
 
   beaver_legendary_chest: {
     id: 'beaver_legendary_chest',
     category: 'reward',
-    title: 'Легендарный Сундук Бобра',
-    icon: '👑',
+    title: 'Кованый Ларь Архитектора',
     type: 'reward_video',
     video: 'assets/videos/Event-15.mp4',
-    speaker: 'Кованый ларь Плотины',
-    text: 'Среди тяжелых бревен плотины замурован огромный золоченый ларь с печатью Бобра! Замки со скрежетом щёлкают... Какая мощь пернатых героев скрыта внутри?',
-    actions: [{ text: 'ОТКРЫТЬ ЛЕГЕНДАРНЫЙ ЛАРЬ 👑', result: { boosterPacks: 3 } }]
+    speaker: 'Казна Плотины',
+    text: 'Перед вами личный резерв Бобра-Дровосека, опечатанный гербом плотины. Внутри хранятся элитные наборы тактических карт для грядущего сражения.',
+    actions: [{ text: 'ВСКРЫТЬ ПЕЧАТЬ', result: { boosterPacks: 3 } }]
   },
 
   lucky_clover: {
     id: 'lucky_clover',
     category: 'reward',
-    title: 'Клевер Удачи',
-    icon: '🍀',
+    title: 'Четырёхлистник Судьбы',
     type: 'reward_video',
     video: 'assets/videos/Event-4.mp4',
-    speaker: 'Лесной Росток',
-    text: 'В изумрудной траве мягко сияет редчайший четырёхлистник! Лесные духи благословляют смелого путника, даруя власть над гранями судьбы.',
-    actions: [{ text: 'КОСНУТЬСЯ КЛЕВЕРА 🍀', result: { rerollDice: 3 } }]
+    speaker: 'Дар поляны',
+    text: 'Среди густого папоротника светится редкий изумрудный росток. Его сила позволяет обмануть случайность и изменить исход броска.',
+    actions: [{ text: 'СОРВАТЬ ТАЛИСМАН', result: { rerollDice: 3 } }]
   },
 
   egg_pouch: {
     id: 'egg_pouch',
     category: 'reward',
-    title: 'Мешочек Яиц',
-    icon: '🥚',
+    title: 'Походный Саквояж',
     type: 'reward_video',
     video: 'assets/videos/Event-6.mp4',
-    speaker: 'Забытый багаж',
-    text: 'На толстой ветке сосны покачивается кем-то забытый птичий саквояж из мягкой замши. Увесистый узелок так и просится в руки!',
-    actions: [{ text: 'РАЗВЯЗАТЬ УЗЕЛ 🎒', result: { eggs: 5 } }]
+    speaker: 'Находка на ветвях',
+    text: 'На нижнем суку сосны зацепилась добротная кожаная сумка, набитая мягким мхом и целыми яйцами. Отличное пополнение припасов.',
+    actions: [{ text: 'ЗАБРАТЬ ПРИПАСЫ', result: { eggs: 5 } }]
   },
 
   egg_magnet: {
     id: 'egg_magnet',
     category: 'reward',
-    title: 'Яичный Магнит',
-    icon: '🧲',
+    title: 'Магнитный Оберег',
     type: 'reward_video',
     video: 'assets/videos/Event-7.mp4',
-    speaker: 'Древний Артефакт',
-    text: 'В ваших руках начинает вибрировать таинственная золотая подкова. Воздух вокруг наполняется статическим треском, притягивая энергию скорлупы...',
-    actions: [{ text: 'ЗАРЯДИТЬ АРТЕФАКТ 🧲', result: { magnet: 2 } }]
+    speaker: 'Реликвия кузницы',
+    text: 'Тяжёлая подкова из метеоритного сплава тихо гудит в лапах. Её поле притяжения удвоит следующую найденную вами партию яиц.',
+    actions: [{ text: 'АКТИВИРОВАТЬ ОБЕРЕГ', result: { magnet: 2 } }]
   },
 
   holiday_gift: {
     id: 'holiday_gift',
     category: 'reward',
-    title: 'Праздничный Подарок',
-    icon: '🎁',
+    title: 'Именной Свёрток',
     type: 'reward',
-    speaker: 'Бандероль с лентой',
-    text: 'Нарядная коробка с пышным бантом подписана вашим именем! Внутри припрятано нечто особенное для именинника...',
-    actions: [{ text: 'РАЗВЕРНУТЬ ПОДАРОК 🎁', result: { boosterPacks: 1 } }]
+    speaker: 'Праздничная почта',
+    text: 'Перевязанная алой лентой шкатулка адресована лично виновнику торжества. Внутри — запечатанный набор бойцов для вашей стаи.',
+    actions: [{ text: 'РАСПАКОВАТЬ НАБОР', result: { boosterPacks: 1 } }]
   },
 
   magic_oracle: {
     id: 'magic_oracle',
     category: 'reward',
-    title: 'Магическое Предсказание',
-    icon: '🔮',
+    title: 'Видение Оракула',
     type: 'reward',
-    speaker: 'Хрустальный Шар Оракула',
-    text: 'В глубинах магической сферы клубится туман, сквозь который проступает сияющий логотип Steam... Оракул шепчет: "Великий подарок ждёт именинника — новые игры уже близко!"',
-    actions: [{ text: 'ПРИНЯТЬ ПРОРОЧЕСТВО 🔮', result: { steamProphecy: true } }]
+    speaker: 'Сфера Предсказаний',
+    text: 'Туман внутри хрустального шара складывается в знакомые очертания библиотеки игр. Звёзды гласят: впереди именинника ждёт пополнение коллекции в Steam и верная победа.',
+    actions: [{ text: 'ПРИНЯТЬ ЗНАМЕНИЕ', result: { steamProphecy: true, eggs: 4 } }]
   },
 
-  // 4. Мини-игры и Азарт
-  mystery_boxes: {
-    id: 'mystery_boxes',
-    category: 'minigame',
-    title: 'Коробка с Сюрпризом',
-    icon: '🎁',
-    type: 'mystery_boxes',
-    playVideoAfterChoice: true,
-    speaker: 'Шкатулка Фокусника',
-    text: 'Перед вами четыре запечатанных кубика-коробочки с праздничными лентами. Внутри может скрываться как щедрый клад или редкая карта, так и коварный сюрприз... Положитесь на интуицию: какую выберете?'
+  merchant_stash: {
+    id: 'merchant_stash',
+    category: 'reward',
+    title: 'Привал Контрабандиста',
+    type: 'reward',
+    speaker: 'Брошенная повозка',
+    text: 'У обочины стоит перевёрнутая тележка лесного торговца. Среди рассыпанных диковинок удалось отыскать и припасы, и запасную кость.',
+    actions: [{ text: 'ОБЫСКАТЬ ТЕЛЕЖКУ', result: { eggs: 4, rerollDice: 1 } }]
   },
 
+  // 4. Интерактивные Мини-Игры (без видео-заглушек)
   wheel_fortune: {
     id: 'wheel_fortune',
     category: 'minigame',
-    title: 'Колесо Лесной Фортуны!',
-    icon: '🎡',
-    type: 'wheel_video',
-    video: 'assets/videos/Event-30.mp4',
-    playVideoAfterChoice: true,
-    speaker: 'Колесо Азарта',
-    text: 'В лесной полутьме весело переливаются огни ярмарочного Колеса Фортуны! Стрелка замерла в ожидании смельчака. Какой сектор судьба уготовила именно вам?',
-    actions: [{ text: 'ИСПЫТАТЬ УДАЧУ! 🎡', result: { eggs: 10 } }]
-  },
-
-  strongman_game: {
-    id: 'strongman_game',
-    category: 'minigame',
-    title: 'Проверка Силача!',
-    icon: '🔨',
-    type: 'strongman',
-    video: 'assets/videos/Event-19.mp4',
-    playVideoAfterChoice: true,
-    speaker: 'Аттракцион Силомер',
-    text: 'Ударьте огромным молотом по наковальне! Зажмите [ПРОБЕЛ] или кнопку, следите за индикатором мощности и отпустите в нужный момент, чтобы показать силу!'
+    title: 'Колесо Лесной Фортуны',
+    type: 'wheel_game',
+    speaker: 'Ярмарочный Механизм',
+    text: 'Деревянное колесо оковано медью и разделено на шесть секторов. Толкните обод и проверьте, на чьей стороне сегодня госпожа Удача.'
   },
 
   timestop_game: {
     id: 'timestop_game',
     category: 'minigame',
-    title: 'Челлендж: Остановка Времени!',
-    icon: '⏱️',
+    title: 'Хронометр Часовщика',
     type: 'timestop',
-    speaker: 'Хранитель Хронометра',
-    text: 'Проверьте свою реакцию и внутреннее чувство времени! Выберите цель, запустите секундомер и остановите его ровно секунда-в-секунду.'
+    speaker: 'Мастер Маятника',
+    text: 'Древний часовой механизм не терпит суеты. Выберите контрольную отметку и остановите ход стрелки точно в заданное мгновение.'
+  },
+
+  strongman_game: {
+    id: 'strongman_game',
+    category: 'minigame',
+    title: 'Наковальня Лесоруба',
+    type: 'strongman',
+    video: 'assets/videos/Event-19.mp4',
+    playVideoAfterChoice: true,
+    speaker: 'Испытание Силы',
+    text: 'Тяжёлый кузнечный молот ждёт крепкого хвата. Поймайте момент наивысшего напряжения шкалы и обрушьте удар на рычаг.'
+  },
+
+  mystery_boxes: {
+    id: 'mystery_boxes',
+    category: 'minigame',
+    title: 'Ларцы Иллюзиониста',
+    type: 'mystery_boxes',
+    playVideoAfterChoice: true,
+    speaker: 'Загадочный Прилавок',
+    text: 'На сукне выстроены четыре одинаковые шкатулки. Три из них хранят ценные дары, а в одной взведена коварная пружина. Сделайте выбор.'
   },
 
   bingo_game: {
     id: 'bingo_game',
     category: 'minigame',
-    title: 'Птичье Бинго!',
-    icon: '🎱',
+    title: 'Лесной Розыгрыш',
     type: 'bingo',
     video: 'assets/videos/Event-32.mp4',
     playVideoAfterChoice: true,
-    speaker: 'Крупье в смокинге',
-    text: 'Лесной крупье в бархатном жилете приветствует вас за лотерейным столом! Вытяните счастливый билет — барабан с шарами уже начинает вращаться!'
+    speaker: 'Распорядитель Тиража',
+    text: 'Лотерейный барабан заряжен пронумерованными шарами. Выберите один из четырёх билетов перед тем, как механизм назовёт победный номер.'
   },
 
   toy_claw_machine: {
     id: 'toy_claw_machine',
     category: 'minigame',
-    title: 'Автомат с Игрушками',
-    icon: '🕹️',
-    type: 'choice',
-    speaker: 'Ретро-автомат Кран',
-    text: 'Среди вековых сосен весело перемигивается неоновый винтажный кран-автомат. Внутри горой насыпаны призы! Рискнёте испытать ловкость клешни?',
-    options: [
-      { text: 'Опустить 1 яйцо 🕹️', choiceKey: 'play_claw' },
-      { text: 'Пройти мимо 🌲', choiceKey: 'pass' }
-    ]
+    title: 'Механический Захват',
+    type: 'claw_game',
+    speaker: 'Автомат Диковинок',
+    text: 'За стеклянной витриной движется стальная клешня. Дождитесь момента, когда захват окажется точно над центральной призовой капсулой, и нажмите кнопку.'
   },
 
-  // 5. Развилки и Выбор пути
+  abandoned_cellar: {
+    id: 'abandoned_cellar',
+    category: 'minigame',
+    title: 'Запертый Погреб',
+    type: 'lockpick_game',
+    speaker: 'Кованый Засов',
+    text: 'Дверь в старый погреб удерживает трёхштифтовый механизм. Поочерёдно зафиксируйте все три штифта в зелёной зоне, чтобы отпереть хранилище.'
+  },
+
+  forest_thimbles: {
+    id: 'forest_thimbles',
+    category: 'minigame',
+    title: 'Игра в Скорлупки',
+    type: 'thimbles_game',
+    speaker: 'Ловкий Бурундук',
+    text: 'Лесной трюкач прячет золотое яйцо под одну из трёх ореховых скорлупок и стремительно меняет их местами. Уследите за правильной скорлупкой!'
+  },
+
+  // 5. Развилки и Выборы
   foggy_crossroad: {
     id: 'foggy_crossroad',
     category: 'choice',
-    title: 'Ориентир: Развилка в тумане',
-    icon: '🌫️',
+    title: 'Развилка в Тумане',
     type: 'choice_video',
     video: 'assets/videos/Event-10.mp4',
     playVideoAfterChoice: true,
-    speaker: 'Таинственный туман',
-    text: 'Кто-то сбил стрелки компаса и затянул тропу густым белым паром. Какую тропу выбрать, чтобы не повернуть вспять?',
+    speaker: 'Густая Дымка',
+    text: 'Белая пелена скрыла дорожные камни, а стрелка компаса бешено вращается. Придётся довериться чутью, чтобы не свернуть на обратную петлю.',
     options: [
-      { text: 'Тропа налево ↖️', choiceKey: 'left' },
-      { text: 'Тропа направо ↗️', choiceKey: 'right' }
+      { text: 'Свернуть на левую тропу', choiceKey: 'left' },
+      { text: 'Держаться правой стороны', choiceKey: 'right' }
     ]
   },
 
   mysterious_basement: {
     id: 'mysterious_basement',
     category: 'choice',
-    title: 'Таинственный Подвал',
-    icon: '🚪',
+    title: 'Подземелье под Корнями',
     type: 'choice',
     playVideoAfterChoice: true,
-    speaker: 'Скрипучий люк',
-    text: 'В земле приоткрыт массивный деревянный люк, откуда доносится приглушённое кудахтанье. Спуститься в таинственную прохладу или обойти стороной?',
+    speaker: 'Дубовый Люк',
+    text: 'Из-под приоткрытой крышки люка тянет теплом и слышится тихое копошение. Вы можете проверить подвал или не рисковать припасами.',
     options: [
-      { text: 'Спуститься в подвал 🔦', choiceKey: 'enter_basement' },
-      { text: 'Пройти мимо 🌲', choiceKey: 'pass' }
-    ]
-  },
-
-  abandoned_cellar: {
-    id: 'abandoned_cellar',
-    category: 'choice',
-    title: 'Заброшенный Подвал',
-    icon: '🗝️',
-    type: 'choice',
-    speaker: 'Ржавый замок',
-    text: 'Окованная железом дверь уходит под вековой холм. На ней висит тяжёлый замок, покрытый мхом и ржавчиной. Попробовать взломать?',
-    options: [
-      { text: 'Попытаться открыть 🗝️', choiceKey: 'try_open' },
-      { text: 'Не терять время 🌲', choiceKey: 'pass' }
+      { text: 'Спуститься по ступеням', choiceKey: 'enter_basement' },
+      { text: 'Обойти стороной', choiceKey: 'pass' }
     ]
   },
 
   spring_flask: {
     id: 'spring_flask',
     category: 'choice',
-    title: 'Колба с Родниковой Водой',
-    icon: '🧪',
+    title: 'Сосуд с Живой Росой',
     type: 'choice',
-    speaker: 'Светящаяся Склянка',
-    text: 'На серебряном блюдце стоит стеклянная колба с прохладной кристальной влагой. Внутри пляшут крошечные лазурные искорки.',
+    speaker: 'Алхимический Пьедестал',
+    text: 'На каменном выступе покоится хрустальная колба. Жидкость внутри светится мягким лазурным светом и источает аромат хвои.',
     options: [
-      { text: 'Выпить залпом! 💧', choiceKey: 'drink_water' },
-      { text: 'Оставить на месте 🌲', choiceKey: 'pass' }
+      { text: 'Осушить сосуд', choiceKey: 'drink_water' },
+      { text: 'Не трогать находку', choiceKey: 'pass' }
+    ]
+  },
+
+  smuggler_deal: {
+    id: 'smuggler_deal',
+    category: 'choice',
+    title: 'Сделка с Сорокой',
+    type: 'choice',
+    speaker: 'Сорока-Скупщица',
+    text: 'Черно-белая торговка предлагает обменять часть ваших яиц на запечатанный бустер карт из личной коллекции Бобра.',
+    options: [
+      { text: 'Отдать 4 яйца за Бустер карт', choiceKey: 'buy_booster_4' },
+      { text: 'Отказаться от обмена', choiceKey: 'pass' }
     ]
   },
 
@@ -341,52 +355,48 @@ export const EVENT_TEMPLATES = {
   divine_healing: {
     id: 'divine_healing',
     category: 'heal',
-    title: 'Божественное Исцеление',
-    icon: '💧',
+    title: 'Чистый Источник',
     type: 'healing',
-    speaker: 'Священный Родник',
-    text: 'Хрустальные струи родника смывают любую усталость и скверну. Если на вас был яд — он развеивается, а потерянные силы возвращаются!',
-    actions: [{ text: 'ОМЫТЬСЯ (ИЗЛЕЧЕНИЕ 💧)', result: { heal: true } }]
+    speaker: 'Священный Ключ',
+    text: 'Прозрачная ключевая вода мгновенно нейтрализует любые лесные токсины и возвращает утраченные в пути силы и припасы.',
+    actions: [{ text: 'ОМЫТЬСЯ В ИСТОЧНИКЕ', result: { heal: true } }]
   },
 
   immunity_elixir: {
     id: 'immunity_elixir',
     category: 'heal',
-    title: 'Эликсир Иммунитета',
-    icon: '🛡️',
+    title: 'Янтарный Эликсир',
     type: 'reward',
-    speaker: 'Флакон Алхимика',
-    text: 'Густое янтарное зелье пахнет смолой и луговым мёдом. Сделав глоток, ваше тело окутывает мерцающий щит, защищающий от яда и потерь!',
-    actions: [{ text: 'ВЫПИТЬ ЩИТ (ИММУНИТЕТ 🛡️)', result: { isImmune: true } }]
+    speaker: 'Лавка Травника',
+    text: 'Густой настой из кедровой живицы укрепляет оперение и создаёт защитный барьер, который примет на себя следующий удар ловушки или яда.',
+    actions: [{ text: 'ПРИНЯТЬ ЭЛИКСИР', result: { isImmune: true } }]
   },
 
   sacrifice_monument: {
     id: 'sacrifice_monument',
     category: 'altar',
-    title: 'Монумент Самопожертвования',
-    icon: '🗿',
+    title: 'Алтарь Стража',
     type: 'choice_video',
     video: 'assets/videos/Event-11.mp4',
     playVideoAfterChoice: true,
-    speaker: 'Дух Монумента',
-    text: 'Древний каменный монолит ждёт подношения. Если пожертвуете 2 яйца — получите священный Щит Несчастья (полный иммунитет к яду и потере яиц на 1 раз).',
+    speaker: 'Каменный Идол',
+    text: 'Высеченный в скале лик хранит древний договор. Оставьте в чаше два яйца, и дух леса укроет вас непробиваемым щитом от следующей беды.',
     options: [
-      { text: 'Пожертвовать 2 яйца 🥚', choiceKey: 'sacrifice_2' },
-      { text: 'Воздержаться 🌲', choiceKey: 'pass' }
+      { text: 'Возложить 2 яйца на алтарь', choiceKey: 'sacrifice_2' },
+      { text: 'Продолжить путь без дара', choiceKey: 'pass' }
     ]
   },
 
   charity_monument: {
     id: 'charity_monument',
     category: 'altar',
-    title: 'Монумент Болеющим и Обездоленным',
-    icon: '🤲',
+    title: 'Чаша Возмездия и Щедрости',
     type: 'charity',
-    speaker: 'Статуя Милосердия',
-    text: 'Пожертвуйте 2 яйца в чашу монумента. Если ваше сердце щедро, тотем возместит все яйца, когда-либо потерянные вами на этой карте, умножив их на 10 (x10)!',
+    speaker: 'Древний Тотем',
+    text: 'Тотем помнит каждую потерю, понесённую вами на этой тропе. Внесите скромную лепту в 2 яйца, чтобы вернуть все утраченные ранее ресурсы в десятикратном размере.',
     options: [
-      { text: 'Пожертвовать 2 яйца 🥚', choiceKey: 'charity_pay' },
-      { text: 'Пройти мимо 🌲', choiceKey: 'pass' }
+      { text: 'Внести 2 яйца в чашу', choiceKey: 'charity_pay' },
+      { text: 'Пройти мимо тотема', choiceKey: 'pass' }
     ]
   },
 
@@ -394,89 +404,120 @@ export const EVENT_TEMPLATES = {
   spoiled_egg: {
     id: 'spoiled_egg',
     category: 'hazard',
-    title: 'Тухлое Яйцо!',
-    icon: '☣️',
+    title: 'Болотная Испарина',
     type: 'hazard_video',
     video: 'assets/videos/Event-5.mp4',
-    speaker: 'Зловонная ловушка',
-    text: 'Под ногой с треском лопается подозрительная скорлупа... Воздух наполняет едкий серный дым! Вы отравлены на 5 ходов (-1 яйцо каждый ход).',
-    actions: [{ text: 'ОТДЫШАТЬСЯ (ЯД 5 ХОДОВ) ☣️', result: { poison: 5 } }]
+    speaker: 'Ядовитая Ловушка',
+    text: 'Под шагом вскрылась старая болотная капсула! Едкое облако спор проникает в лёгкие — в течение следующих 5 ходов вы будете терять силы.',
+    actions: [{ text: 'ПРОДОЛЖИТЬ ЧЕРЕЗ ДЫМ', result: { poison: 5 } }]
   },
 
   poison_thorns: {
     id: 'poison_thorns',
     category: 'hazard',
-    title: 'Ядовитые Шипы!',
-    icon: '🥀',
+    title: 'Заросли Чёрного Терновника',
     type: 'hazard_video',
     video: 'assets/videos/Event-12.mp4',
-    speaker: 'Терновый капкан',
-    text: 'Острые как бритва шипы дикого терновника оцарапали лапки! Растение выделяет токсин: вы отравлены на 4 хода (-1 яйцо за ход).',
-    actions: [{ text: 'ТЕРПЕТЬ БОЛЬ (ЯД 4 ХОДА) 🥀', result: { poison: 4 } }]
+    speaker: 'Шипастая Преграда',
+    text: 'Колючие плети смыкаются прямо на тропе. Ядовитый сок шипов вызывает ослабление на ближайшие 4 хода.',
+    actions: [{ text: 'ПРОРВАТЬСЯ СКВОЗЬ ЧАЩУ', result: { poison: 4 } }]
   },
 
   fox_ambush: {
     id: 'fox_ambush',
     category: 'hazard',
-    title: 'Нападение Хитрой Лисы!',
-    icon: '🦊',
+    title: 'Лисья Засада',
     type: 'hazard_video',
     video: 'assets/videos/Event-23.mp4',
-    speaker: 'Рыжая воровка',
-    text: 'Из кустов с молниеносной быстротой выскакивает рыжая лиса, ловко выхватывает из вашей сумки 3 яйца и растворяется в чаще!',
-    actions: [{ text: 'УДЕРЖАТЬ ОСТАЛЬНОЕ (-3 яйца) 🦊', result: { loseEggs: 3 } }]
+    speaker: 'Лесная Разбойница',
+    text: 'Рыжая тень молнией метнулась из папоротника! Прежде чем вы успели взмахнуть крылом, плутовка облегчила ваш походный мешок.',
+    actions: [{ text: 'ПРОВЕРИТЬ ОСТАТКИ', result: { loseEggs: 3 } }]
   },
 
   thunder_strike: {
     id: 'thunder_strike',
     category: 'hazard',
-    title: 'Кара Небесная!',
-    icon: '⚡',
+    title: 'Грозовой Разряд',
     type: 'hazard',
-    speaker: 'Громовая Туча',
-    text: 'С ясного неба бьёт ослепительный фиолетовый разряд молнии! Опалённые перья ноют: в финальной битве с Бобром ваше здоровье уменьшится на 5 HP!',
-    actions: [{ text: 'ВЫСТОЯТЬ (-5 HP К БОССУ) ⚡', result: { bossHpPenalty: 5 } }]
+    speaker: 'Штормовой Фронт',
+    text: 'Ослепительная молния бьёт в верхушку соседней сосны! Ударная волна ослабляет вашу стойкость перед финальной схваткой с Боссом.',
+    actions: [{ text: 'ВОССТАНОВИТЬ РАВНОВЕСИЕ', result: { bossHpPenalty: 5 } }]
+  },
+
+  beaver_patrol_tax: {
+    id: 'beaver_patrol_tax',
+    category: 'hazard',
+    title: 'Застава Дровосеков',
+    type: 'hazard',
+    speaker: 'Патруль Плотины',
+    text: 'Механический часовой Бобра перегородил узкий мостик. За проход без боя система безопасности списывает пошлину с ваших припасов.',
+    actions: [{ text: 'УПЛАТИТЬ ПОШЛИНУ', result: { loseEggs: 2 } }]
   }
 };
 
 /**
- * Карта событий 1..36 для классической доски (ссылается на уникальные шаблоны)
+ * Базовая раскладка на 54 клетки по умолчанию
  */
-export const BOARD_EVENTS = {
-  1:  { ...EVENT_TEMPLATES.start_gate, index: 1 },
-  2:  { ...EVENT_TEMPLATES.quiz_campfire, index: 2 },
-  3:  { ...EVENT_TEMPLATES.chest_regular, index: 3 },
-  4:  { ...EVENT_TEMPLATES.lucky_clover, index: 4 },
-  5:  { ...EVENT_TEMPLATES.spoiled_egg, index: 5 },
-  6:  { ...EVENT_TEMPLATES.egg_pouch, index: 6 },
-  7:  { ...EVENT_TEMPLATES.egg_magnet, index: 7 },
-  8:  { ...EVENT_TEMPLATES.divine_healing, index: 8 },
-  9:  { ...EVENT_TEMPLATES.toy_claw_machine, index: 9 },
-  10: { ...EVENT_TEMPLATES.foggy_crossroad, index: 10 },
-  11: { ...EVENT_TEMPLATES.sacrifice_monument, index: 11 },
-  12: { ...EVENT_TEMPLATES.poison_thorns, index: 12 },
-  13: { ...EVENT_TEMPLATES.spring_flask, index: 13 },
-  14: { ...EVENT_TEMPLATES.egg_pouch, index: 14 },
-  15: { ...EVENT_TEMPLATES.beaver_legendary_chest, index: 15 },
-  16: { ...EVENT_TEMPLATES.mysterious_basement, index: 16 },
-  17: { ...EVENT_TEMPLATES.mystery_boxes, index: 17 },
-  18: { ...EVENT_TEMPLATES.immunity_elixir, index: 18 },
-  19: { ...EVENT_TEMPLATES.strongman_game, index: 19 },
-  20: { ...EVENT_TEMPLATES.timestop_game, index: 20 },
-  21: { ...EVENT_TEMPLATES.charity_monument, index: 21 },
-  22: { ...EVENT_TEMPLATES.holiday_gift, index: 22 },
-  23: { ...EVENT_TEMPLATES.fox_ambush, index: 23 },
-  24: { ...EVENT_TEMPLATES.abandoned_cellar, index: 24 },
-  25: { ...EVENT_TEMPLATES.mystery_boxes, index: 25 },
-  26: { ...EVENT_TEMPLATES.egg_pouch, index: 26 },
-  27: { ...EVENT_TEMPLATES.spoiled_egg, index: 27 },
-  28: { ...EVENT_TEMPLATES.magic_oracle, index: 28 },
-  29: { ...EVENT_TEMPLATES.lucky_clover, index: 29 },
-  30: { ...EVENT_TEMPLATES.wheel_fortune, index: 30 },
-  31: { ...EVENT_TEMPLATES.thunder_strike, index: 31 },
-  32: { ...EVENT_TEMPLATES.bingo_game, index: 32 },
-  33: { ...EVENT_TEMPLATES.egg_magnet, index: 33 },
-  34: { ...EVENT_TEMPLATES.quiz_campfire, index: 34 },
-  35: { ...EVENT_TEMPLATES.boss_gate, index: 35 },
-  36: { ...EVENT_TEMPLATES.magic_barrier, index: 36 }
-};
+const DEFAULT_54_SEQUENCE = [
+  'start_gate',             // 1
+  'quiz_campfire',          // 2
+  'chest_regular',          // 3
+  'lucky_clover',           // 4
+  'spoiled_egg',            // 5
+  'egg_pouch',              // 6
+  'egg_magnet',             // 7
+  'divine_healing',         // 8
+  'toy_claw_machine',       // 9
+  'foggy_crossroad',        // 10
+  'sacrifice_monument',     // 11
+  'poison_thorns',          // 12
+  'spring_flask',           // 13
+  'egg_pouch',              // 14
+  'beaver_legendary_chest', // 15
+  'mysterious_basement',    // 16
+  'mystery_boxes',          // 17
+  'immunity_elixir',        // 18
+  'strongman_game',         // 19
+  'timestop_game',          // 20
+  'charity_monument',       // 21
+  'holiday_gift',           // 22
+  'fox_ambush',             // 23
+  'abandoned_cellar',       // 24
+  'forest_thimbles',        // 25
+  'egg_pouch',              // 26
+  'spoiled_egg',            // 27
+  'magic_oracle',           // 28
+  'lucky_clover',           // 29
+  'wheel_fortune',          // 30
+  'thunder_strike',         // 31
+  'bingo_game',             // 32
+  'egg_magnet',             // 33
+  'smuggler_deal',          // 34
+  'merchant_stash',         // 35
+  'beaver_patrol_tax',      // 36
+  'forest_riddle_owl',      // 37
+  'chest_regular',          // 38
+  'foggy_crossroad',        // 39
+  'toy_claw_machine',       // 40
+  'poison_thorns',          // 41
+  'divine_healing',         // 42
+  'mystery_boxes',          // 43
+  'abandoned_cellar',       // 44
+  'fox_ambush',             // 45
+  'wheel_fortune',          // 46
+  'immunity_elixir',        // 47
+  'timestop_game',          // 48
+  'beaver_legendary_chest', // 49
+  'strongman_game',         // 50
+  'charity_monument',       // 51
+  'quiz_campfire',          // 52
+  'boss_gate',              // 53
+  'magic_barrier'           // 54
+];
+
+export const BOARD_EVENTS = {};
+DEFAULT_54_SEQUENCE.forEach((key, i) => {
+  const step = i + 1;
+  const tpl = EVENT_TEMPLATES[key] || EVENT_TEMPLATES.egg_pouch;
+  BOARD_EVENTS[step] = { ...tpl, index: step };
+});
