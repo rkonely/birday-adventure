@@ -27,24 +27,31 @@ export const ARENA_TILES_COORDS = {
 // Плитки с лесными рунами на арте (+4 ATK птице на них)
 const RUNE_TILE_KEYS = ['2x1', '4x1', '2x3'];
 
+// Координаты 4 факелов на видео-арене (под разрешение 1376x768)
+const ARENA_PROPS = {
+  topLeftTorch:     { x: 438,  y: 162, r: 42, name: 'Верхний левый факел' },
+  topRightTorch:    { x: 940,  y: 162, r: 42, name: 'Верхний правый факел' },
+  bottomLeftTorch:  { x: 205,  y: 445, r: 48, name: 'Нижний левый факел' },
+  bottomRightTorch: { x: 1168, y: 445, r: 48, name: 'Нижний правый факел' }
+};
 
+// Координаты центра Бобра для прицеливания снарядов и выпадов карт
+const BOSS_CENTER = { x: 688, y: 155 };
 
 /**
  * Модуль финальной Арены Битвы с Бобром
- * Сетка 5x3 (15 тайлов), 26 уникальных карт, 3 типа угроз, передышка карт и интерактивное окружение
+ * Включает процедурный кодовый VFX-движок (частицы, кривые Безье, крутящиеся пилы, 3 стадии боя и пружинную физику карт)
  */
 export class BossArena {
   constructor(videoManager) {
     this.videoManager = videoManager;
     this.isActive = false;
 
-    // Холст и контекст
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
     this.arenaWidth = 1376;
     this.arenaHeight = 768;
 
-    // Загрузка ассетов арены (фоновое видео IDE-BossArena.mp4 и статичный фоллбэк)
     this.bgVideo = document.createElement('video');
     this.bgVideo.src = 'assets/videos/IDE-BossArena.mp4';
     this.bgVideo.loop = true;
@@ -54,15 +61,11 @@ export class BossArena {
     this.bgVideo.preload = 'auto';
 
     events.on('music:volume_changed', (vol) => {
-      if (this.bgVideo) {
-        this.bgVideo.volume = vol;
-      }
+      if (this.bgVideo) this.bgVideo.volume = vol;
     });
 
     events.on('sound:toggled', (enabled) => {
-      if (this.bgVideo) {
-        this.bgVideo.muted = !enabled;
-      }
+      if (this.bgVideo) this.bgVideo.muted = !enabled;
     });
 
     this.bgImage = new Image();
@@ -71,7 +74,6 @@ export class BossArena {
     this.cardBackImage = new Image();
     this.cardBackImage.src = 'assets/Market/Card back/Back-Card01.png';
 
-    // 15 индивидуальных тайлов
     this.tileImages = {};
     for (const key of Object.keys(ARENA_TILES_COORDS)) {
       const img = new Image();
@@ -79,19 +81,19 @@ export class BossArena {
       this.tileImages[key] = img;
     }
 
-    // Кэш изображений карт
     this.cardImagesCache = {};
 
-    // Состояние босса
+    // Состояние босса и его стадия (1, 2 или 3)
     this.boss = {
       name: 'БОБЁР-РАЗРУШИТЕЛЬ',
       title: 'Хранитель Лесной Плотины',
       maxHp: 360,
       hp: 360,
+      phase: 1,
       armor: 0,
       poisonRounds: 0,
-      vulnerable: false,     // Если топор застрял в камне (+50% урона по боссу)
-      blockSpecNext: false,  // От Совы-Экзорциста
+      vulnerable: false,
+      blockSpecNext: false,
       hitFlashTimer: 0,
       intents: []
     };
@@ -102,17 +104,15 @@ export class BossArena {
       hp: 100,
       round: 1,
       maxSummons: 3,
+      torchCooldown: 0,
       deck: [],
       hand: [],
       discard: [],
       selectedCardIndex: -1
     };
 
-    // Размещенные птицы на сетке { 'col x row': unitObject }
     this.gridUnits = {};
 
-    // Эффекты на тайлах
-    // intentType: null | 'BREACH' (красный прорыв в героя) | 'SAW_AOE' (оранжевая пила только по птицам) | 'HEAVY_AXE' (фиолетовый топор по рунам)
     this.tileEffects = {};
     for (const key of Object.keys(ARENA_TILES_COORDS)) {
       this.tileEffects[key] = {
@@ -123,25 +123,29 @@ export class BossArena {
         isTargeted: false,
         intentType: null,
         intentDamage: 0,
-        shakeTimer: 0
+        shakeTimer: 0,
+        sinkOffset: 0 // Пружинное проседание плиты при ударе или высадке
       };
     }
 
-    // Всплывающие надписи урона / эффектов
+    // === ПРОЦЕДУРНЫЕ СПИСКИ КОДОВЫХ СПЕЦЭФФЕКТОВ ===
     this.floatingTexts = [];
+    this.particles = [];      // Искры, щепки, огонь, перья, капли яда
+    this.projectiles = [];    // Дуги пламени от факелов, перья, молнии
+    this.shockwaves = [];     // Расходящиеся кольца ударных волн и слеши топора
+    this.activeHazards = [];  // Анимированные циркулярные пилы и катящиеся брёвна
 
-    // Анимационные таймеры
     this.animTime = 0;
+    this.ambientSpawnTimer = 0;
     this.screenShakeTimer = 0;
     this.screenShakeIntensity = 0;
     this.isResolvingTurn = false;
 
-    // Мышь и взаимодействие
     this.hoveredTileKey = null;
+    this.hoveredPropKey = null;
     this.hoveredCardIndex = -1;
     this.mousePos = { x: -1, y: -1 };
 
-    // DOM контейнер интерфейса карт и боя
     this.uiContainer = null;
     this.isInspectOpen = false;
     this.inspectModalEl = null;
@@ -151,9 +155,7 @@ export class BossArena {
 
   setupEvents() {
     window.addEventListener('resize', () => {
-      if (this.isActive) {
-        this.updateCanvasBounds();
-      }
+      if (this.isActive) this.updateCanvasBounds();
     });
 
     window.addEventListener('keydown', (e) => {
@@ -214,6 +216,162 @@ export class BossArena {
   }
 
   /* ==========================================================================
+     КОДОВЫЙ ГЕНЕРАТОР ВСПЫШЕК, ЧАСТИЦ, СНАРЯДОВ И ПИЛ (PROCEDURAL VFX)
+     ========================================================================== */
+  spawnParticles(x, y, count, opts = {}) {
+    for (let i = 0; i < count; i++) {
+      const angle = (opts.angle !== undefined)
+        ? opts.angle + (Math.random() - 0.5) * (opts.spread || Math.PI)
+        : Math.random() * Math.PI * 2;
+      const speed = (opts.speed || 140) * (0.4 + Math.random() * 0.8);
+      const life = (opts.life || 0.7) * (0.6 + Math.random() * 0.6);
+      this.particles.push({
+        x: x + (Math.random() - 0.5) * (opts.jitter || 12),
+        y: y + (Math.random() - 0.5) * (opts.jitter || 12),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed + (opts.upwardBoost || 0),
+        gravity: opts.gravity !== undefined ? opts.gravity : 260,
+        size: (opts.size || 5) * (0.6 + Math.random() * 0.7),
+        color: Array.isArray(opts.colors)
+          ? opts.colors[Math.floor(Math.random() * opts.colors.length)]
+          : (opts.color || '#ffb703'),
+        shape: opts.shape || 'circle', // 'circle' | 'spark' | 'wood' | 'rune'
+        rotation: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 12,
+        life,
+        maxLife: life,
+        glow: opts.glow !== undefined ? opts.glow : true
+      });
+    }
+  }
+
+  spawnShockwave(x, y, maxRadius = 110, color = '#ffd166', duration = 0.45, lineWidth = 5) {
+    this.shockwaves.push({
+      x,
+      y,
+      radius: 8,
+      maxRadius,
+      color,
+      lineWidth,
+      life: duration,
+      maxLife: duration,
+      type: 'ring'
+    });
+  }
+
+  spawnSlashEffect(x, y, color = '#a335ee', duration = 0.4) {
+    this.shockwaves.push({
+      x,
+      y,
+      radius: 75,
+      maxRadius: 95,
+      color,
+      lineWidth: 7,
+      life: duration,
+      maxLife: duration,
+      type: 'cross_slash'
+    });
+  }
+
+  /**
+   * Запускает анимированный снаряд по кривой Безье с хвостом из частиц
+   */
+  fireCurvedProjectile(startX, startY, targetX, targetY, color = '#ff5722', duration = 0.42) {
+    return new Promise((resolve) => {
+      const cpX = (startX + targetX) / 2 + (Math.random() - 0.5) * 160;
+      const cpY = Math.min(startY, targetY) - 130 - Math.random() * 60;
+      this.projectiles.push({
+        startX,
+        startY,
+        cpX,
+        cpY,
+        targetX,
+        targetY,
+        x: startX,
+        y: startY,
+        color,
+        elapsed: 0,
+        duration,
+        onHit: resolve
+      });
+    });
+  }
+
+  /**
+   * Анимация физического выпада карты птицы вперёд при ударе по Боссу
+   */
+  animateUnitLunge(unit, targetX = BOSS_CENTER.x, targetY = BOSS_CENTER.y) {
+    return new Promise((resolve) => {
+      const tile = ARENA_TILES_COORDS[unit.tileKey];
+      if (!tile) {
+        resolve();
+        return;
+      }
+      const startX = tile.x + tile.w / 2;
+      const startY = tile.y + tile.h / 2;
+      const dx = (targetX - startX) * 0.58;
+      const dy = (targetY - startY) * 0.58;
+
+      unit.lungeTime = 0;
+      unit.lungeDuration = 0.28;
+      unit.lungeTargetDX = dx;
+      unit.lungeTargetDY = dy;
+      unit.onLungePeak = () => {
+        this.spawnParticles(BOSS_CENTER.x + (Math.random() - 0.5) * 70, BOSS_CENTER.y + 20, 14, {
+          colors: ['#ffd166', '#ff4d4d', '#ffffff'],
+          speed: 220,
+          size: 5,
+          shape: 'spark'
+        });
+        this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 20, 95, '#ffd166', 0.32, 4);
+      };
+      setTimeout(resolve, 180);
+    });
+  }
+
+  /**
+   * Проверка и переключение стадии Босса (1 -> 2 -> 3) с кинематографичным переходом
+   */
+  checkBossPhaseTransition() {
+    const hpRatio = this.boss.hp / this.boss.maxHp;
+    let targetPhase = 1;
+    if (hpRatio <= 0.35 || this.player.round >= 7) {
+      targetPhase = 3;
+    } else if (hpRatio <= 0.68 || this.player.round >= 4) {
+      targetPhase = 2;
+    }
+
+    if (targetPhase > this.boss.phase) {
+      this.boss.phase = targetPhase;
+      this.screenShake(24, 0.7);
+      if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
+
+      if (targetPhase === 2) {
+        this.boss.armor += 12;
+        this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 30, 380, '#ff8800', 0.75, 8);
+        this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y + 30, 45, {
+          colors: ['#ff8800', '#ffd166', '#d97706'],
+          speed: 320,
+          size: 6,
+          shape: 'wood'
+        });
+        this.addFloatingText(this.arenaWidth / 2, 175, 'СТАДИЯ II: ЗАПУСК ЛЕСОПИЛКИ! (+12 БРОНИ)', '#ff8800', 2.8);
+      } else if (targetPhase === 3) {
+        this.boss.armor += 20;
+        this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 30, 520, '#ff2233', 0.9, 10);
+        this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y + 30, 65, {
+          colors: ['#ff2233', '#ff5722', '#ffd166'],
+          speed: 380,
+          size: 7,
+          shape: 'spark'
+        });
+        this.addFloatingText(this.arenaWidth / 2, 175, 'СТАДИЯ III: ЯРОСТЬ БОБРА-БЕРСЕРКА!', '#ff2233', 3.0);
+      }
+      this.updateHUD();
+    }
+  }
+
+  /* ==========================================================================
      Запуск и Остановка Арены
      ========================================================================== */
   start(customDeck = null) {
@@ -228,9 +386,7 @@ export class BossArena {
     if (this.videoManager) {
       this.videoManager.stopBoardGameBossSequence();
       const wrapper = document.getElementById('video-wrapper');
-      if (wrapper) {
-        wrapper.style.display = 'none';
-      }
+      if (wrapper) wrapper.style.display = 'none';
     }
 
     if (this.bgVideo) {
@@ -239,8 +395,7 @@ export class BossArena {
       } catch (e) {}
       const playPromise = this.bgVideo.play();
       if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('[BossArena] Автоплей видео заблокирован со звуком, запускаем без звука:', err);
+        playPromise.catch(() => {
           this.bgVideo.muted = true;
           this.bgVideo.play().catch(() => {});
         });
@@ -249,10 +404,10 @@ export class BossArena {
 
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 
-    // Сброс состояния матча
     this.boss.name = 'БОБЁР-РАЗРУШИТЕЛЬ';
     this.boss.maxHp = 360;
     this.boss.hp = 360;
+    this.boss.phase = 1;
     this.boss.armor = 0;
     this.boss.poisonRounds = 0;
     this.boss.vulnerable = false;
@@ -263,6 +418,7 @@ export class BossArena {
     this.player.maxHp = 100;
     this.player.hp = 100;
     this.player.maxSummons = 3;
+    this.player.torchCooldown = 0;
 
     if (customDeck && customDeck.length > 0) {
       this.player.deck = customDeck.map(c => ({ ...c, restRounds: 0 })).sort(() => 0.5 - Math.random());
@@ -300,8 +456,14 @@ export class BossArena {
       this.tileEffects[key].isTargeted = false;
       this.tileEffects[key].intentType = null;
       this.tileEffects[key].intentDamage = 0;
+      this.tileEffects[key].sinkOffset = 0;
     }
+
     this.floatingTexts = [];
+    this.particles = [];
+    this.projectiles = [];
+    this.shockwaves = [];
+    this.activeHazards = [];
     this.isResolvingTurn = false;
 
     this.createDomHUD();
@@ -317,13 +479,8 @@ export class BossArena {
 
     this.closeCardInspect();
 
-    if (this.canvas) {
-      this.canvas.style.display = 'none';
-    }
-
-    if (this.bgVideo) {
-      this.bgVideo.pause();
-    }
+    if (this.canvas) this.canvas.style.display = 'none';
+    if (this.bgVideo) this.bgVideo.pause();
 
     if (this.uiContainer && this.uiContainer.parentNode) {
       this.uiContainer.parentNode.removeChild(this.uiContainer);
@@ -331,20 +488,14 @@ export class BossArena {
     }
 
     const wrapper = document.getElementById('video-wrapper');
-    if (wrapper) {
-      wrapper.style.display = 'block';
-    }
-
-    console.log('🚪 [BossArena] Выход с Арены Босса');
+    if (wrapper) wrapper.style.display = 'block';
   }
 
   /* ==========================================================================
-     DOM HUD: Рука карт, здоровье игрока и индикатор босса
+     DOM HUD
      ========================================================================== */
   createDomHUD() {
-    if (this.uiContainer) {
-      this.uiContainer.remove();
-    }
+    if (this.uiContainer) this.uiContainer.remove();
 
     const uiLayer = document.getElementById('ui-layer') || document.getElementById('game-container');
     if (!uiLayer) return;
@@ -371,7 +522,7 @@ export class BossArena {
       </div>
 
       <div id="boss-card-hint" class="boss-card-hint hidden">
-        Красная клетка = Прорыв в героя (блокируйте!) | Оранжевая = Пила (не ставьте слабых!) | ЛКМ по птице на поле = вернуть в руку
+        Красная = Прорыв в героя | Оранжевая = Пила по ряду | Фиолетовая = Топор по рунам | Кликайте по факелам!
       </div>
 
       <div class="boss-player-col">
@@ -438,7 +589,7 @@ export class BossArena {
 
     const hpNum = document.getElementById('boss-hp-num');
     if (hpNum) {
-      const armorTag = this.boss.armor > 0 ? ` [+${this.boss.armor} ЩИТ]` : '';
+      const armorTag = this.boss.armor > 0 ? ` [ЩИТ ${this.boss.armor}]` : '';
       const vulnTag = this.boss.vulnerable ? ' [УЯЗВИМ +50%]' : '';
       hpNum.textContent = `HP ${Math.max(0, this.boss.hp)}/${this.boss.maxHp}${armorTag}${vulnTag}`;
     }
@@ -449,18 +600,14 @@ export class BossArena {
     }
 
     const deckCounter = document.getElementById('deck-counter');
-    if (deckCounter) {
-      deckCounter.textContent = `${this.player.deck.length}`;
-    }
+    if (deckCounter) deckCounter.textContent = `${this.player.deck.length}`;
 
     const discardCounter = document.getElementById('discard-counter');
-    if (discardCounter) {
-      discardCounter.textContent = `${this.player.discard.length}`;
-    }
+    if (discardCounter) discardCounter.textContent = `${this.player.discard.length}`;
 
     const roundCounter = document.getElementById('round-counter');
     if (roundCounter) {
-      roundCounter.textContent = `Раунд ${this.player.round}`;
+      roundCounter.textContent = `Раунд ${this.player.round} (Фаза ${this.boss.phase})`;
     }
 
     const intentDesc = document.getElementById('boss-intent-desc');
@@ -516,9 +663,6 @@ export class BossArena {
     }
   }
 
-  /* ==========================================================================
-     Рендер руки карт (с индикатором отдыха 1 ход после возврата с поля)
-     ========================================================================== */
   renderHandDOM() {
     const container = document.getElementById('boss-hand-container');
     if (!container) return;
@@ -648,9 +792,7 @@ export class BossArena {
       }
       if (this.player.hand.length < 7) {
         const card = this.player.deck.shift();
-        if (card) {
-          this.player.hand.push(card);
-        }
+        if (card) this.player.hand.push(card);
       }
     }
     this.renderHandDOM();
@@ -658,7 +800,7 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     Выставление и возврат птицы с поля 5x3 (с поддержкой всех 26 способностей)
+     Выставление и возврат птицы с поля 5x3 + Кодовые VFX высадки
      ========================================================================== */
   recallUnitFromTile(tileKey) {
     const unit = this.gridUnits[tileKey];
@@ -675,12 +817,18 @@ export class BossArena {
       return;
     }
 
-    // Если забираем Павлина — убираем и его иллюзии
     if (unit.id === 'magician_peacock') {
       for (const [k, u] of Object.entries(this.gridUnits)) {
         if (u.isDecoy) delete this.gridUnits[k];
       }
     }
+
+    const tile = ARENA_TILES_COORDS[tileKey];
+    this.spawnParticles(tile.x + tile.w / 2, tile.y + tile.h / 2, 10, {
+      colors: ['#48cae4', '#ffffff'],
+      speed: 90,
+      size: 4
+    });
 
     delete this.gridUnits[tileKey];
     this.player.hand.push({
@@ -700,7 +848,6 @@ export class BossArena {
     });
 
     audio.playClick();
-    const tile = ARENA_TILES_COORDS[tileKey];
     this.addFloatingText(tile.x + tile.w / 2, tile.y, 'Возврат в руку', '#48cae4', 1.1);
     this.recalculateBoardAuras();
     this.renderHandDOM();
@@ -740,60 +887,42 @@ export class BossArena {
       painImmune: false,
       spawnAnim: 1.0,
       hitAnim: 0,
+      lungeTime: 0,
+      lungeDuration: 0,
+      lungeTargetDX: 0,
+      lungeTargetDY: 0,
       triggerAbilityOnAttack: true
     };
 
-    if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+    // Эффект проседания плиты и разлёта пыли/перьев при посадке
     const tile = ARENA_TILES_COORDS[tileKey];
-    this.addFloatingText(tile.x + tile.w / 2, tile.y, `${card.name}!`, '#ffd166', 1.5);
+    const cx = tile.x + tile.w / 2;
+    const cy = tile.y + tile.h / 2;
+    this.tileEffects[tileKey].sinkOffset = 9;
 
-    this.recalculateBoardAuras();
-    this.renderHandDOM();
-    this.updateHUD();
-  }
-
-  /**
-   * Возврат выставленной птицы с клетки обратно в руку во время фазы планирования
-   */
-  recallUnitFromTile(tileKey) {
-    if (this.isResolvingTurn) return;
-    const unit = this.gridUnits[tileKey];
-    if (!unit) return;
-
-    if (unit.isDecoy) {
-      this.addFloatingText(ARENA_TILES_COORDS[tileKey].x + 60, ARENA_TILES_COORDS[tileKey].y, 'Это иллюзия!', '#aaa', 1.2);
-      return;
-    }
-
-    delete this.gridUnits[tileKey];
-
-    this.player.hand.push({
-      id: unit.id,
-      name: unit.name,
-      subname: unit.subname,
-      role: unit.role,
-      rarity: unit.rarity,
-      image: unit.image,
-      atk: unit.baseAtk !== undefined ? unit.baseAtk : unit.atk,
-      hp: unit.maxHp !== undefined ? unit.maxHp : unit.hp,
-      currentHp: unit.currentHp,
-      abilityName: unit.abilityName,
-      abilityDesc: unit.abilityDesc,
-      price: unit.price,
-      restRounds: 0
+    const rarityColors = {
+      common: ['#e5e7eb', '#d1d5db'],
+      uncommon: ['#2ecc71', '#a7f3d0'],
+      rare: ['#38bdf8', '#93c5fd'],
+      epic: ['#c084fc', '#a855f7'],
+      legendary: ['#fbbf24', '#f59e0b', '#ffffff']
+    };
+    this.spawnShockwave(cx, cy + 15, 65, (rarityColors[card.rarity] || ['#ffd166'])[0], 0.35, 3);
+    this.spawnParticles(cx, cy + 15, 16, {
+      colors: rarityColors[card.rarity] || ['#ffd166'],
+      speed: 130,
+      size: 5,
+      upwardBoost: -60
     });
 
-    audio.playClick();
-    const tile = ARENA_TILES_COORDS[tileKey];
-    this.addFloatingText(tile.x + tile.w / 2, tile.y, 'Вернут в руку', '#94a3b8', 1.3);
+    if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
+    this.addFloatingText(cx, tile.y, `${card.name}!`, '#ffd166', 1.5);
+
     this.recalculateBoardAuras();
     this.renderHandDOM();
     this.updateHUD();
   }
 
-  /**
-   * Пересчёт динамических аур на поле (Руны леса, Курица-Шеф, Скворец, Гриф, Пернатый Король, Смола)
-   */
   recalculateBoardAuras() {
     const units = Object.values(this.gridUnits);
     const starlingCount = units.filter(u => u.id === 'starling_musician').length;
@@ -807,35 +936,12 @@ export class BossArena {
 
       let atk = unit.baseAtk !== undefined ? unit.baseAtk : unit.atk;
 
-      // Руна леса (+4 ATK)
-      if (this.tileEffects[key]?.isRune) {
-        atk += 4;
-      }
-
-      // Скворец-Музыкант (+4 ATK всем)
-      if (starlingCount > 0) {
-        atk += starlingCount * 4;
-      }
-
-      // Курица-Шеф: Эспрессо-ярость (+8 ATK при HP < 50%)
-      if (unit.id === 'chef_chicken' && unit.currentHp <= unit.maxHp * 0.5) {
-        atk += 8;
-      }
-
-      // Гриф-Охотник: Королевский контракт (x2 ATK при HP босса < 40%)
-      if (unit.id === 'vulture_hunter' && this.boss.hp <= this.boss.maxHp * 0.4) {
-        atk *= 2;
-      }
-
-      // Пернатый Король: +100% к атаке всем союзникам
-      if (hasKing && unit.id !== 'feathered_king') {
-        atk *= 2;
-      }
-
-      // Штраф смолы (-50% ATK)
-      if (this.tileEffects[key]?.tarRounds > 0) {
-        atk = Math.max(1, Math.floor(atk * 0.5));
-      }
+      if (this.tileEffects[key]?.isRune) atk += 4;
+      if (starlingCount > 0) atk += starlingCount * 4;
+      if (unit.id === 'chef_chicken' && unit.currentHp <= unit.maxHp * 0.5) atk += 8;
+      if (unit.id === 'vulture_hunter' && this.boss.hp <= this.boss.maxHp * 0.4) atk *= 2;
+      if (hasKing && unit.id !== 'feathered_king') atk *= 2;
+      if (this.tileEffects[key]?.tarRounds > 0) atk = Math.max(1, Math.floor(atk * 0.5));
 
       unit.currentAtk = atk;
     }
@@ -856,17 +962,18 @@ export class BossArena {
 
   async triggerOnPlayAbility(card, tileKey) {
     const tile = ARENA_TILES_COORDS[tileKey];
+    const cx = tile.x + tile.w / 2;
+    const cy = tile.y + tile.h / 2;
 
-    // 1. Пингвин-Менеджер: +1 карта из колоды
     if (card.id === 'penguin_manager') {
       this.drawCards(1);
       this.addFloatingText(this.arenaWidth / 2, 450, '+1 Карта (Квартальный отчёт)!', '#2ec4b6', 1.8);
-    }
-    // 2. Павлин-Фокусник: 2 зеркальные копии по бокам
-    else if (card.id === 'magician_peacock') {
+    } else if (card.id === 'magician_peacock') {
       const [c, r] = tileKey.split('x').map(Number);
       [`${c - 1}x${r}`, `${c + 1}x${r}`].forEach(k => {
         if (ARENA_TILES_COORDS[k] && !this.gridUnits[k]) {
+          const dt = ARENA_TILES_COORDS[k];
+          this.spawnShockwave(dt.x + dt.w / 2, dt.y + dt.h / 2, 55, '#a335ee', 0.4, 3);
           this.gridUnits[k] = {
             id: 'peacock_decoy',
             name: 'Иллюзия Павлина',
@@ -882,34 +989,30 @@ export class BossArena {
             isDecoy: true,
             tileKey: k,
             spawnAnim: 1.0,
-            hitAnim: 0
+            hitAnim: 0,
+            lungeTime: 0
           };
         }
       });
       this.addFloatingText(this.arenaWidth / 2, 400, 'Зеркальные копии созданы!', '#a335ee', 1.8);
-    }
-    // 3. Сова Афина: +18 щита всему ряду
-    else if (card.id === 'owl_sparta') {
+    } else if (card.id === 'owl_sparta') {
       const r = parseInt(tileKey.split('x')[1], 10);
       for (let col = 1; col <= 5; col++) {
         const k = `${col}x${r}`;
         if (this.gridUnits[k]) {
           this.gridUnits[k].currentHp += 18;
           this.gridUnits[k].maxHp += 18;
+          const t = ARENA_TILES_COORDS[k];
+          this.spawnShockwave(t.x + t.w / 2, t.y + t.h / 2, 60, '#f39c12', 0.4, 4);
         }
       }
       this.addFloatingText(this.arenaWidth / 2, 420, 'Фаланга Спарты: +18 HP в ряду!', '#f39c12', 2.0);
-    }
-    // 4. Синица-Пиромант: поджог клетки на 3 раунда и сжигание смолы по всей арене
-    else if (card.id === 'tit_pyromancer') {
+    } else if (card.id === 'tit_pyromancer') {
       this.tileEffects[tileKey].burningRounds = 3;
-      for (const eff of Object.values(this.tileEffects)) {
-        eff.tarRounds = 0;
-      }
-      this.addFloatingText(tile.x + 60, tile.y, 'Огненный шквал: вся смола сожжена!', '#ff5722', 2.0);
-    }
-    // 5. Ворон-Алхимик: яд боссу и целебный эликсир на клетке
-    else if (card.id === 'raven_alchemist') {
+      this.tileEffects[tileKey].tarRounds = 0;
+      this.spawnParticles(cx, cy, 24, { colors: ['#ff5722', '#ffb703'], speed: 150, upwardBoost: -80 });
+      this.addFloatingText(cx, tile.y, 'Клетка охвачена огнём!', '#ff5722', 1.8);
+    } else if (card.id === 'raven_alchemist') {
       this.boss.poisonRounds = 3;
       this.tileEffects[tileKey].elixirRounds = 3;
       this.tileEffects[tileKey].tarRounds = 0;
@@ -917,10 +1020,9 @@ export class BossArena {
         this.tileEffects[tileKey].isTargeted = false;
         this.tileEffects[tileKey].intentType = null;
       }
-      this.addFloatingText(tile.x + 60, tile.y, 'Трансмутация: Яд + Эликсир!', '#2ecc71', 1.9);
-    }
-    // 6. Сокол-Космонавт: сдвигает зоны атак босса на 1 клетку в сторону
-    else if (card.id === 'sokol_cosmonaut') {
+      this.spawnParticles(cx, cy, 22, { colors: ['#2ecc71', '#a335ee'], speed: 120, upwardBoost: -60 });
+      this.addFloatingText(cx, tile.y, 'Трансмутация: Яд + Эликсир!', '#2ecc71', 1.9);
+    } else if (card.id === 'sokol_cosmonaut') {
       for (let r = 1; r <= 3; r++) {
         const rowCopy = [];
         for (let c = 1; c <= 5; c++) {
@@ -936,18 +1038,16 @@ export class BossArena {
           targetEff.intentDamage = src.intentDamage;
         }
       }
+      this.spawnShockwave(this.arenaWidth / 2, 410, 340, '#38bdf8', 0.55, 5);
       this.addFloatingText(this.arenaWidth / 2, 360, '«Она круглая?!» Прицел Бобра сдвинут!', '#38bdf8', 2.0);
-    }
-    // 7. Зарянка-Психолог: АНТИДЕПРЕССАНТЫ! (0 урона себе и соседям)
-    else if (card.id === 'therapist_robin') {
+    } else if (card.id === 'therapist_robin') {
       this.gridUnits[tileKey].painImmune = true;
       this.getNeighborKeys(tileKey).forEach(k => {
         if (this.gridUnits[k]) this.gridUnits[k].painImmune = true;
       });
-      this.addFloatingText(tile.x + 60, tile.y, 'АНТИДЕПРЕССАНТЫ: 0 урона!', '#ff6b8b', 2.0);
-    }
-    // 8. Сова-Экзорцист: очищает смолу и снимает броню/спец-атаку Бобра
-    else if (card.id === 'owl_exorcist') {
+      this.spawnShockwave(cx, cy, 140, '#ff6b8b', 0.45, 4);
+      this.addFloatingText(cx, tile.y, 'АНТИДЕПРЕССАНТЫ: 0 урона!', '#ff6b8b', 2.0);
+    } else if (card.id === 'owl_exorcist') {
       for (const eff of Object.values(this.tileEffects)) {
         eff.tarRounds = 0;
         if (eff.intentType === 'HEAVY_AXE') {
@@ -957,17 +1057,17 @@ export class BossArena {
       }
       this.boss.armor = 0;
       this.boss.blockSpecNext = true;
+      this.spawnShockwave(this.arenaWidth / 2, 400, 420, '#a335ee', 0.6, 6);
       this.addFloatingText(this.arenaWidth / 2, 360, '«Изыди!» Арена очищена от ловушек!', '#a335ee', 2.0);
-    }
-    // 9. Сова-Барбер: срезает броню босса сразу при выходе
-    else if (card.id === 'owl_hairdresser' && this.boss.armor > 0) {
+    } else if (card.id === 'owl_hairdresser' && this.boss.armor > 0) {
       this.boss.armor = 0;
+      this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ffd166', 0.45);
       this.addFloatingText(this.arenaWidth / 2, 220, 'Стрижка под ноль: Броня Бобра срезана!', '#ffd166', 1.8);
     }
   }
 
   /* ==========================================================================
-     Телеграфирование атак Бобра: Разогрев (Раунды 1-3) и 3 типа угроз
+     Телеграфирование атак Бобра по 3 стадиям
      ========================================================================== */
   generateBossIntents() {
     for (const key of Object.keys(this.tileEffects)) {
@@ -976,19 +1076,18 @@ export class BossArena {
       this.tileEffects[key].intentDamage = 0;
     }
 
+    this.checkBossPhaseTransition();
+
     const round = this.player.round;
     let desc = '';
 
-    // РАУНД 1: Плавный разогрев — только 1 бревно прорыва по центру
     if (round === 1) {
       const key = '3x2';
       this.tileEffects[key].isTargeted = true;
       this.tileEffects[key].intentType = 'BREACH';
       this.tileEffects[key].intentDamage = 6;
       desc = 'Разминка (Катящееся бревно): перекройте красную клетку [3x2], иначе -6 HP герою!';
-    }
-    // РАУНД 2: Обучение разнице между Прорывом (красный) и Пилой (оранжевый)
-    else if (round === 2) {
+    } else if (round === 2) {
       const breachKey = '2x2';
       this.tileEffects[breachKey].isTargeted = true;
       this.tileEffects[breachKey].intentType = 'BREACH';
@@ -1001,9 +1100,7 @@ export class BossArena {
         this.tileEffects[sawKey].intentDamage = 8;
       }
       desc = 'Бревно [2x2] (перекрыть!) + Оранжевая пила в 1-м ряду (бьёт только птиц, герою 0 урона!)';
-    }
-    // РАУНД 3: Знакомство с Фиолетовым Топором по рунам (застревает, если птица выжила)
-    else if (round === 3) {
+    } else if (round === 3) {
       ['1x3', '5x3'].forEach(k => {
         this.tileEffects[k].isTargeted = true;
         this.tileEffects[k].intentType = 'BREACH';
@@ -1015,17 +1112,15 @@ export class BossArena {
         this.tileEffects[k].intentDamage = 14;
       });
       desc = '2 Бревна по краям (перекрыть!) + Фиолетовый топор по рунам (выживите = Бобёр уязвим!)';
-    }
-    // С 4 РАУНДА: Настоящий бой с чередованием паттернов
-    else {
+    } else {
       const pattern = (round + (this.boss.blockSpecNext ? 1 : 0)) % 3;
       this.boss.blockSpecNext = false;
 
-      const breachDmg = Math.min(12, 8 + Math.floor(round / 2));
-      const sawDmg = Math.min(14, 9 + Math.floor(round / 2));
+      const rageBonus = this.boss.phase === 3 ? 3 : 0;
+      const breachDmg = Math.min(14, 8 + Math.floor(round / 2) + rageBonus);
+      const sawDmg = Math.min(16, 9 + Math.floor(round / 2) + rageBonus);
 
       if (pattern === 1) {
-        // Паттерн А: 2 прорыва + Пила по случайному ряду + Смола
         const cols = [1, 2, 3, 4, 5].sort(() => 0.5 - Math.random()).slice(0, 2);
         const sawRow = Math.floor(Math.random() * 3) + 1;
         for (let c = 1; c <= 5; c++) {
@@ -1041,10 +1136,9 @@ export class BossArena {
           this.tileEffects[k].intentType = 'BREACH';
           this.tileEffects[k].intentDamage = breachDmg;
         });
-        desc = `Аврал: 2 красных прорыва (${breachDmg} ур.) + Оранжевая пила по ${sawRow}-му ряду (${sawDmg} ур. птицам)`;
+        desc = `Аврал (Фаза ${this.boss.phase}): 2 прорыва (${breachDmg} ур.) + Оранжевая пила по ${sawRow}-му ряду (${sawDmg} ур.)`;
       } else if (pattern === 2) {
-        // Паттерн Б: Укрепление плотины (+броня боссу) + 2 прорыва + Фиолетовый топор по рунам
-        this.boss.armor = 16;
+        this.boss.armor = 16 + rageBonus * 2;
         const cols = [1, 3, 5].sort(() => 0.5 - Math.random()).slice(0, 2);
         cols.forEach(c => {
           const k = `${c}x2`;
@@ -1055,11 +1149,10 @@ export class BossArena {
         RUNE_TILE_KEYS.forEach(k => {
           this.tileEffects[k].isTargeted = true;
           this.tileEffects[k].intentType = 'HEAVY_AXE';
-          this.tileEffects[k].intentDamage = 15;
+          this.tileEffects[k].intentDamage = 15 + rageBonus;
         });
-        desc = `Щит Плотины (+16 брони) + 2 прорыва (${breachDmg} ур.) + Фиолетовый топор по рунам!`;
+        desc = `Щит Плотины (+${this.boss.armor} брони) + 2 прорыва + Фиолетовый топор по рунам!`;
       } else {
-        // Паттерн В: 3 бревна прорыва (проверка защиты или перехвата Гусем/Стримером)
         const cols = [1, 2, 3, 4, 5].sort(() => 0.5 - Math.random()).slice(0, 3);
         cols.forEach((c, idx) => {
           const r = (idx % 3) + 1;
@@ -1068,7 +1161,7 @@ export class BossArena {
           this.tileEffects[k].intentType = 'BREACH';
           this.tileEffects[k].intentDamage = breachDmg;
         });
-        desc = `Лесосплав: 3 красных бревна прорыва по ${breachDmg} ур. (блокируйте или используйте Гуся/Стримера!)`;
+        desc = `Лесосплав: 3 красных бревна прорыва по ${breachDmg} ур. (блокируйте или перехватите Гусем!)`;
       }
     }
 
@@ -1081,14 +1174,131 @@ export class BossArena {
   }
 
   /* ==========================================================================
-     Боевой цикл (Разрешение хода со всеми способностями птиц)
+     Интерактивные факелы: живая огненная дуга по кривой Безье без поломки видео!
+     ========================================================================== */
+  async activateArenaTorch(propKey) {
+    if (this.isResolvingTurn) return;
+    if (this.player.torchCooldown > 0) {
+      this.addFloatingText(this.arenaWidth / 2, 340, `Факелы набирают жар (ещё ${this.player.torchCooldown} х.)!`, '#ffb703', 1.4);
+      audio.playClick();
+      return;
+    }
+
+    const prop = ARENA_PROPS[propKey];
+    if (!prop) return;
+
+    this.player.torchCooldown = 3;
+    audio.playClick();
+
+    // Вспышка искр на самом факеле
+    this.spawnShockwave(prop.x, prop.y, 85, '#ffb703', 0.4, 4);
+    this.spawnParticles(prop.x, prop.y, 28, {
+      colors: ['#ffb703', '#ff5722', '#ffffff'],
+      speed: 200,
+      upwardBoost: -90,
+      shape: 'spark'
+    });
+
+    // Запускаем огненный шар по дуге прямо в Бобра
+    await this.fireCurvedProjectile(prop.x, prop.y, BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ff5722', 0.42);
+
+    if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
+    this.screenShake(14, 0.35);
+    this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 20, 160, '#ff5722', 0.45, 6);
+    this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y + 20, 40, {
+      colors: ['#ff5722', '#ffb703', '#ef4444'],
+      speed: 280,
+      size: 6,
+      shape: 'spark'
+    });
+
+    // Огненная волна выжигает смолу на плитах и ослабляет брёвна
+    for (const [k, eff] of Object.entries(this.tileEffects)) {
+      if (eff.tarRounds > 0) {
+        eff.tarRounds = 0;
+        const t = ARENA_TILES_COORDS[k];
+        this.spawnParticles(t.x + t.w / 2, t.y + t.h / 2, 16, { colors: ['#ff5722', '#ffb703'], speed: 120 });
+      }
+      if (eff.intentType === 'BREACH') {
+        eff.intentDamage = Math.max(2, eff.intentDamage - 3);
+      }
+    }
+
+    this.boss.hp = Math.max(0, this.boss.hp - 10);
+    this.boss.hitFlashTimer = 0.45;
+    this.addFloatingText(this.arenaWidth / 2, 220, 'ПЛАМЯ ЖАРОВНИ! -10 HP Бобру, смола сожжена, брёвна ослаблены!', '#ff5722', 2.4);
+    this.checkBossPhaseTransition();
+    this.recalculateBoardAuras();
+    this.updateHUD();
+  }
+
+  /* ==========================================================================
+     Кодовые анимации ударов Бобра (Крутящаяся пила, Катящееся бревно, Топор)
+     ========================================================================== */
+  playBossAttackVFX() {
+    return new Promise((resolve) => {
+      let maxAnimDuration = 0.45;
+
+      // Проверяем, есть ли ряд с Циркулярной пилой (SAW_AOE)
+      for (let r = 1; r <= 3; r++) {
+        const rowHasSaw = [1, 2, 3, 4, 5].some(c => this.tileEffects[`${c}x${r}`]?.intentType === 'SAW_AOE');
+        if (rowHasSaw) {
+          const firstTile = ARENA_TILES_COORDS[`1x${r}`];
+          const lastTile = ARENA_TILES_COORDS[`5x${r}`];
+          const y = firstTile.y + firstTile.h / 2;
+          this.activeHazards.push({
+            type: 'saw',
+            startX: firstTile.x - 40,
+            endX: lastTile.x + lastTile.w + 40,
+            x: firstTile.x - 40,
+            y,
+            elapsed: 0,
+            duration: 0.52
+          });
+          maxAnimDuration = Math.max(maxAnimDuration, 0.52);
+        }
+      }
+
+      // Проверяем клетки с Катящимся бревном (BREACH) и Фиолетовым топором (HEAVY_AXE)
+      for (const [key, eff] of Object.entries(this.tileEffects)) {
+        if (!eff.isTargeted) continue;
+        const tile = ARENA_TILES_COORDS[key];
+        const tx = tile.x + tile.w / 2;
+        const ty = tile.y + tile.h / 2;
+
+        if (eff.intentType === 'BREACH') {
+          this.activeHazards.push({
+            type: 'log',
+            startX: BOSS_CENTER.x + (tx - BOSS_CENTER.x) * 0.35,
+            startY: 215,
+            endX: tx,
+            endY: ty,
+            x: tx,
+            y: 215,
+            elapsed: 0,
+            duration: 0.46
+          });
+        } else if (eff.intentType === 'HEAVY_AXE') {
+          setTimeout(() => {
+            this.spawnSlashEffect(tx, ty, '#a335ee', 0.45);
+            this.spawnParticles(tx, ty, 24, { colors: ['#a335ee', '#ffffff', '#c084fc'], speed: 220, shape: 'spark' });
+          }, 220);
+        }
+      }
+
+      setTimeout(resolve, maxAnimDuration * 1000);
+    });
+  }
+
+  /* ==========================================================================
+     Боевой цикл (Разрешение хода)
      ========================================================================== */
   async executeTurn() {
     this.isResolvingTurn = true;
     const btn = document.getElementById('btn-end-turn');
     if (btn) btn.disabled = true;
 
-    // Шаг 0: Заклинивание шестерёнок пилы и активация боевых кличей выставленных карт
+    // Шаг 0: Срабатывание способностей при выходе и заклинивание шестерёнок только ПОСЛЕ нажатия кнопки "Атака"
     const hasGearJammer = Object.entries(this.gridUnits).some(([k, u]) => (k === '1x1' || k === '5x1') && u.triggerAbilityOnAttack);
     if (hasGearJammer && Object.values(this.tileEffects).some(e => e.intentType === 'SAW_AOE')) {
       for (const eff of Object.values(this.tileEffects)) {
@@ -1101,18 +1311,17 @@ export class BossArena {
     }
 
     let triggeredCount = 0;
-    for (const [tileKey, unit] of Object.entries(this.gridUnits)) {
+    for (const [tKey, unit] of Object.entries(this.gridUnits)) {
       if (unit.triggerAbilityOnAttack) {
         unit.triggerAbilityOnAttack = false;
-        await this.triggerOnPlayAbility(unit, tileKey);
+        await this.triggerOnPlayAbility(unit, tKey);
         triggeredCount++;
         await this.sleep(250);
       }
     }
-
-    this.recalculateBoardAuras();
-    this.updateHUD();
     if (triggeredCount > 0) {
+      this.recalculateBoardAuras();
+      this.updateHUD();
       await this.sleep(250);
     }
 
@@ -1132,12 +1341,13 @@ export class BossArena {
     }
     if (dotDamage > 0) {
       this.boss.hp = Math.max(0, this.boss.hp - dotDamage);
+      this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y + 20, 22, { colors: ['#2ecc71', '#ff5722'], speed: 160 });
       this.addFloatingText(this.arenaWidth / 2, 220, `-${dotDamage} (Огонь и Яд)`, '#ff5722', 1.4);
       this.updateHUD();
       await this.sleep(350);
     }
 
-    // Шаг 2: Активные способности и атака всех выставленных птиц
+    // Шаг 2: Поочерёдные физические выпады выставленных птиц по Бобру
     const activeUnits = Object.values(this.gridUnits);
     let bossStunnedThisRound = false;
     let bossAccuracyPenalty = false;
@@ -1145,16 +1355,15 @@ export class BossArena {
 
     if (activeUnits.length > 0) {
       this.addFloatingText(this.arenaWidth / 2, 280, 'ПЕРНАТЫЕ АТАКУЮТ!', '#ffd166', 1.5);
-      await this.sleep(400);
+      await this.sleep(320);
 
       const vulnMult = this.boss.vulnerable ? 1.5 : 1.0;
-      this.boss.vulnerable = false; // Сбрасываем уязвимость после реализации
+      this.boss.vulnerable = false;
 
       let totalBirdsDamage = 0;
       for (const unit of activeUnits) {
         if (unit.isDecoy) continue;
 
-        // Спец-эффекты птиц во время атаки:
         if (unit.id === 'carrier_pigeon') bossDamageMult *= 0.85;
         if (unit.id === 'owl_hairdresser') bossDamageMult *= 0.80;
         if (unit.id === 'swan_princess') bossDamageMult *= 0.70;
@@ -1171,7 +1380,9 @@ export class BossArena {
         }
 
         if (unit.id === 'owl_mage') {
+          const ut = ARENA_TILES_COORDS[unit.tileKey];
           if (Math.random() < 0.5) {
+            await this.fireCurvedProjectile(ut.x + ut.w / 2, ut.y, BOSS_CENTER.x, BOSS_CENTER.y, '#38bdf8', 0.32);
             totalBirdsDamage += 15;
             this.addFloatingText(this.arenaWidth / 2, 240, 'Молния Совы-Мага: +15 урона!', '#38bdf8', 1.8);
           } else {
@@ -1186,16 +1397,19 @@ export class BossArena {
         }
 
         let unitDmg = unit.currentAtk || 0;
-        if (unit.id === 'kiwi_secret') unitDmg += 10; // Скрытный крит Киви
+        if (unit.id === 'kiwi_secret') unitDmg += 10;
         if (unit.id === 'sacred_ibis') {
           const targetedCount = Object.values(this.tileEffects).filter(e => e.isTargeted).length;
           unitDmg += Math.max(12, targetedCount * 6);
+          this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 30, 300, '#fbbf24', 0.5, 6);
         }
 
         unitDmg = Math.round(unitDmg * vulnMult);
 
         if (unitDmg > 0) {
-          // Дятел-Перфоратор игнорирует и ломает броню босса
+          audio.playClick();
+          await this.animateUnitLunge(unit);
+
           if (unit.id === 'woodpecker_drill' && this.boss.armor > 0) {
             this.boss.armor = 0;
             this.addFloatingText(this.arenaWidth / 2, 180, 'Перфоратор Дятла разнёс щит Бобра!', '#ffd166', 1.6);
@@ -1206,20 +1420,18 @@ export class BossArena {
           }
 
           totalBirdsDamage += unitDmg;
-          unit.hitAnim = 0.4;
-          audio.playClick();
-          await this.sleep(120);
         }
       }
 
       this.boss.hp = Math.max(0, this.boss.hp - totalBirdsDamage);
       this.boss.hitFlashTimer = 0.5;
-      this.screenShake(12, 0.4);
+      this.screenShake(14, 0.4);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
       this.addFloatingText(this.arenaWidth / 2, 200, `-${totalBirdsDamage} УРОНА БОССУ!`, '#ff3333', 2.0);
+      this.checkBossPhaseTransition();
       this.updateHUD();
 
-      await this.sleep(600);
+      await this.sleep(550);
     }
 
     if (this.boss.hp <= 0) {
@@ -1229,17 +1441,19 @@ export class BossArena {
       return;
     }
 
-    // Шаг 3: Ответная атака Бобра по 3 типам клеток
+    // Шаг 3: Ответная атака Бобра с кодовыми анимациями пилы, брёвен и топора
     if (bossStunnedThisRound) {
-      await this.sleep(500);
+      await this.sleep(450);
     } else if (bossAccuracyPenalty && Math.random() < 0.5) {
       this.addFloatingText(this.arenaWidth / 2, 180, 'Бобёр смутился труселей Орла с сердечками и ПРОМАХНУЛСЯ!', '#ff6b8b', 2.4);
-      await this.sleep(700);
+      await this.sleep(650);
     } else {
       this.addFloatingText(this.arenaWidth / 2, 160, 'БОБЁР НАНОСИТ УДАР!', '#e63946', 2.0);
-      this.screenShake(16, 0.5);
       if (typeof audio.playImpact === 'function') audio.playImpact(); else audio.playClick();
-      await this.sleep(550);
+
+      // Проигрываем полёт брёвен, проход циркулярной пилы и удар топора!
+      await this.playBossAttackVFX();
+      this.screenShake(18, 0.45);
 
       let directPlayerDamage = 0;
       const hasOdinRaven = Object.values(this.gridUnits).some(u => u.id === 'odin_raven' && u.currentHp > 0);
@@ -1249,56 +1463,56 @@ export class BossArena {
 
       const applyDamageToUnit = (unit, rawDmg, tile) => {
         if (!unit) return;
+        const cx = tile.x + tile.w / 2;
+        const cy = tile.y + tile.h / 2;
 
-        // Киви-Шпион и Пернатый Король неуязвимы для прямых ударов
         if (unit.id === 'kiwi_secret' || unit.id === 'feathered_king') {
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, 'Укрытие! 0 урона', '#38bdf8', 1.5);
+          this.addFloatingText(cx, tile.y - 10, 'Укрытие! 0 урона', '#38bdf8', 1.5);
           return;
         }
-        // Зарянка-Психолог: Антидепрессанты (0 урона)
         if (unit.painImmune) {
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, 'Антидепрессанты! 0 HP', '#ff6b8b', 1.6);
+          this.spawnShockwave(cx, cy, 55, '#ff6b8b', 0.35, 3);
+          this.addFloatingText(cx, tile.y - 10, 'Антидепрессанты! 0 HP', '#ff6b8b', 1.6);
           return;
         }
-        // Гусь-Охранник: 50% шанс полного уклонения
         if (unit.id === 'guard_goose' && Math.random() < 0.5) {
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, 'Фейсконтроль! 0 урона', '#ffd166', 1.6);
+          this.spawnShockwave(cx, cy, 55, '#ffd166', 0.35, 3);
+          this.addFloatingText(cx, tile.y - 10, 'Фейсконтроль! 0 урона', '#ffd166', 1.6);
           return;
         }
-        // Гусь-Викинг: первый удар блокирует щитом и контратакует на 20 урона
         if (unit.id === 'viking_goose' && !unit.shieldBlocked) {
           unit.shieldBlocked = true;
           this.boss.hp = Math.max(0, this.boss.hp - 20);
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, 'Щит Вальхаллы! Контрудар -20 HP!', '#f39c12', 2.0);
+          this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#f39c12', 0.45);
+          this.addFloatingText(cx, tile.y - 10, 'Щит Вальхаллы! Контрудар -20 HP!', '#f39c12', 2.0);
           return;
         }
 
         let dmg = Math.max(1, Math.round(rawDmg * bossDamageMult));
-        // Храбрый селезень: кастрюля поглощает 6 урона
-        if (unit.id === 'brave_drake') {
-          dmg = Math.max(1, dmg - 6);
-        }
+        if (unit.id === 'brave_drake') dmg = Math.max(1, dmg - 6);
 
         unit.currentHp -= dmg;
         unit.hitAnim = 0.5;
+        this.spawnParticles(cx, cy, 14, { colors: ['#ff4d4d', '#ffd166', '#d97706'], speed: 150, shape: 'wood' });
 
-        // Сова Афина: отвечает уколом копья на 14 урона
         if (unit.id === 'owl_sparta' && unit.currentHp > 0) {
           this.boss.hp = Math.max(0, this.boss.hp - 14);
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 28, 'Копьё Афины: -14 HP Бобру!', '#ffd166', 1.7);
+          this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ffd166', 0.35);
+          this.addFloatingText(cx, tile.y - 28, 'Копьё Афины: -14 HP Бобру!', '#ffd166', 1.7);
         }
 
         if (unit.currentHp <= 0) {
           if (hasOdinRaven && unit.id !== 'odin_raven' && !unit.isDecoy && !unit.hasResurrectedThisRound) {
             unit.hasResurrectedThisRound = true;
             unit.currentHp = unit.maxHp;
-            this.addFloatingText(tile.x + tile.w / 2, tile.y - 12, 'Врата Вальхаллы: Воскрешён со 100% HP!', '#ffd166', 2.2);
+            this.spawnShockwave(cx, cy, 85, '#ffd166', 0.5, 5);
+            this.addFloatingText(cx, tile.y - 12, 'Врата Вальхаллы: Воскрешён со 100% HP!', '#ffd166', 2.2);
           } else {
             unit.currentHp = 0;
-            this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `${unit.name} повержен!`, '#ff4d4d', 1.8);
+            this.addFloatingText(cx, tile.y - 10, `${unit.name} повержен!`, '#ff4d4d', 1.8);
           }
         } else {
-          this.addFloatingText(tile.x + tile.w / 2, tile.y - 10, `Блок! -${dmg} HP`, '#55efc4', 1.5);
+          this.addFloatingText(cx, tile.y - 10, `Блок! -${dmg} HP`, '#55efc4', 1.5);
         }
       };
 
@@ -1306,12 +1520,16 @@ export class BossArena {
         if (!effect.isTargeted) continue;
 
         effect.shakeTimer = 0.5;
+        effect.sinkOffset = 10;
         const rawDamage = effect.intentDamage || 6;
         const unit = this.gridUnits[key];
         const tile = ARENA_TILES_COORDS[key];
+        const cx = tile.x + tile.w / 2;
+        const cy = tile.y + tile.h / 2;
+
+        this.spawnParticles(cx, cy, 12, { colors: ['#d97706', '#fbbf24'], speed: 130, shape: 'wood' });
 
         if (effect.intentType === 'BREACH') {
-          // КРАСНАЯ КЛЕТКА (Прорыв): Киви в кустах и Король не останавливают катящееся бревно!
           const canBlockBreach = unit && unit.id !== 'kiwi_secret' && unit.id !== 'feathered_king';
           if (canBlockBreach) {
             applyDamageToUnit(unit, rawDamage, tile);
@@ -1322,26 +1540,23 @@ export class BossArena {
           } else {
             const heroDmg = Math.max(1, Math.round(rawDamage * bossDamageMult));
             directPlayerDamage += heroDmg;
-            this.addFloatingText(tile.x + tile.w / 2, tile.y + 20, `ПРОРЫВ! -${heroDmg} HP`, '#ff3838', 2.0);
+            this.spawnShockwave(cx, cy, 70, '#ff2233', 0.4, 4);
+            this.addFloatingText(cx, tile.y + 20, `ПРОРЫВ! -${heroDmg} HP`, '#ff3838', 2.0);
           }
         } else if (effect.intentType === 'SAW_AOE') {
-          // ОРАНЖЕВАЯ КЛЕТКА (Пила): бьёт только птиц на линии, Герою урон НЕ наносит!
-          if (unit) {
-            applyDamageToUnit(unit, rawDamage, tile);
-          }
+          if (unit) applyDamageToUnit(unit, rawDamage, tile);
         } else if (effect.intentType === 'HEAVY_AXE') {
-          // ФИОЛЕТОВАЯ КЛЕТКА (Топор по рунам): если птица приняла удар и выжила — топор застревает!
           if (unit) {
             applyDamageToUnit(unit, rawDamage, tile);
             if (unit.currentHp > 0) {
               this.boss.vulnerable = true;
-              this.addFloatingText(tile.x + tile.w / 2, tile.y - 28, 'Топор Бобра застрял! Босс УЯЗВИМ (+50% ур.)!', '#a335ee', 2.4);
+              this.spawnShockwave(cx, cy, 95, '#a335ee', 0.55, 5);
+              this.addFloatingText(cx, tile.y - 28, 'Топор Бобра застрял! Босс УЯЗВИМ (+50% ур.)!', '#a335ee', 2.4);
             }
           }
         }
       }
 
-      // Начиная с 3 раунда Бобр разливает Смолу на 1 случайную клетку
       if (this.player.round >= 3) {
         const allKeys = Object.keys(ARENA_TILES_COORDS);
         const tarKey = allKeys[Math.floor(Math.random() * allKeys.length)];
@@ -1351,9 +1566,9 @@ export class BossArena {
       }
 
       if (directPlayerDamage > 0) {
-        await this.sleep(350);
+        await this.sleep(320);
         this.player.hp = Math.max(0, this.player.hp - directPlayerDamage);
-        this.screenShake(20, 0.6);
+        this.screenShake(22, 0.55);
         audio.playBonk();
         this.addFloatingText(this.arenaWidth / 2, 430, `УРОН ИГРОКУ: -${directPlayerDamage} HP!`, '#ff3838', 2.4);
         this.updateHUD();
@@ -1367,7 +1582,7 @@ export class BossArena {
       return;
     }
 
-    await this.sleep(650);
+    await this.sleep(550);
 
     if (this.player.hp <= 0) {
       this.player.hp = 0;
@@ -1376,7 +1591,7 @@ export class BossArena {
       return;
     }
 
-    // Шаг 4: Лечение в конце раунда (Зарянка-Садовник и Целебный эликсир Ворона)
+    // Шаг 4: Лечение в конце раунда
     for (const [key, unit] of Object.entries(this.gridUnits)) {
       if (!unit || unit.currentHp <= 0 || unit.isDecoy) continue;
       if (unit.id === 'robin_gardener') {
@@ -1387,6 +1602,7 @@ export class BossArena {
           }
         });
         const tile = ARENA_TILES_COORDS[key];
+        this.spawnShockwave(tile.x + tile.w / 2, tile.y + tile.h / 2, 110, '#2ecc71', 0.4, 3);
         this.addFloatingText(tile.x + tile.w / 2, tile.y, '+8 HP соседям (Компост)', '#2ecc71', 1.5);
       }
       if (this.tileEffects[key]?.elixirRounds > 0) {
@@ -1394,7 +1610,6 @@ export class BossArena {
       }
     }
 
-    // Уменьшаем кулдаун отдыха у карт, которые уже сидели в руке в этом раунде (+4 HP за передышку!)
     this.player.hand.forEach(c => {
       if (c.restRounds && c.restRounds > 0) {
         c.restRounds--;
@@ -1404,15 +1619,15 @@ export class BossArena {
       }
     });
 
-    // Шаг 5: Возвращение выживших карт в руку (с отдыхом 1 ход, кроме застрявших в смоле)
+    // Шаг 5: Возврат выживших карт в руку (с отдыхом 1 ход)
     const nextGridUnits = {};
 
     for (const [key, unit] of Object.entries(this.gridUnits)) {
       if (unit.isDecoy) continue;
 
       if (unit.currentHp > 0) {
-        // Если клетка в смоле — птица застревает на поле на следующий раунд!
         if (this.tileEffects[key]?.tarRounds > 0) {
+          unit.hasResurrectedThisRound = false;
           nextGridUnits[key] = unit;
           const tile = ARENA_TILES_COORDS[key];
           this.addFloatingText(tile.x + tile.w / 2, tile.y, 'Увяз в смоле!', '#f97316', 1.6);
@@ -1453,20 +1668,20 @@ export class BossArena {
       }
     }
 
-    // Тикаем таймеры смолы и эликсира на клетках
     for (const eff of Object.values(this.tileEffects)) {
       if (eff.tarRounds > 0) eff.tarRounds--;
       if (eff.elixirRounds > 0) eff.elixirRounds--;
     }
+
+    if (this.player.torchCooldown > 0) this.player.torchCooldown--;
 
     this.gridUnits = nextGridUnits;
     this.recalculateBoardAuras();
     this.renderHandDOM();
     this.updateHUD();
 
-    await this.sleep(350);
+    await this.sleep(300);
 
-    // Шаг 6: Новый раунд и добор 2 свежих карт
     this.player.round++;
     this.drawCards(2);
     this.generateBossIntents();
@@ -1524,6 +1739,12 @@ export class BossArena {
 
   handleVictory() {
     audio.playSuccess();
+    this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y, 600, '#ffd166', 1.1, 10);
+    this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y, 90, {
+      colors: ['#ffd166', '#2ecc71', '#38bdf8', '#ff6b8b'],
+      speed: 380,
+      size: 7
+    });
     this.addFloatingText(this.arenaWidth / 2, 300, 'ПОБЕДА! ПЛОТИНА СВОБОДНА!', '#ffd166', 4.0);
     this.showToast('ПОЗДРАВЛЯЕМ! Вы одолели Бобра-Дровосека и освободили лес!');
     setTimeout(() => {
@@ -1587,15 +1808,32 @@ export class BossArena {
       }
     }
     this.hoveredTileKey = foundKey;
+
+    let foundProp = null;
+    for (const [pKey, prop] of Object.entries(ARENA_PROPS)) {
+      if (Math.hypot(pos.x - prop.x, pos.y - prop.y) <= prop.r) {
+        foundProp = pKey;
+        break;
+      }
+    }
+    this.hoveredPropKey = foundProp;
   }
 
   handleMouseLeave() {
     this.hoveredTileKey = null;
+    this.hoveredPropKey = null;
   }
 
   handleCanvasClick(e) {
     if (!this.isActive || this.isResolvingTurn) return;
     const pos = this.getCanvasMousePos(e);
+
+    for (const [pKey, prop] of Object.entries(ARENA_PROPS)) {
+      if (Math.hypot(pos.x - prop.x, pos.y - prop.y) <= prop.r) {
+        this.activateArenaTorch(pKey);
+        return;
+      }
+    }
 
     for (const [key, coords] of Object.entries(ARENA_TILES_COORDS)) {
       if (
@@ -1607,7 +1845,6 @@ export class BossArena {
         if (this.player.selectedCardIndex >= 0) {
           this.placeCardOnTile(key);
         } else if (this.gridUnits[key]) {
-          // ЛКМ по уже выставленной птице возвращает её обратно в руку (ПКМ — осмотр)
           this.recallUnitFromTile(key);
         }
         break;
@@ -1705,9 +1942,7 @@ export class BossArena {
     `;
 
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        this.closeCardInspect();
-      }
+      if (e.target === modal) this.closeCardInspect();
     });
 
     modal.querySelector('#btn-inspect-close')?.addEventListener('click', (e) => {
@@ -1742,17 +1977,42 @@ export class BossArena {
       color,
       life: duration,
       maxLife: duration,
-      vy: -28
+      vy: -32
     });
   }
 
   /* ==========================================================================
-     Игровой цикл: Update и Render
+     Игровой цикл: Update и Render (со всеми процедурными спецэффектами)
      ========================================================================== */
   update(dt) {
     if (!this.isActive) return;
 
     this.animTime += dt;
+    this.ambientSpawnTimer += dt;
+
+    // Фоновые атмосферные частицы по стадиям боя (искры от пил в стадии 2, пепел в стадии 3)
+    if (this.ambientSpawnTimer >= 0.08) {
+      this.ambientSpawnTimer = 0;
+      if (this.boss.phase >= 2) {
+        this.spawnParticles(525 + (Math.random() > 0.5 ? 325 : 0), 145, 1, {
+          colors: ['#ff8800', '#ffd166'],
+          speed: 75,
+          size: 3,
+          life: 0.45,
+          upwardBoost: -40,
+          shape: 'spark'
+        });
+      }
+      if (this.boss.phase === 3) {
+        this.spawnParticles(Math.random() * this.arenaWidth, 40, 1, {
+          colors: ['#ff2233', '#ff5722'],
+          speed: 40,
+          gravity: 55,
+          size: 4,
+          life: 1.4
+        });
+      }
+    }
 
     if (this.boss.hitFlashTimer > 0) {
       this.boss.hitFlashTimer = Math.max(0, this.boss.hitFlashTimer - dt);
@@ -1762,28 +2022,108 @@ export class BossArena {
       this.screenShakeTimer = Math.max(0, this.screenShakeTimer - dt);
     }
 
+    // Обновление плит (тряска и возврат после проседания)
     for (const eff of Object.values(this.tileEffects)) {
-      if (eff.shakeTimer > 0) {
-        eff.shakeTimer = Math.max(0, eff.shakeTimer - dt);
-      }
+      if (eff.shakeTimer > 0) eff.shakeTimer = Math.max(0, eff.shakeTimer - dt);
+      if (eff.sinkOffset > 0) eff.sinkOffset = Math.max(0, eff.sinkOffset - dt * 28);
     }
 
+    // Обновление боевых единиц и их пружинного выпада (Lunge)
     for (const unit of Object.values(this.gridUnits)) {
-      if (unit.spawnAnim > 0) {
-        unit.spawnAnim = Math.max(0, unit.spawnAnim - dt * 3);
-      }
-      if (unit.hitAnim > 0) {
-        unit.hitAnim = Math.max(0, unit.hitAnim - dt * 2.5);
+      if (unit.spawnAnim > 0) unit.spawnAnim = Math.max(0, unit.spawnAnim - dt * 3);
+      if (unit.hitAnim > 0) unit.hitAnim = Math.max(0, unit.hitAnim - dt * 2.5);
+
+      if (unit.lungeDuration > 0) {
+        const prevTime = unit.lungeTime;
+        unit.lungeTime += dt;
+        const half = unit.lungeDuration * 0.45;
+        if (prevTime < half && unit.lungeTime >= half && unit.onLungePeak) {
+          unit.onLungePeak();
+          unit.onLungePeak = null;
+        }
+        if (unit.lungeTime >= unit.lungeDuration) {
+          unit.lungeTime = 0;
+          unit.lungeDuration = 0;
+        }
       }
     }
 
+    // Обновление снарядов Безье (огненные дуги от факелов, магия Совы)
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+      p.elapsed += dt;
+      const t = Math.min(1, p.elapsed / p.duration);
+      const inv = 1 - t;
+      p.x = inv * inv * p.startX + 2 * inv * t * p.cpX + t * t * p.targetX;
+      p.y = inv * inv * p.startY + 2 * inv * t * p.cpY + t * t * p.targetY;
+
+      // Хвост частиц за снарядом
+      this.spawnParticles(p.x, p.y, 2, {
+        colors: [p.color, '#ffd166', '#ffffff'],
+        speed: 45,
+        gravity: 20,
+        size: 5,
+        life: 0.25
+      });
+
+      if (t >= 1) {
+        if (p.onHit) p.onHit();
+        this.projectiles.splice(i, 1);
+      }
+    }
+
+    // Обновление активных атак Бобра (Крутящаяся пила и Катящееся бревно)
+    for (let i = this.activeHazards.length - 1; i >= 0; i--) {
+      const h = this.activeHazards[i];
+      h.elapsed += dt;
+      const t = Math.min(1, h.elapsed / h.duration);
+
+      if (h.type === 'saw') {
+        h.x = h.startX + (h.endX - h.startX) * t;
+        this.spawnParticles(h.x, h.y + 10, 3, {
+          colors: ['#ffb703', '#ff5722', '#ffffff'],
+          speed: 190,
+          upwardBoost: -90,
+          size: 4,
+          life: 0.3,
+          shape: 'spark'
+        });
+      } else if (h.type === 'log') {
+        h.x = h.startX + (h.endX - h.startX) * t;
+        h.y = h.startY + (h.endY - h.startY) * t - Math.abs(Math.sin(t * Math.PI * 3)) * 18;
+      }
+
+      if (t >= 1) {
+        this.activeHazards.splice(i, 1);
+      }
+    }
+
+    // Обновление ударных волн и слешей
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.life -= dt;
+      const p = 1 - sw.life / sw.maxLife;
+      sw.radius = 10 + (sw.maxRadius - 10) * p;
+      if (sw.life <= 0) this.shockwaves.splice(i, 1);
+    }
+
+    // Обновление частиц
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const pt = this.particles[i];
+      pt.life -= dt;
+      pt.vy += pt.gravity * dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.rotation += pt.vRot * dt;
+      if (pt.life <= 0) this.particles.splice(i, 1);
+    }
+
+    // Обновление всплывающих текстов
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       const ft = this.floatingTexts[i];
       ft.life -= dt;
       ft.y += ft.vy * dt;
-      if (ft.life <= 0) {
-        this.floatingTexts.splice(i, 1);
-      }
+      if (ft.life <= 0) this.floatingTexts.splice(i, 1);
     }
   }
 
@@ -1798,6 +2138,7 @@ export class BossArena {
       this.ctx.translate(ox, oy);
     }
 
+    // 1. Базовый видео-фон арены
     const isVideoReady = this.bgVideo && (this.bgVideo.readyState >= 2 || !this.bgVideo.paused);
     if (isVideoReady) {
       this.ctx.drawImage(this.bgVideo, 0, 0, this.arenaWidth, this.arenaHeight);
@@ -1808,18 +2149,112 @@ export class BossArena {
       this.ctx.fillRect(0, 0, this.arenaWidth, this.arenaHeight);
     }
 
-    if (this.boss.hitFlashTimer > 0) {
-      this.ctx.save();
-      this.ctx.fillStyle = `rgba(255, 50, 50, ${this.boss.hitFlashTimer * 0.4})`;
-      this.ctx.fillRect(400, 50, 580, 220);
-      this.ctx.restore();
-    }
+    // Аура ярости Бобра во 2 и 3 стадии боя
+    this.renderBossStageAtmosphere();
 
+    // 2. Отрисовка 15 интерактивных тайлов (с левитацией рун и проседанием)
     this.renderTiles();
+
+    // 3. Отрисовка интерактивных факелов
+    this.renderInteractiveProps();
+
+    // 4. Отрисовка выставленных птиц (с анимацией выпада Lunge)
     this.renderPlacedUnits();
+
+    // 5. Отрисовка активных пил, брёвен, снарядов, ударных волн и частиц
+    this.renderProceduralVFX();
+
+    // 6. Отрисовка всплывающего текста
     this.renderFloatingTexts();
 
     this.ctx.restore();
+  }
+
+  renderBossStageAtmosphere() {
+    this.ctx.save();
+
+    // Вспышка при получении урона боссом
+    if (this.boss.hitFlashTimer > 0) {
+      this.ctx.globalCompositeOperation = 'lighter';
+      const grad = this.ctx.createRadialGradient(BOSS_CENTER.x, BOSS_CENTER.y, 10, BOSS_CENTER.x, BOSS_CENTER.y, 210);
+      grad.addColorStop(0, `rgba(255, 90, 50, ${this.boss.hitFlashTimer * 0.75})`);
+      grad.addColorStop(1, 'rgba(255, 50, 50, 0)');
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(BOSS_CENTER.x, BOSS_CENTER.y, 210, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+
+    // Защитный энергетический купол Бобра, если активна броня плотины
+    if (this.boss.armor > 0) {
+      const shieldPulse = Math.sin(this.animTime * 5) * 0.1 + 0.35;
+      this.ctx.strokeStyle = `rgba(251, 191, 36, ${shieldPulse + 0.3})`;
+      this.ctx.lineWidth = 3.5;
+      this.ctx.beginPath();
+      this.ctx.ellipse(BOSS_CENTER.x, BOSS_CENTER.y + 25, 135, 78, 0, Math.PI, Math.PI * 2);
+      this.ctx.stroke();
+    }
+
+    // В 3-й стадии (Берсерк) добавляем пульсирующую багровую виньетку по краям экрана
+    if (this.boss.phase === 3) {
+      const rageAlpha = (Math.sin(this.animTime * 4) * 0.5 + 0.5) * 0.22 + 0.08;
+      const vig = this.ctx.createRadialGradient(
+        this.arenaWidth / 2, this.arenaHeight / 2, 320,
+        this.arenaWidth / 2, this.arenaHeight / 2, 780
+      );
+      vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vig.addColorStop(1, `rgba(220, 20, 40, ${rageAlpha})`);
+      this.ctx.fillStyle = vig;
+      this.ctx.fillRect(0, 0, this.arenaWidth, this.arenaHeight);
+    }
+
+    this.ctx.restore();
+  }
+
+  renderInteractiveProps() {
+    for (const [pKey, prop] of Object.entries(ARENA_PROPS)) {
+      const isHovered = this.hoveredPropKey === pKey;
+      const isReady = this.player.torchCooldown === 0;
+
+      this.ctx.save();
+
+      // Мягкое аддитивное свечение живого огня поверх каждого факела на видео
+      this.ctx.globalCompositeOperation = 'lighter';
+      const flicker = Math.sin(this.animTime * 9 + prop.x) * 0.08 + 0.24;
+      const glowRadius = isHovered ? prop.r * 1.9 : prop.r * 1.35;
+      const grad = this.ctx.createRadialGradient(prop.x, prop.y, 4, prop.x, prop.y, glowRadius);
+      grad.addColorStop(0, isReady ? `rgba(255, 200, 60, ${flicker + 0.2})` : 'rgba(148, 163, 184, 0.12)');
+      grad.addColorStop(1, 'rgba(255, 87, 34, 0)');
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(prop.x, prop.y, glowRadius, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Интерактивное кольцо при готовности или наведении курсора
+      if (isReady || isHovered) {
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.strokeStyle = isReady ? '#ffd166' : '#9ca3af';
+        this.ctx.lineWidth = isHovered ? 3 : 1.8;
+        this.ctx.setLineDash([6, 4]);
+        this.ctx.lineDashOffset = -this.animTime * 20;
+        this.ctx.beginPath();
+        this.ctx.arc(prop.x, prop.y, prop.r * 0.78, 0, Math.PI * 2);
+        this.ctx.stroke();
+      }
+
+      if (isHovered) {
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.font = 'bold 13px "8bitoperator", monospace';
+        this.ctx.fillStyle = '#ffd166';
+        this.ctx.shadowColor = '#000000';
+        this.ctx.shadowBlur = 6;
+        this.ctx.textAlign = 'center';
+        const label = isReady ? '🔥 Направить пламя (-10 HP Бобру, сжечь смолу)' : `Жаровня (КД: ${this.player.torchCooldown} х.)`;
+        this.ctx.fillText(label, prop.x, prop.y - prop.r - 8);
+      }
+
+      this.ctx.restore();
+    }
   }
 
   getTintedTileCanvas(key, colorHex, overlayAlpha = 0.65) {
@@ -1853,8 +2288,12 @@ export class BossArena {
 
       this.ctx.save();
 
+      // Пружинное смещение плиты (левитация для рун и проседание при ударе/посадке)
       let drawX = coords.x;
-      let drawY = coords.y;
+      let drawY = coords.y + (eff.sinkOffset || 0);
+      if (eff.isRune && !eff.isTargeted) {
+        drawY += Math.sin(this.animTime * 3 + coords.col) * 2.5;
+      }
       if (eff.shakeTimer > 0) {
         drawX += (Math.random() - 0.5) * 6;
         drawY += (Math.random() - 0.5) * 6;
@@ -1862,7 +2301,7 @@ export class BossArena {
 
       const tileImg = this.tileImages[key];
 
-      if (eff.shakeTimer > 0 && !eff.isTargeted && !isHovered && eff.burningRounds <= 0) {
+      if ((eff.shakeTimer > 0 || eff.sinkOffset > 0) && !eff.isTargeted && !isHovered && eff.burningRounds <= 0) {
         if (tileImg && tileImg.complete && tileImg.naturalWidth > 0) {
           this.ctx.drawImage(tileImg, drawX, drawY, coords.w, coords.h);
         }
@@ -1879,8 +2318,7 @@ export class BossArena {
         }
       }
 
-      // Подсветка 3 типов угроз Бобра:
-      // BREACH = Красный (#ff2233), SAW_AOE = Оранжевый (#ff8800), HEAVY_AXE = Фиолетовый (#a335ee)
+      // 3 типа угроз Бобра: BREACH (Красный), SAW_AOE (Оранжевый), HEAVY_AXE (Фиолетовый)
       if (eff.isTargeted) {
         const pulse = Math.sin(this.animTime * 6) * 0.2 + 0.8;
         let threatColor = '#ff2233';
@@ -1897,7 +2335,6 @@ export class BossArena {
           this.ctx.restore();
         }
 
-        // Компактная плашка с типом и величиной урона в углу клетки
         this.ctx.save();
         this.ctx.font = 'bold 13px "8bitoperator", monospace';
         this.ctx.fillStyle = '#ffffff';
@@ -1908,29 +2345,22 @@ export class BossArena {
         this.ctx.restore();
       }
 
-      // Смола Бобра
       if (eff.tarRounds > 0) {
         const tarTile = this.getTintedTileCanvas(key, '#451a03', 0.72);
-        if (tarTile) {
-          this.ctx.drawImage(tarTile, drawX, drawY, coords.w, coords.h);
-        }
+        if (tarTile) this.ctx.drawImage(tarTile, drawX, drawY, coords.w, coords.h);
         this.ctx.font = 'bold 12px "8bitoperator", monospace';
         this.ctx.fillStyle = '#fde68a';
         this.ctx.fillText('СМОЛА', drawX + 10, drawY + 20);
       }
 
-      // Целебный эликсир Ворона-Алхимика
       if (eff.elixirRounds > 0) {
         const elixTile = this.getTintedTileCanvas(key, '#10b981', 0.55);
-        if (elixTile) {
-          this.ctx.drawImage(elixTile, drawX, drawY, coords.w, coords.h);
-        }
+        if (elixTile) this.ctx.drawImage(elixTile, drawX, drawY, coords.w, coords.h);
         this.ctx.font = 'bold 12px "8bitoperator", monospace';
         this.ctx.fillStyle = '#a7f3d0';
         this.ctx.fillText('+4 HP', drawX + 10, drawY + 20);
       }
 
-      // Горение Синицы-пироманта
       if (eff.burningRounds > 0) {
         const burnPulse = Math.sin(this.animTime * 8) * 0.15 + 0.8;
         const burnTile = this.getTintedTileCanvas(key, '#ff6700', 0.6);
@@ -1946,7 +2376,6 @@ export class BossArena {
         this.ctx.fillText('🔥', drawX + 8, drawY + 22);
       }
 
-      // Подсветка при наведении курсора
       if (isHovered) {
         const hoverColor = isSelected ? '#ffd166' : '#48cae4';
         const hoverTile = this.getTintedTileCanvas(key, hoverColor, isSelected ? 0.6 : 0.45);
@@ -1972,10 +2401,23 @@ export class BossArena {
 
       this.ctx.save();
 
-      const cx = coords.x + coords.w / 2;
-      const cy = coords.y + coords.h / 2;
+      // Расчёт смещения при физическом выпаде карты к Боссу (Lunge)
+      let lungeDX = 0;
+      let lungeDY = 0;
+      let lungeScale = 1.0;
+      if (unit.lungeDuration > 0) {
+        const p = unit.lungeTime / unit.lungeDuration;
+        const wave = Math.sin(p * Math.PI);
+        lungeDX = unit.lungeTargetDX * wave;
+        lungeDY = unit.lungeTargetDY * wave;
+        lungeScale = 1.0 + wave * 0.25;
+      }
+
+      const sink = this.tileEffects[key]?.sinkOffset || 0;
+      const cx = coords.x + coords.w / 2 + lungeDX;
+      const cy = coords.y + coords.h / 2 + lungeDY + sink;
       const bob = Math.sin(this.animTime * 4 + coords.col) * 3;
-      const spawnScale = unit.spawnAnim > 0 ? (1.3 - unit.spawnAnim * 0.3) : 1.0;
+      const spawnScale = (unit.spawnAnim > 0 ? (1.3 - unit.spawnAnim * 0.3) : 1.0) * lungeScale;
 
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
       this.ctx.beginPath();
@@ -2054,6 +2496,129 @@ export class BossArena {
       this.ctx.fillText(`${unit.currentHp}`, hpX, hpY + 1);
       this.ctx.restore();
 
+      this.ctx.restore();
+    }
+  }
+
+  /**
+   * Отрисовка процедурных спецэффектов: вращающиеся пилы, катящиеся брёвна, снаряды, ударные кольца и частицы
+   */
+  renderProceduralVFX() {
+    // 1. Активные опасности Бобра (Циркулярная пила и Катящееся бревно)
+    for (const h of this.activeHazards) {
+      this.ctx.save();
+      if (h.type === 'saw') {
+        this.ctx.translate(h.x, h.y);
+        this.ctx.rotate(this.animTime * 28);
+
+        // Зубчатый металлический диск пилы
+        const teeth = 14;
+        const outerR = 46;
+        const innerR = 34;
+        this.ctx.fillStyle = '#e5e7eb';
+        this.ctx.strokeStyle = '#ff8800';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        for (let i = 0; i < teeth * 2; i++) {
+          const r = i % 2 === 0 ? outerR : innerR;
+          const a = (i * Math.PI) / teeth;
+          if (i === 0) this.ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+          else this.ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Раскалённый центр диска
+        this.ctx.fillStyle = '#b91c1c';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        this.ctx.fill();
+      } else if (h.type === 'log') {
+        this.ctx.translate(h.x, h.y);
+        this.ctx.fillStyle = '#78350f';
+        this.ctx.strokeStyle = '#451a03';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.roundRect(-42, -18, 84, 36, 12);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Годовые кольца на торцах бревна
+        this.ctx.fillStyle = '#fde68a';
+        this.ctx.beginPath();
+        this.ctx.arc(-32, 0, 10, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+      this.ctx.restore();
+    }
+
+    // 2. Снаряды по кривой Безье (огненные шары факелов, магия)
+    for (const p of this.projectiles) {
+      this.ctx.save();
+      this.ctx.globalCompositeOperation = 'lighter';
+      const grad = this.ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 24);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.4, p.color);
+      grad.addColorStop(1, 'rgba(255, 87, 34, 0)');
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.restore();
+    }
+
+    // 3. Ударные волны и крестовые росчерки (Slash)
+    for (const sw of this.shockwaves) {
+      this.ctx.save();
+      const alpha = Math.max(0, sw.life / sw.maxLife);
+      this.ctx.globalAlpha = alpha;
+      this.ctx.strokeStyle = sw.color;
+      this.ctx.lineWidth = sw.lineWidth * alpha;
+      this.ctx.shadowColor = sw.color;
+      this.ctx.shadowBlur = 12;
+
+      if (sw.type === 'cross_slash') {
+        const len = sw.radius;
+        this.ctx.beginPath();
+        this.ctx.moveTo(sw.x - len, sw.y - len * 0.6);
+        this.ctx.lineTo(sw.x + len, sw.y + len * 0.6);
+        this.ctx.moveTo(sw.x + len, sw.y - len * 0.6);
+        this.ctx.lineTo(sw.x - len, sw.y + len * 0.6);
+        this.ctx.stroke();
+      } else {
+        this.ctx.beginPath();
+        this.ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+      }
+      this.ctx.restore();
+    }
+
+    // 4. Частицы (искры, щепки, огонь)
+    for (const pt of this.particles) {
+      this.ctx.save();
+      const alpha = Math.max(0, pt.life / pt.maxLife);
+      this.ctx.globalAlpha = alpha;
+      if (pt.glow) this.ctx.globalCompositeOperation = 'lighter';
+      this.ctx.fillStyle = pt.color;
+      this.ctx.translate(pt.x, pt.y);
+      this.ctx.rotate(pt.rotation);
+
+      if (pt.shape === 'wood') {
+        this.ctx.fillRect(-pt.size, -pt.size * 0.4, pt.size * 2, pt.size * 0.8);
+      } else if (pt.shape === 'spark') {
+        this.ctx.beginPath();
+        this.ctx.moveTo(-pt.size * 1.6, 0);
+        this.ctx.lineTo(0, -pt.size * 0.5);
+        this.ctx.lineTo(pt.size * 1.6, 0);
+        this.ctx.lineTo(0, pt.size * 0.5);
+        this.ctx.closePath();
+        this.ctx.fill();
+      } else {
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, pt.size, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
       this.ctx.restore();
     }
   }
