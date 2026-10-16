@@ -1672,7 +1672,6 @@ export class Stage1Level {
 
     // 11. Обновление интерфейса (HUD)
     this.updateHUD();
-    this.showToast('Начинаем с самого начала! Соберись с силами!');
   }
 
   triggerVictory() {
