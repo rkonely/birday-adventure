@@ -73,10 +73,19 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       try {
+        const fullUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const target = fullUrl.searchParams.get('target');
+
         const dataPath = path.join(__dirname, 'data', 'board_level.json');
         fs.writeFileSync(dataPath, body, 'utf8');
+
+        if (target && (target.startsWith('Board') && target.endsWith('.json'))) {
+          const varPath = path.join(__dirname, 'assets', 'Second Level', 'Main Board', target);
+          fs.writeFileSync(varPath, body, 'utf8');
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
-        res.end(JSON.stringify({ success: true, message: 'Карта настолки сохранена в data/board_level.json' }));
+        res.end(JSON.stringify({ success: true, message: 'Карта настолки сохранена' }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=UTF-8' });
         res.end(JSON.stringify({ success: false, error: err.message }));

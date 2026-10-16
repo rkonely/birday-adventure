@@ -177,7 +177,8 @@ export class SettingsModal {
     });
   }
 
-  setupBoardSkinSelectors() {
+  syncActiveBoardCards() {
+    this.currentBoardTexture = localStorage.getItem('birday_board_texture') || this.currentBoardTexture || 'Board.png';
     const cards = document.querySelectorAll('.board-skin-card');
     cards.forEach(card => {
       const bFile = card.getAttribute('data-board');
@@ -186,7 +187,21 @@ export class SettingsModal {
       } else {
         card.classList.remove('active');
       }
+    });
+  }
 
+  setupBoardSkinSelectors() {
+    events.on('stage2:board_variation_changed', (variation) => {
+      if (variation && variation.textureFile) {
+        this.currentBoardTexture = variation.textureFile;
+        this.syncActiveBoardCards();
+      }
+    });
+
+    const cards = document.querySelectorAll('.board-skin-card');
+    this.syncActiveBoardCards();
+
+    cards.forEach(card => {
       card.addEventListener('click', () => {
         const selectedBoard = card.getAttribute('data-board');
         if (selectedBoard) {
@@ -194,8 +209,7 @@ export class SettingsModal {
           try {
             localStorage.setItem('birday_board_texture', selectedBoard);
           } catch (e) {}
-          cards.forEach(c => c.classList.remove('active'));
-          card.classList.add('active');
+          this.syncActiveBoardCards();
           events.emit('stage2:board_texture_changed', selectedBoard);
           if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
         }
@@ -246,8 +260,9 @@ export class SettingsModal {
     this.isOpen = true;
     this.modalEl.classList.remove('hidden');
 
-    // Синхронизируем CRT тумблер
+    // Синхронизируем CRT тумблер и выбранную доску
     this.applyCrtState(this.crtEnabled);
+    this.syncActiveBoardCards();
 
     // Синхронизируем слайдеры при открытии
     if (this.sliderMusic) {

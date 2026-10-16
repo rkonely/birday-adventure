@@ -227,8 +227,8 @@ export class Stage2Editor {
           <button id="btn-s2ed-renumber" class="s2-ed-btn" title="Перенумеровать по порядку (1..N)">
             <span>🔢 НУМЕРАЦИЯ</span>
           </button>
-          <button id="btn-s2ed-board-toggle" class="s2-ed-btn" title="Сменить текстуру доски (Board.png / Board-Variant2.png)">
-            <span id="s2ed-board-btn-text">🗺️ ${this.stage2Board.currentBoardFilename === 'Board-Variant2.png' ? 'ДОСКА: 2' : 'ДОСКА: 1'}</span>
+          <button id="btn-s2ed-board-toggle" class="s2-ed-btn" title="Сменить вариацию доски и карты (Board1 / Board2)">
+            <span id="s2ed-board-btn-text">🗺️ ${this.stage2Board.currentVariationId === 'board2' ? 'ДОСКА: 2 (Board2)' : 'ДОСКА: 1 (Board1)'}</span>
           </button>
         </div>
 
@@ -462,13 +462,15 @@ export class Stage2Editor {
 
     const btnBoardToggle = document.getElementById('btn-s2ed-board-toggle');
     if (btnBoardToggle) {
-      btnBoardToggle.addEventListener('click', () => {
-        const cur = this.stage2Board.currentBoardFilename || 'Board.png';
-        const next = cur === 'Board-Variant2.png' ? 'Board.png' : 'Board-Variant2.png';
-        this.stage2Board.setBoardTexture(next);
+      btnBoardToggle.addEventListener('click', async () => {
+        const nextVar = await this.stage2Board.toggleBoardVariation();
+        this.cells = JSON.parse(JSON.stringify(this.stage2Board.cells || []));
+        this.boardImage = this.stage2Board.boardImage;
+        this.selectedCell = null;
+        this.hideInspector();
         const txt = document.getElementById('s2ed-board-btn-text');
-        if (txt) txt.textContent = `🗺️ ${next === 'Board-Variant2.png' ? 'ДОСКА: 2' : 'ДОСКА: 1'}`;
-        audio.playClick();
+        if (txt) txt.textContent = `🗺️ ${nextVar.id === 'board2' ? 'ДОСКА: 2 (Board2)' : 'ДОСКА: 1 (Board1)'}`;
+        if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
       });
     }
 
@@ -962,15 +964,16 @@ export class Stage2Editor {
     const jsonStr = JSON.stringify(exportData, null, 2);
     localStorage.setItem('birday_board_data', jsonStr);
 
+    const curVar = this.stage2Board?.currentVariationId === 'board2' ? 'Board 2.json' : 'Board1.json';
     try {
-      const resp = await fetch('/api/save-board', {
+      const resp = await fetch(`/api/save-board?target=${curVar}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: jsonStr
       });
       if (resp.ok) {
         audio.playSuccess();
-        this.showToast('Успешно! Карта настольной игры сохранена в data/board_level.json');
+        this.showToast(`Успешно! Карта сохранена в ${curVar} и data/board_level.json`);
         return;
       }
     } catch (e) {

@@ -187,10 +187,17 @@ class BirDayApp {
 
     // Кнопка "ПРОДОЛЖИТЬ ПРИКЛЮЧЕНИЕ!" в центре снизу -> переход на Настольную игру (Этап 2)
     if (this.btnLevel2Continue) {
-      this.btnLevel2Continue.addEventListener('click', () => {
+      this.btnLevel2Continue.addEventListener('click', async () => {
         audio.playClick();
         this.hideLevel2StartScreen();
         const eggsFromStage1 = this.lastStage1Stats ? (this.lastStage1Stats.eggsLaid ?? this.lastStage1Stats.nestsCompleted ?? 0) : 0;
+        
+        // Рандомный выбор вариации доски и событий при завершении 1 уровня
+        if (this.stage2Board) {
+          const pickedVar = await this.stage2Board.selectRandomBoardVariation();
+          console.log(`🎲 [Level 2 Start] Случайно выбрана карта: ${pickedVar.name} (${pickedVar.textureFile} + ${pickedVar.jsonFile})`);
+        }
+
         this.startStage2Board(eggsFromStage1);
       });
     }

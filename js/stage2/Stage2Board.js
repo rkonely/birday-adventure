@@ -12,6 +12,25 @@ import { BoardEventManager } from './BoardEventManager.js';
  * - Слой 2 (геймплей): Клетки поля, соединительные пути, фишка игрока, эффекты свечения
  * - Слой 3 (UI): Бросок кубика, модальные квесты с Cut-Scene-Boardgame.png и Big Frame.png
  */
+/**
+ * Вариации доски настольной игры (легко расширяется до 5 и более вариантов)
+ */
+export const BOARD_VARIATIONS = [
+  {
+    id: 'board1',
+    name: 'Классическая доска',
+    jsonFile: 'Board1.json',
+    textureFile: 'Board.png'
+  },
+  {
+    id: 'board2',
+    name: 'Вариант 2 (Загадочный Лес)',
+    jsonFile: 'Board 2.json',
+    altJsonFile: 'Board2.json',
+    textureFile: 'Board-Variant2.png'
+  }
+];
+
 export class Stage2Board {
   constructor(videoManager) {
     this.videoManager = videoManager;
@@ -28,17 +47,22 @@ export class Stage2Board {
     this.isActive = false;
     this.isLoaded = false;
 
-    // Ассет карты стола (поддержка Board.png и Board-Variant2.png)
-    this.currentBoardFilename = localStorage.getItem('birday_board_texture') || 'Board.png';
+    // Ассет карты стола и вариации (Board1.json + Board.png / Board2.json + Board-Variant2.png)
+    const savedTexture = localStorage.getItem('birday_board_texture') || 'Board.png';
+    const savedVarId = localStorage.getItem('birday_board_variation');
+    const initialVar = this.getVariationByIdOrTexture(savedVarId || savedTexture);
+    this.currentVariationId = initialVar.id;
+    this.currentBoardFilename = initialVar.textureFile;
+
     this.boardImage = new Image();
     this.boardImage.src = `assets/Second Level/Main Board/${this.currentBoardFilename}`;
     this.boardImage.onload = () => {
       this.isLoaded = true;
-      console.log(`🎲 [Stage2Board] Карта настолки ${this.currentBoardFilename} успешно загружена!`);
+      console.log(`🎲 [Stage2Board] Карта настолки ${this.currentBoardFilename} (${this.currentVariationId}) успешно загружена!`);
     };
 
     events.on('stage2:board_texture_changed', (filename) => {
-      this.setBoardTexture(filename);
+      this.setBoardVariation(filename, false);
     });
 
     // Данные клеток
@@ -90,6 +114,11 @@ export class Stage2Board {
     this.loadBoardData();
   }
 
+  getVariationByIdOrTexture(key) {
+    if (!key) return BOARD_VARIATIONS[0];
+    return BOARD_VARIATIONS.find(v => v.id === key || v.textureFile === key || v.jsonFile === key) || BOARD_VARIATIONS[0];
+  }
+
   setBoardTexture(filename) {
     if (!filename) return;
     this.currentBoardFilename = filename;
@@ -104,7 +133,67 @@ export class Stage2Board {
     console.log(`🎲 [Stage2Board] Текстура доски переключена на: ${filename}`);
   }
 
+  async setBoardVariation(variationIdOrTexture, syncPlayer = true) {
+    const variation = this.getVariationByIdOrTexture(variationIdOrTexture);
+    this.currentVariationId = variation.id;
+    this.currentBoardFilename = variation.textureFile;
+
+    try {
+      localStorage.setItem('birday_board_variation', variation.id);
+      localStorage.setItem('birday_board_texture', variation.textureFile);
+    } catch (e) {}
+
+    this.setBoardTexture(variation.textureFile);
+    await this.loadBoardVariationData(variation, syncPlayer);
+
+    events.emit('stage2:board_variation_changed', variation);
+    return variation;
+  }
+
+  async toggleBoardVariation() {
+    const currentIndex = BOARD_VARIATIONS.findIndex(v => v.id === this.currentVariationId);
+    const nextIndex = (currentIndex + 1) % BOARD_VARIATIONS.length;
+    return await this.setBoardVariation(BOARD_VARIATIONS[nextIndex].id, false);
+  }
+
+  async selectRandomBoardVariation() {
+    const randomIndex = Math.floor(Math.random() * BOARD_VARIATIONS.length);
+    const picked = BOARD_VARIATIONS[randomIndex];
+    await this.setBoardVariation(picked.id, true);
+    return picked;
+  }
+
+  async loadBoardVariationData(variation, syncPlayer = true) {
+    const filesToTry = [
+      `assets/Second Level/Main Board/${variation.jsonFile}`,
+      variation.altJsonFile ? `assets/Second Level/Main Board/${variation.altJsonFile}` : null
+    ].filter(Boolean);
+
+    for (const fileUrl of filesToTry) {
+      try {
+        const resp = await fetch(fileUrl).catch(() => null);
+        if (resp && resp.ok) {
+          const data = await resp.json();
+          if (data && Array.isArray(data.cells)) {
+            this.cells = data.cells;
+            this.startCellId = data.startCellId || (this.cells[0] ? this.cells[0].id : 'cell_1');
+            console.log(`🎲 [Stage2Board] Загружена карта вариации "${variation.name}" (${fileUrl}): ${this.cells.length} клеток`);
+            if (syncPlayer) this.syncPlayerToStart();
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn(`[Stage2Board] Ошибка загрузки ${fileUrl}:`, e);
+      }
+    }
+    return false;
+  }
+
   async loadBoardData() {
+    const curVar = this.getVariationByIdOrTexture(this.currentVariationId);
+    const loaded = await this.loadBoardVariationData(curVar, true);
+    if (loaded) return;
+
     try {
       let resp = await fetch('/api/load-board').catch(() => null);
       if (!resp || !resp.ok) {
@@ -496,12 +585,10 @@ export class Stage2Board {
     // Переключение стиля доски (Классика / Вариант 2)
     const btnSwitchBoard = document.getElementById('btn-s2-switch-board');
     if (btnSwitchBoard) {
-      btnSwitchBoard.addEventListener('click', (e) => {
+      btnSwitchBoard.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const nextBoard = this.currentBoardFilename === 'Board-Variant2.png' ? 'Board.png' : 'Board-Variant2.png';
-        this.setBoardTexture(nextBoard);
+        await this.toggleBoardVariation();
         if (typeof audio.playCoin === 'function') audio.playCoin(); else audio.playClick();
-        events.emit('stage2:board_texture_changed', nextBoard);
       });
     }
 
