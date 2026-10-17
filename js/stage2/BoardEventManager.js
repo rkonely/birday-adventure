@@ -18,12 +18,17 @@ export class BoardEventManager {
       rerollDice: 0,         // Кубики на переброс (0 бросков на старте)
       boosterPacks: 0,       // Бустеры карт (0 по умолчанию)
       lastRoll: null,        // Последний бросок
-      poisonTurns: 0,        // Оставшиеся ходы яда
-      isImmune: false,       // Щит иммунитета
-      eggMultiplier: 1,      // Множитель яиц
-      reverseNextMove: false,// Обратный ход кубиком
-      bossHpPenalty: 0,      // Штраф к HP босса
-      mysteriousBuff: null   // Особый бафф
+      poisonTurns: 0,        // Оставшиеся ходы яда (Poison-DeBuff-icon)
+      bleedTurns: 0,         // Оставшиеся ходы кровотечения (Bleed-DeBuff-Icon)
+      isImmune: false,       // Щит иммунитета (Elixir-Icon)
+      eggMultiplier: 1,      // Множитель яиц / Магнит (Lucky-Buff-Icon)
+      reverseNextMove: false,// Обратный ход кубиком (Cursed-DeBuff-icon)
+      bossHpPenalty: 0,      // Штраф к HP босса / Ожог (Burn-Debuff-Icon)
+      burnTurns: 0,          // Длительность ожога
+      mysteriousBuff: null,  // Особый бафф (GodBless-Buff-Icon)
+      isBlessed: false,      // Благословение Леса
+      hasGoldenWings: false, // Золотые крылья (GoldenWings-Buff-Icon)
+      hasGoldenKey: false    // Золотой ключ (GoldenKey-Buff-Icon)
     };
 
     this.modal = new BoardQuestModal(this);
@@ -48,11 +53,16 @@ export class BoardEventManager {
       boosterPacks: 0,
       lastRoll: null,
       poisonTurns: 0,
+      bleedTurns: 0,
       isImmune: false,
       eggMultiplier: 1,
       reverseNextMove: false,
       bossHpPenalty: 0,
-      mysteriousBuff: null
+      burnTurns: 0,
+      mysteriousBuff: null,
+      isBlessed: false,
+      hasGoldenWings: false,
+      hasGoldenKey: false
     };
     this.saveStats();
   }
@@ -136,6 +146,37 @@ export class BoardEventManager {
     this.saveStats();
   }
 
+  setBurn(turns = 3, penalty = 5) {
+    this.stats.burnTurns = turns;
+    this.stats.bossHpPenalty = penalty;
+    this.saveStats();
+  }
+
+  addBleed(turns) {
+    if (this.stats.isImmune) {
+      this.stats.isImmune = false;
+      this.saveStats();
+      return;
+    }
+    this.stats.bleedTurns = Math.max(this.stats.bleedTurns || 0, turns);
+    this.saveStats();
+  }
+
+  setGoldenWings(val = true) {
+    this.stats.hasGoldenWings = val;
+    this.saveStats();
+  }
+
+  setGoldenKey(val = true) {
+    this.stats.hasGoldenKey = val;
+    this.saveStats();
+  }
+
+  setBlessed(val = true) {
+    this.stats.isBlessed = val;
+    this.saveStats();
+  }
+
   setMysteriousBuff(name) {
     this.stats.mysteriousBuff = name;
     this.saveStats();
@@ -151,6 +192,8 @@ export class BoardEventManager {
    */
   cleanseAndRestore() {
     this.stats.poisonTurns = 0;
+    this.stats.bleedTurns = 0;
+    this.stats.reverseNextMove = false;
     const restored = this.stats.lostEggsCount;
     this.stats.eggs += restored;
     this.stats.lostEggsCount = 0;
@@ -168,9 +211,16 @@ export class BoardEventManager {
       audio.playImpact();
       if (this.boardGame && typeof this.boardGame.showToastNotification === 'function') {
         this.boardGame.showToastNotification(
-          `Действие токсина: -1 яйцо (осталось ходов: ${this.stats.poisonTurns})`
+          `Действие токсина: -1 яйцо (осталось ходов: ${this.stats.poisonTurns})`,
+          'bad'
         );
       }
+    }
+    if (this.stats.bleedTurns > 0) {
+      this.stats.bleedTurns--;
+    }
+    if (this.stats.burnTurns > 0) {
+      this.stats.burnTurns--;
     }
     this.updateHUD();
   }
@@ -242,5 +292,9 @@ export class BoardEventManager {
     if (elCards) elCards.textContent = this.stats.boosterPacks;
     if (elDice) elDice.textContent = this.stats.rerollDice;
     if (elLastTurn) elLastTurn.textContent = this.stats.lastRoll || '-';
+
+    if (this.boardGame && typeof this.boardGame.renderStatusEffects === 'function') {
+      this.boardGame.renderStatusEffects();
+    }
   }
 }

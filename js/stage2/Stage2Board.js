@@ -450,6 +450,20 @@ export class Stage2Board {
       this.canvas.height = this.boardHeight;
     }
 
+    // Режим тестирования всех эффектов (?test_statuses)
+    if (new URLSearchParams(window.location.search).has('test_statuses')) {
+      this.eventManager.stats.poisonTurns = 4;
+      this.eventManager.stats.bleedTurns = 3;
+      this.eventManager.stats.bossHpPenalty = 5;
+      this.eventManager.stats.reverseNextMove = true;
+      this.eventManager.stats.isImmune = true;
+      this.eventManager.stats.eggMultiplier = 2;
+      this.eventManager.stats.isBlessed = true;
+      this.eventManager.stats.hasGoldenWings = true;
+      this.eventManager.stats.hasGoldenKey = true;
+      this.eventManager.saveStats();
+    }
+
     // 4. Создаем UI слой настолки (Кубик, статус, кнопки)
     this.createUI();
     this.eventManager.updateHUD();
@@ -512,6 +526,12 @@ export class Stage2Board {
     this.uiContainer.className = 'stage2-board-ui';
 
     this.uiContainer.innerHTML = `
+      <!-- Левый верхний угол: Активные статусы (Баффы и Дебаффы) и Компактные уведомления -->
+      <div class="s2-top-left-rack">
+        <div id="s2-status-effects" class="s2-status-effects"></div>
+        <div id="s2-toast-container" class="s2-toast-container"></div>
+      </div>
+
       <!-- Верхний статус игрока (Status Frame) -->
       <div class="s2-status-card">
         <div class="s2-status-header">
@@ -681,6 +701,9 @@ export class Stage2Board {
         }
       });
     }
+
+    // Инициализируем отрисовку активных баффов и дебаффов в левом верхнем углу
+    this.renderStatusEffects();
   }
 
   removeUI() {
@@ -1489,18 +1512,168 @@ export class Stage2Board {
     }
   }
 
+  renderStatusEffects() {
+    const container = document.getElementById('s2-status-effects');
+    if (!container || !this.eventManager) return;
+
+    const stats = this.eventManager.stats || {};
+    const effects = [];
+
+    // 1. Отравление (DeBuff) — Poison-DeBuff-icon.png
+    if (stats.poisonTurns > 0) {
+      effects.push({
+        id: 'poison',
+        type: 'debuff',
+        icon: 'assets/UI/Poison-DeBuff-icon.png',
+        title: 'Отравление',
+        count: `${stats.poisonTurns}`,
+        desc: `Токсичные споры: теряете 1 яйцо в начале каждого хода. Осталось ходов: ${stats.poisonTurns}.`
+      });
+    }
+
+    // 2. Кровотечение (DeBuff) — Bleed-DeBuff-Icon.png
+    if (stats.bleedTurns > 0) {
+      effects.push({
+        id: 'bleed',
+        type: 'debuff',
+        icon: 'assets/UI/Bleed-DeBuff-Icon.png',
+        title: 'Кровотечение',
+        count: `${stats.bleedTurns}`,
+        desc: `Кровоточащая рана: ослабление на ${stats.bleedTurns} ход.`
+      });
+    }
+
+    // 3. Ожог / Штраф к HP Босса (DeBuff) — Burn-Debuff-Icon.png
+    if (stats.bossHpPenalty > 0 || stats.burnTurns > 0) {
+      const penalty = stats.bossHpPenalty || 5;
+      effects.push({
+        id: 'burn',
+        type: 'debuff',
+        icon: 'assets/UI/Burn-Debuff-Icon.png',
+        title: 'Ожог / След молнии',
+        count: `-${penalty}`,
+        desc: `Штраф к стойкости: -${penalty} HP в грядущей битве с Бобром-Дровосеком.`
+      });
+    }
+
+    // 4. Проклятие (DeBuff) — Cursed-DeBuff-icon.png
+    if (stats.reverseNextMove) {
+      effects.push({
+        id: 'cursed',
+        type: 'debuff',
+        icon: 'assets/UI/Cursed-DeBuff-icon.png',
+        title: 'Лесное Проклятие',
+        count: '↺',
+        desc: 'Искривление пространства: следующий ход кубиком будет сделан В ОБРАТНУЮ сторону!'
+      });
+    }
+
+    // 5. Щит неуязвимости / Эликсир (Buff) — Elixir-Icon.png
+    if (stats.isImmune) {
+      effects.push({
+        id: 'immunity',
+        type: 'buff',
+        icon: 'assets/UI/Elixir-Icon.png',
+        title: 'Щит Неуязвимости',
+        count: '1',
+        desc: 'Янтарный барьер: поглотит следующий урон, ядовитую ловушку или потерю ресурсов.'
+      });
+    }
+
+    // 6. Удача / Магнит яиц (Buff) — Lucky-Buff-Icon.png
+    if ((stats.eggMultiplier || 1) > 1) {
+      effects.push({
+        id: 'lucky',
+        type: 'buff',
+        icon: 'assets/UI/Lucky-Buff-Icon.png',
+        title: 'Клевер Удачи',
+        count: `x${stats.eggMultiplier}`,
+        desc: `Удвоение добычи: следующее получение яиц будет умножено на ${stats.eggMultiplier}!`
+      });
+    }
+
+    // 7. Благословение Леса (Buff) — GodBless-Buff-Icon.png
+    if (stats.mysteriousBuff || stats.isBlessed) {
+      effects.push({
+        id: 'godbless',
+        type: 'buff',
+        icon: 'assets/UI/GodBless-Buff-Icon.png',
+        title: 'Благословение Леса',
+        count: '★',
+        desc: 'Священный свет: дарует покровительство древних духов и защищает в пути.'
+      });
+    }
+
+    // 8. Золотые Крылья (Buff) — GoldenWings-Buff-Icon.png
+    if (stats.hasGoldenWings || stats.speedBoost) {
+      effects.push({
+        id: 'wings',
+        type: 'buff',
+        icon: 'assets/UI/GoldenWings-Buff-Icon.png',
+        title: 'Золотые Крылья',
+        count: '✈',
+        desc: 'Порыв попутного ветра: дарует птичью легкость и дополнительную скорость.'
+      });
+    }
+
+    // 9. Золотой Ключ (Buff) — GoldenKey-Buff-Icon.png
+    if (stats.hasGoldenKey) {
+      effects.push({
+        id: 'key',
+        type: 'buff',
+        icon: 'assets/UI/GoldenKey-Buff-Icon.png',
+        title: 'Золотой Ключ',
+        count: '🔑',
+        desc: 'Древний ключ: открывает потайные лесные лари и врата цитадели.'
+      });
+    }
+
+    if (effects.length === 0) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = 'flex';
+    container.innerHTML = effects.map(eff => `
+      <div class="s2-effect-badge s2-effect-${eff.type}" data-effect-id="${eff.id}" tabindex="0">
+        <img src="${eff.icon}" class="s2-effect-img" alt="${eff.title}" />
+        ${eff.count ? `<span class="s2-effect-count ${eff.type}">${eff.count}</span>` : ''}
+        <div class="s2-effect-tooltip">
+          <div class="s2-tooltip-title s2-tooltip-${eff.type}">${eff.title}</div>
+          <div class="s2-tooltip-desc">${eff.desc}</div>
+        </div>
+      </div>
+    `).join('');
+
+    // При клике на иконку статуса показываем информационное уведомление
+    container.querySelectorAll('.s2-effect-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const effId = badge.getAttribute('data-effect-id');
+        const eff = effects.find(e => e.id === effId);
+        if (eff) {
+          this.showGameToast(eff.title, eff.type === 'buff' ? 'good' : 'bad', eff.desc);
+        }
+      });
+    });
+  }
+
   showGameToast(title, type = 'info', sub = '') {
     if (!title) return;
-    let container = document.getElementById('toast-container');
+    let container = document.getElementById('s2-toast-container');
+    if (!container) {
+      container = document.getElementById('toast-container');
+    }
     if (!container) {
       container = document.createElement('div');
-      container.id = 'toast-container';
+      container.id = 's2-toast-container';
       const root = document.getElementById('game-container') || document.body;
       root.appendChild(container);
     }
 
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    toast.className = `toast toast-${type} s2-toast`;
 
     if (sub) {
       toast.innerHTML = `<span>${title}</span><span class="toast-sub">${sub}</span>`;
@@ -1512,10 +1685,10 @@ export class Stage2Board {
 
     setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-12px)';
-      toast.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-      setTimeout(() => toast.remove(), 350);
-    }, 2700);
+      toast.style.transform = 'translateX(-14px)';
+      toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      setTimeout(() => toast.remove(), 320);
+    }, 2800);
   }
 
   showToastNotification(text, type = 'info', sub = '') {

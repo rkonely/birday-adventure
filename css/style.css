@@ -5077,6 +5077,201 @@ body {
    НАСТОЛЬНАЯ ИГРА: UI СТАТУСА И НИЖНЕЙ ПАНЕЛИ БРОСКА (Stage 2 HUD)
    ========================================================================== */
 
+/* 0. Левый верхний угол: Баффы/Дебаффы и Компактные уведомления */
+.s2-top-left-rack {
+  position: absolute;
+  top: 36px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 95;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+/* Панель активных эффектов (Баффы и Дебаффы) */
+.s2-status-effects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.s2-effect-badge {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.16s ease, filter 0.16s ease;
+  animation: s2EffectFloat 2.6s infinite ease-in-out;
+}
+
+.s2-effect-badge:nth-child(even) {
+  animation-delay: 1.3s;
+}
+
+.s2-effect-badge:hover,
+.s2-effect-badge:focus-visible {
+  transform: scale(1.15) translateY(-3px) !important;
+  z-index: 10;
+}
+
+.s2-effect-badge.s2-effect-buff {
+  filter: drop-shadow(0 0 6px rgba(0, 245, 212, 0.75)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.85));
+}
+
+.s2-effect-badge.s2-effect-debuff {
+  filter: drop-shadow(0 0 6px rgba(255, 77, 109, 0.85)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.85));
+}
+
+.s2-effect-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.s2-effect-count {
+  position: absolute;
+  bottom: -4px;
+  right: -5px;
+  background: #180e06;
+  border: 1.5px solid #ffb703;
+  border-radius: 4px;
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  padding: 2px 4px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+.s2-effect-count.buff {
+  border-color: #00f5d4;
+  color: #00f5d4;
+}
+
+.s2-effect-count.debuff {
+  border-color: #ff4d6d;
+  color: #ffb4a2;
+}
+
+/* Всплывающая подсказка эффекта при наведении */
+.s2-effect-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: rgba(18, 12, 8, 0.96);
+  border: 2px solid #5a381e;
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 220px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.s2-effect-badge:hover .s2-effect-tooltip,
+.s2-effect-badge:focus-visible .s2-effect-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.s2-tooltip-title {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.s2-tooltip-title.s2-tooltip-buff {
+  color: #00f5d4;
+  text-shadow: 1px 1px 0 #000, 0 0 8px rgba(0, 245, 212, 0.6);
+}
+
+.s2-tooltip-title.s2-tooltip-debuff {
+  color: #ff4d6d;
+  text-shadow: 1px 1px 0 #000, 0 0 8px rgba(255, 77, 109, 0.6);
+}
+
+.s2-tooltip-desc {
+  font-family: var(--font-pixel), '8bitoperator', monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #f1faee;
+  text-shadow: 1px 1px 0 #000;
+}
+
+@keyframes s2EffectFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Контейнер уведомлений настолки в левом верхнем углу */
+.s2-toast-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 380px;
+}
+
+/* Компактный размер тостов настолки */
+.s2-toast-container .toast,
+.toast.s2-toast {
+  font-size: 15px !important;
+  letter-spacing: 0.8px !important;
+  padding: 3px 6px !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  animation: s2ToastSlideLeft 0.25s ease-out !important;
+  max-width: 380px;
+}
+
+.s2-toast-container .toast .toast-sub,
+.toast.s2-toast .toast-sub {
+  font-size: 11.5px !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 2px !important;
+  max-width: 380px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+
+@keyframes s2ToastSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* 1. Верхний правый блок статуса (Status Frame) */
 .s2-status-card {
   position: absolute;

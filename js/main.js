@@ -64,6 +64,7 @@ class BirDayApp {
     this.stage1Editor = new Stage1Editor(this.stage1Level);
     // - Настольная игра (Этап 2)
     this.stage2Board = new Stage2Board(this.videoManager);
+    window.stage2Board = this.stage2Board;
     // - Конструктор карты настольной игры (Этап 2)
     this.stage2Editor = new Stage2Editor(this.stage2Board);
     // - Магазин карт перед боссом (Этап 3)
