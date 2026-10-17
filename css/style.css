@@ -4247,12 +4247,16 @@ body {
 
 .inspect-card-preview-wrap {
   position: relative;
-  width: 250px;
   height: 360px;
+  aspect-ratio: 264 / 373;
+  width: auto;
+  max-width: 260px;
   flex-shrink: 0;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+  box-shadow: none;
+  border: none;
+  background: transparent;
   transition: transform 0.2s ease;
   display: flex;
   align-items: center;
@@ -4263,29 +4267,13 @@ body {
   transform: scale(1.03);
 }
 
-.inspect-card-preview-wrap.common {
-  box-shadow: 0 0 15px rgba(173, 181, 189, 0.4);
-  border: 2px solid #6c757d;
-}
-
-.inspect-card-preview-wrap.uncommon {
-  box-shadow: 0 0 18px rgba(64, 145, 108, 0.6);
-  border: 2px solid #40916c;
-}
-
-.inspect-card-preview-wrap.rare {
-  box-shadow: 0 0 20px rgba(33, 158, 188, 0.7);
-  border: 2px solid #219ebc;
-}
-
-.inspect-card-preview-wrap.epic {
-  box-shadow: 0 0 22px rgba(181, 23, 158, 0.8);
-  border: 2px solid #b5179e;
-}
-
+.inspect-card-preview-wrap.common,
+.inspect-card-preview-wrap.uncommon,
+.inspect-card-preview-wrap.rare,
+.inspect-card-preview-wrap.epic,
 .inspect-card-preview-wrap.legendary {
-  box-shadow: 0 0 25px rgba(255, 183, 3, 0.9);
-  border: 2px solid #ffb703;
+  box-shadow: none;
+  border: none;
 }
 
 .inspect-card-img {
