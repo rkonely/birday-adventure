@@ -4028,7 +4028,7 @@ body {
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
   pointer-events: none;
-  z-index: 5;
+  z-index: 12;
 }
 
 /* 4. Правая колонка: Кнопка Атаки + Колода + Сброс */
@@ -5927,12 +5927,15 @@ body {
 }
 
 .market-card-img-wrap {
-  width: 75%;
   height: 76%;
+  aspect-ratio: 264 / 373;
+  width: auto;
+  max-width: 78%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius: 10px;
 }
 
 .market-card-img {

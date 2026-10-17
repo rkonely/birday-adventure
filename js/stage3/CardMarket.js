@@ -17,43 +17,85 @@ const RARITY_AURA_CONFIG = {
     name: 'Обычная',
     color: '#f8fafc',
     secondary: '#cbd5e1',
-    shadow: '0 0 26px rgba(255, 255, 255, 0.9), 0 0 55px rgba(226, 232, 240, 0.65)',
-    particleColor: '#ffffff'
+    shadow: '0 0 26px rgba(255, 255, 255, 0.9), 0 0 55px rgba(226, 232, 240, 0.65)'
   },
   uncommon: {
     name: 'Необычная',
     color: '#2ecc71',
     secondary: '#10b981',
-    shadow: '0 0 28px rgba(46, 204, 113, 0.95), 0 0 65px rgba(16, 185, 129, 0.75)',
-    particleColor: '#4ade80'
+    shadow: '0 0 28px rgba(46, 204, 113, 0.95), 0 0 65px rgba(16, 185, 129, 0.75)'
   },
   rare: {
     name: 'Редкая',
     color: '#00a8ff',
     secondary: '#0284c7',
-    shadow: '0 0 30px rgba(0, 168, 255, 0.98), 0 0 75px rgba(2, 132, 199, 0.85)',
-    particleColor: '#38bdf8'
+    shadow: '0 0 30px rgba(0, 168, 255, 0.98), 0 0 75px rgba(2, 132, 199, 0.85)'
   },
   epic: {
     name: 'Эпическая',
     color: '#a855f7',
     secondary: '#7e22ce',
-    shadow: '0 0 34px rgba(168, 85, 247, 1), 0 0 85px rgba(147, 51, 234, 0.9), 0 0 120px rgba(126, 34, 206, 0.6)',
-    particleColor: '#d8b4fe'
+    shadow: '0 0 34px rgba(168, 85, 247, 1), 0 0 85px rgba(147, 51, 234, 0.9), 0 0 120px rgba(126, 34, 206, 0.6)'
   },
   legendary: {
     name: 'Легендарная!',
     color: '#ffb703',
     secondary: '#fb5607',
-    shadow: '0 0 40px rgba(255, 183, 3, 1), 0 0 95px rgba(251, 86, 7, 0.95), 0 0 140px rgba(255, 215, 0, 0.85)',
-    particleColor: '#fde047'
+    shadow: '0 0 32px rgba(255, 183, 3, 0.85), 0 0 75px rgba(251, 86, 7, 0.70), 0 0 110px rgba(255, 215, 0, 0.55)'
   }
 };
 
 /**
- * CardMarket — Интерактивный альбом-магазин карт перед битвой с Бобром
- * С бесшовным открытием бустера в стиле Hearthstone поверх финального кадра видео
+ * Вешает интерактивный 3D-наклон (Tilt) и слои голографической фольги (Holo Foil)
  */
+export function attach3DHoloTilt(targetEl, rarity = 'common', maxTilt = 15) {
+  if (!targetEl) return;
+  ensureBoosterAndHoloStyles();
+
+  targetEl.classList.add('holo-tilt-target', `holo-rarity-${rarity}`);
+  targetEl.style.setProperty('--rx', '0deg');
+  targetEl.style.setProperty('--ry', '0deg');
+  targetEl.style.setProperty('--mx', '50%');
+  targetEl.style.setProperty('--my', '50%');
+
+  if (!targetEl.querySelector('.holo-foil-layer')) {
+    const foil = document.createElement('div');
+    foil.className = 'holo-foil-layer';
+    const glare = document.createElement('div');
+    glare.className = 'holo-glare-layer';
+    targetEl.appendChild(foil);
+    targetEl.appendChild(glare);
+  }
+
+  const onMove = (e) => {
+    const rect = targetEl.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const px = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const py = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+    const rx = ((0.5 - py) * maxTilt * 2).toFixed(2);
+    const ry = ((px - 0.5) * maxTilt * 2).toFixed(2);
+
+    targetEl.style.setProperty('--rx', `${rx}deg`);
+    targetEl.style.setProperty('--ry', `${ry}deg`);
+    targetEl.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+    targetEl.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+    targetEl.classList.add('is-tilting');
+  };
+
+  const onLeave = () => {
+    targetEl.classList.remove('is-tilting');
+    targetEl.style.setProperty('--rx', '0deg');
+    targetEl.style.setProperty('--ry', '0deg');
+    targetEl.style.setProperty('--mx', '50%');
+    targetEl.style.setProperty('--my', '50%');
+  };
+
+  targetEl.addEventListener('mousemove', onMove);
+  targetEl.addEventListener('mouseleave', onLeave);
+}
+
 export class CardMarket {
   constructor(videoManager = null) {
     this.videoManager = videoManager || (window.birDayApp && window.birDayApp.videoManager);
@@ -65,21 +107,149 @@ export class CardMarket {
     this.ownedCardIds = new Set();
     this.initPlayerCards();
 
-    this.injectBoosterStyles();
+    this.injectBoosterAndHoloStyles();
 
     this.container = document.getElementById('screen-market');
     this.initDOM();
   }
 
-  /**
-   * Встраивает CSS-стили для веерного расположения карт на координатах видео,
-   * подсветки редкости при наведении (Hearthstone Glow) и 3D-переворота
-   */
-  injectBoosterStyles() {
+  injectBoosterAndHoloStyles() {
     if (document.getElementById('hs-booster-custom-styles')) return;
     const style = document.createElement('style');
     style.id = 'hs-booster-custom-styles';
     style.textContent = `
+      /* ==========================================================================
+         ГЛОБАЛЬНЫЕ СТИЛИ 3D-НАКЛОНА И ГОЛОГРАФИЧЕСКОГО ПЕРЕЛИВА (HOLO FOIL)
+         ========================================================================== */
+      .holo-tilt-target {
+        position: relative;
+        transform-style: preserve-3d;
+        will-change: transform;
+      }
+
+      /* Применение 3D-наклона для карт в альбоме, в руке и в окне осмотра */
+      .market-card-img-wrap {
+        height: 76% !important;
+        aspect-ratio: 264 / 373 !important;
+        width: auto !important;
+        max-width: 78% !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border-radius: 10px;
+      }
+
+      .market-card-img-wrap.holo-tilt-target,
+      .boss-hand-card.holo-tilt-target,
+      .inspect-card-preview-wrap.holo-tilt-target {
+        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+        transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1);
+      }
+
+      .market-card-img-wrap.holo-tilt-target.is-tilting {
+        transition: transform 0.06s linear;
+        transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.06);
+        z-index: 20;
+      }
+
+      .boss-hand-card.holo-tilt-target.is-tilting {
+        transition: transform 0.06s linear !important;
+        transform: perspective(850px) translateY(-18px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.14) !important;
+        z-index: 50 !important;
+      }
+
+      .inspect-card-preview-wrap.holo-tilt-target.is-tilting {
+        transition: transform 0.06s linear;
+        transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.03);
+      }
+
+      /* Слой 1: Стеклянный световой блик (Glare) под окантовку карты */
+      .holo-glare-layer {
+        position: absolute;
+        inset: 4.8% 6.2%;
+        border-radius: 9px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        background: radial-gradient(
+          circle at var(--mx, 50%) var(--my, 50%),
+          rgba(255, 255, 255, 0.40) 0%,
+          rgba(255, 255, 255, 0.10) 28%,
+          rgba(255, 255, 255, 0) 68%
+        );
+        mix-blend-mode: overlay;
+        z-index: 8;
+        overflow: hidden;
+      }
+
+      .holo-tilt-target.is-tilting .holo-glare-layer {
+        opacity: 1;
+      }
+
+      /* Слой 2: Радужная голографическая фольга (Foil) строго под рамку карты */
+      .holo-foil-layer {
+        position: absolute;
+        inset: 4.8% 6.2%;
+        border-radius: 9px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.28s ease;
+        mix-blend-mode: color-dodge;
+        z-index: 7;
+        background-size: 260% 260%;
+        background-position: var(--mx, 50%) var(--my, 50%);
+        overflow: hidden;
+      }
+
+      /* Редкие карты: сапфирово-бирюзовый перелив */
+      .holo-rarity-rare.is-tilting .holo-foil-layer {
+        opacity: 0.40;
+        background-image: linear-gradient(
+          115deg,
+          transparent 20%,
+          rgba(0, 168, 255, 0.55) 40%,
+          rgba(125, 211, 252, 0.70) 50%,
+          rgba(59, 130, 246, 0.55) 60%,
+          transparent 80%
+        );
+      }
+
+      /* Эпические карты: астрально-пурпурная голограмма */
+      .holo-rarity-epic.is-tilting .holo-foil-layer {
+        opacity: 0.50;
+        background-image: linear-gradient(
+          125deg,
+          transparent 15%,
+          rgba(168, 85, 247, 0.65) 35%,
+          rgba(236, 72, 153, 0.72) 48%,
+          rgba(56, 189, 248, 0.62) 62%,
+          transparent 85%
+        );
+      }
+
+      /* Легендарные карты: мягкий благородный золотисто-призматический перелив без шумов и артефактов */
+      .holo-rarity-legendary .holo-foil-layer {
+        opacity: 0;
+        background-image: linear-gradient(
+          120deg,
+          transparent 14%,
+          rgba(255, 145, 0, 0.35) 28%,
+          rgba(255, 215, 0, 0.48) 42%,
+          rgba(52, 211, 153, 0.32) 54%,
+          rgba(56, 189, 248, 0.38) 66%,
+          rgba(192, 132, 252, 0.35) 78%,
+          transparent 92%
+        );
+      }
+      .holo-rarity-legendary.is-tilting .holo-foil-layer {
+        opacity: 0.45;
+        filter: brightness(1.04);
+      }
+
+      /* ==========================================================================
+          МОДАЛКА ОТКРЫТИЯ БУСТЕРА В СТИЛЕ HEARTHSTONE С 3D-TILT
+         ========================================================================== */
       #market-booster-modal.hs-booster-overlay {
         position: absolute;
         inset: 0;
@@ -101,7 +271,6 @@ export class CardMarket {
         display: none !important;
       }
 
-      /* Верхняя ненавязчивая плашка прогресса */
       .hs-booster-top-bar {
         margin-top: 18px;
         padding: 8px 26px;
@@ -123,7 +292,6 @@ export class CardMarket {
         text-shadow: 0 2px 4px #000;
       }
 
-      /* Сцена 16:9, повторяющая пропорции видеокадра */
       .hs-booster-stage {
         position: absolute;
         inset: 0;
@@ -133,47 +301,35 @@ export class CardMarket {
         pointer-events: none;
       }
 
-      /* Слот карты точно в координатах последнего кадра видео */
       .hs-card-slot {
         position: absolute;
         width: 19.6%;
         aspect-ratio: 0.705;
-        transform: translate(-50%, -50%) rotate(var(--slot-rot, 0deg)) scale(1);
+        transform: translate(-50%, -50%) rotate(var(--slot-rot, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1);
         transform-style: preserve-3d;
-        transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), z-index 0s;
+        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), z-index 0s;
         cursor: pointer;
         pointer-events: auto;
         z-index: 10;
       }
+      .hs-card-slot.is-tilting {
+        transition: transform 0.06s linear;
+      }
 
-      /* При наведении на ЗАКРЫТУЮ рубашку: приподнимаем и включаем свечение редкости! */
       .hs-card-slot:not(.is-flipped):hover {
-        transform: translate(-50%, -54%) rotate(var(--slot-rot, 0deg)) scale(1.08);
+        transform: translate(-50%, -54%) rotate(var(--slot-rot, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.1);
         z-index: 30;
       }
 
-      /* Для эпических и легендарных карт добавляем лёгкую вибрацию мощи при наведении */
-      .hs-card-slot.rarity-epic:not(.is-flipped):hover .hs-card-inner,
-      .hs-card-slot.rarity-legendary:not(.is-flipped):hover .hs-card-inner {
-        animation: hsCardTremble 0.28s infinite alternate ease-in-out;
-      }
-
-      @keyframes hsCardTremble {
-        0%   { transform: rotateZ(-1.2deg) scale(1.02); }
-        100% { transform: rotateZ(1.2deg) scale(1.04); }
-      }
-
-      /* Когда карта перевёрнута — чуть выравниваем угол, чтобы удобно читать */
       .hs-card-slot.is-flipped {
-        transform: translate(-50%, -50%) rotate(var(--reveal-rot, 0deg)) scale(1.03);
+        transform: translate(-50%, -50%) rotate(var(--reveal-rot, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.04);
         z-index: 20;
       }
       .hs-card-slot.is-flipped:hover {
-        transform: translate(-50%, -54%) rotate(0deg) scale(1.18);
+        transform: translate(-50%, -54%) rotate(0deg) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.2);
         z-index: 45;
       }
 
-      /* Внутренний 3D-контейнер для переворота */
       .hs-card-inner {
         width: 100%;
         height: 100%;
@@ -186,7 +342,6 @@ export class CardMarket {
         transform: rotateY(180deg);
       }
 
-      /* Ореол редкости позади рубашки (плавно разгорается при наведении мыши) */
       .hs-rarity-aura {
         position: absolute;
         inset: -8px;
@@ -204,7 +359,6 @@ export class CardMarket {
         transform: scale(1.06);
         animation: hsAuraPulse 1.1s infinite alternate ease-in-out;
       }
-      /* После открытия ореол остаётся мягкой подсветкой вокруг редких карт */
       .hs-card-slot.is-flipped .hs-rarity-aura {
         opacity: 0.65;
         inset: -4px;
@@ -215,7 +369,6 @@ export class CardMarket {
         100% { filter: blur(8px) brightness(1.35); transform: scale(1.11); }
       }
 
-      /* Стороны карты (Рубашка и Лицо) */
       .hs-card-face {
         position: absolute;
         inset: 0;
@@ -224,7 +377,7 @@ export class CardMarket {
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
         border-radius: 12px;
-        overflow: visible;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -241,7 +394,6 @@ export class CardMarket {
         filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.75));
       }
 
-      /* При наведении на рубашку подсвечиваем контур самой PNG-картинки цветом редкости */
       .hs-card-slot:not(.is-flipped):hover .hs-card-front-shirt img {
         filter: drop-shadow(0 0 12px var(--aura-color)) drop-shadow(0 0 24px var(--aura-secondary));
       }
@@ -250,31 +402,30 @@ export class CardMarket {
         transform: rotateY(180deg);
       }
 
-      /* Бейдж названия редкости при открытии */
       .hs-card-rarity-banner {
         position: absolute;
-        bottom: -26px;
+        bottom: 6px;
         padding: 3px 12px;
         border-radius: 999px;
         background: rgba(12, 10, 14, 0.92);
         border: 1.5px solid var(--aura-color);
         color: var(--aura-color);
         font-family: "8bitoperator", monospace, sans-serif;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         white-space: nowrap;
         box-shadow: 0 4px 12px rgba(0,0,0,0.8);
         opacity: 0;
-        transform: translateY(-6px);
+        transform: translateY(6px);
         transition: opacity 0.35s ease 0.25s, transform 0.35s ease 0.25s;
         pointer-events: none;
+        z-index: 12;
       }
       .hs-card-slot.is-flipped .hs-card-rarity-banner {
         opacity: 1;
         transform: translateY(0);
       }
 
-      /* Вспышка света в момент клика по карте */
       .hs-burst-ring {
         position: absolute;
         left: 50%;
@@ -296,7 +447,6 @@ export class CardMarket {
         100% { transform: translate(-50%, -50%) scale(16); opacity: 0; }
       }
 
-      /* Плавающие искорки при наведении на закрытую карту */
       .hs-hover-sparks {
         position: absolute;
         inset: -15px;
@@ -322,7 +472,6 @@ export class CardMarket {
         100% { transform: translateY(-24px) scale(0.2); opacity: 0; }
       }
 
-      /* Нижняя кнопка сбора карт */
       .hs-booster-bottom-bar {
         margin-bottom: 22px;
         z-index: 35;
@@ -385,9 +534,7 @@ export class CardMarket {
       const statsJson = localStorage.getItem('birday_board_stats');
       if (statsJson) {
         const stats = JSON.parse(statsJson);
-        if (typeof stats.eggs === 'number') {
-          return stats.eggs;
-        }
+        if (typeof stats.eggs === 'number') return stats.eggs;
       }
     } catch (e) {}
     if (gameState && gameState.data && typeof gameState.data.eggs === 'number') {
@@ -457,7 +604,6 @@ export class CardMarket {
 
     this.container.innerHTML = `
       <div class="market-stage-viewport">
-        <!-- Верхний каменный баннер "В БОЙ С БОБРОМ! ⚔️" -->
         <div class="market-top-banner">
           <div class="market-title-stone-wrap" id="btn-market-title-final" title="Вступить в бой с Бобром!">
             <img src="assets/UI/Title Stone.png" alt="В БОЙ С БОБРОМ!" class="market-title-stone-img" />
@@ -465,17 +611,14 @@ export class CardMarket {
           </div>
         </div>
 
-        <!-- Левый стрелочный переключатель -->
         <button id="btn-market-page-prev" class="market-page-arrow market-arrow-left" title="Предыдущая страница">
           <img src="assets/UI/UI-Market-Arrow-Left.png" alt="◀" />
         </button>
 
-        <!-- Правый стрелочный переключатель -->
         <button id="btn-market-page-next" class="market-page-arrow market-arrow-right" title="Следующая страница">
           <img src="assets/UI/UI-Market-Arrow-Right.png" alt="▶" />
         </button>
 
-        <!-- Левая страница альбома (4 кармашка 2x2) -->
         <div class="market-album-page market-album-left" id="market-page-left">
           <div class="market-card-slot" data-slot="0"></div>
           <div class="market-card-slot" data-slot="1"></div>
@@ -483,7 +626,6 @@ export class CardMarket {
           <div class="market-card-slot" data-slot="3"></div>
         </div>
 
-        <!-- Правая страница альбома (4 кармашка 2x2) -->
         <div class="market-album-page market-album-right" id="market-page-right">
           <div class="market-card-slot" data-slot="4"></div>
           <div class="market-card-slot" data-slot="5"></div>
@@ -491,7 +633,6 @@ export class CardMarket {
           <div class="market-card-slot" data-slot="7"></div>
         </div>
 
-        <!-- Левый стол: Счетчик собранных карт -->
         <div class="market-desk-left">
           <div class="market-deck-icon-wrap">
             <img src="assets/UI/Status-Icon-CardCount.png" alt="Колода" class="market-deck-icon" />
@@ -500,7 +641,6 @@ export class CardMarket {
           <div class="market-page-counter" id="market-page-counter">СТР. 1/${this.totalPages}</div>
         </div>
 
-        <!-- Правый стол: Гнездо с балансом яиц и Бустер-пак -->
         <div class="market-desk-right">
           <div class="market-nest-section" id="market-nest-section">
             <div class="market-nest-egg-amount" id="market-nest-amount">0</div>
@@ -521,10 +661,9 @@ export class CardMarket {
           </div>
         </div>
 
-        <!-- Всплывающая подсказка с описанием карты при наведении -->
         <div id="market-card-tooltip" class="market-card-tooltip hidden" style="z-index: 250;"></div>
 
-        <!-- Бесшовное окно вскрытия Бустера в стиле Hearthstone (поверх последнего кадра видео) -->
+        <!-- Модалка вскрытия Бустера с 3D-наклоном и голографией -->
         <div id="market-booster-modal" class="hs-booster-overlay hidden">
           <div class="hs-booster-top-bar">
             <div class="hs-booster-top-title" id="booster-modal-subtitle">
@@ -731,6 +870,12 @@ export class CardMarket {
         </div>
       `;
 
+      // Подключаем 3D-наклон и голографический перелив для карты в альбоме!
+      const imgWrap = slotEl.querySelector('.market-card-img-wrap');
+      if (imgWrap) {
+        attach3DHoloTilt(imgWrap, card.rarity, 14);
+      }
+
       const cardItem = slotEl.querySelector('.market-card-item');
       if (cardItem) {
         cardItem.addEventListener('mouseenter', (e) => this.showCardTooltip(card, e));
@@ -822,10 +967,6 @@ export class CardMarket {
     this.showQuickNotice('У вас нет бустеров! Нажмите «КУПИТЬ» за 15 яиц.');
   }
 
-  /**
-   * Захватывает последний кадр видео перед его закрытием,
-   * чтобы фон модалки бустера на 100% бесшовно совпал с окончанием анимации!
-   */
   captureVideoLastFrame(videoWrapper) {
     try {
       const videoEl = videoWrapper ? videoWrapper.querySelector('video') : document.querySelector('video');
@@ -863,7 +1004,6 @@ export class CardMarket {
       if (isDone) return;
       isDone = true;
 
-      // Снимаем точный стоп-кадр конца видео для бесшовного фона
       const lastFrameDataUrl = this.captureVideoLastFrame(videoWrapper);
 
       if (btnSkip) {
@@ -888,9 +1028,6 @@ export class CardMarket {
     }
   }
 
-  /**
-   * Открывает 4 интерактивные карты поверх последнего кадра видео в тех же координатах и углах
-   */
   openBoosterModal(lastFrameDataUrl = null) {
     const modal = document.getElementById('market-booster-modal');
     const cardsRow = document.getElementById('market-booster-cards-row');
@@ -898,14 +1035,12 @@ export class CardMarket {
     const btnCollect = document.getElementById('btn-market-close-booster');
     if (!modal || !cardsRow) return;
 
-    // Если удалось снять стоп-кадр с видео — ставим его бесшовным фоном!
     if (lastFrameDataUrl) {
       modal.style.backgroundImage = `url('${lastFrameDataUrl}')`;
     } else {
       modal.style.backgroundImage = '';
     }
 
-    // Выбираем 4 случайные карты (приоритет неоткрытым)
     const unowned = CARDS_DATABASE.filter(c => !this.ownedCardIds.has(c.id));
     let dropped = [];
     if (unowned.length >= 4) {
@@ -929,7 +1064,7 @@ export class CardMarket {
       btnCollect.classList.add('disabled');
     }
     if (subtitleEl) {
-      subtitleEl.textContent = 'Наведите на рубашку, чтобы увидеть ауру редкости, и нажмите! (0 / 4)';
+      subtitleEl.textContent = 'Наведите на рубашку, чтобы увидеть 3D-ауру редкости, и нажмите! (0 / 4)';
     }
 
     dropped.forEach((card, i) => {
@@ -937,7 +1072,7 @@ export class CardMarket {
       const aura = RARITY_AURA_CONFIG[card.rarity] || RARITY_AURA_CONFIG.common;
 
       const slotEl = document.createElement('div');
-      slotEl.className = `hs-card-slot rarity-${card.rarity}`;
+      slotEl.className = `hs-card-slot rarity-${card.rarity} holo-rarity-${card.rarity}`;
       slotEl.style.left = layout.left;
       slotEl.style.top = layout.top;
       slotEl.style.setProperty('--slot-rot', layout.rotate);
@@ -946,7 +1081,6 @@ export class CardMarket {
       slotEl.style.setProperty('--aura-secondary', aura.secondary);
       slotEl.style.setProperty('--aura-shadow', aura.shadow);
 
-      // Генерируем 8 парящих искр вокруг рубашки при наведении
       let sparksHtml = '';
       for (let s = 0; s < 8; s++) {
         const leftPct = 8 + Math.round(Math.random() * 84);
@@ -961,20 +1095,23 @@ export class CardMarket {
         <div class="hs-hover-sparks">${sparksHtml}</div>
 
         <div class="hs-card-inner">
-          <!-- Рубашка карты (лежит точно поверх рубашки из видео) -->
           <div class="hs-card-face hs-card-front-shirt">
             <img src="assets/Market/Card back/Back-Card01.png" alt="Рубашка карты" draggable="false" />
+            <div class="holo-glare-layer"></div>
           </div>
 
-          <!-- Лицевая сторона карты -->
           <div class="hs-card-face hs-card-back-art">
             <img src="${card.image}" alt="${card.name}" draggable="false" />
+            <div class="holo-foil-layer"></div>
+            <div class="holo-glare-layer"></div>
             <div class="hs-card-rarity-banner">${aura.name}: ${card.name}</div>
           </div>
         </div>
       `;
 
-      // Звук при наведении на закрытую карту + показ тултипа для открытой карты
+      // Подключаем 3D-наклон и голографические координаты (--rx, --ry, --mx, --my) к слоту бустера!
+      attach3DHoloTilt(slotEl, card.rarity, 16);
+
       slotEl.addEventListener('mouseenter', (e) => {
         if (slotEl.classList.contains('is-flipped')) {
           this.showCardTooltip(card, e);
@@ -985,7 +1122,6 @@ export class CardMarket {
         this.hideCardTooltip();
       });
 
-      // Клик: переворот в стиле Hearthstone со вспышкой редкости
       slotEl.addEventListener('click', (e) => {
         e.stopPropagation();
         if (slotEl.classList.contains('is-flipped')) return;
@@ -1003,7 +1139,7 @@ export class CardMarket {
         }
 
         if (subtitleEl) {
-          subtitleEl.textContent = `Открыто карт: ${openedCount} / 4 — наведите на открытую карту для подробностей`;
+          subtitleEl.textContent = `Открыто карт: ${openedCount} / 4 — поводите курсором по карте для 3D-голографии!`;
         }
 
         if (openedCount >= 4) {
@@ -1112,4 +1248,8 @@ export class CardMarket {
     this.stop();
     events.emit('stage:switch_to_boss_arena', deck);
   }
+}
+
+export function ensureBoosterAndHoloStyles() {
+  CardMarket.prototype.injectBoosterAndHoloStyles.call({});
 }

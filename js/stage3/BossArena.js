@@ -1,6 +1,7 @@
 import { CARDS_DATABASE, getRandomStarterDeck } from './cardsData.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
+import { attach3DHoloTilt } from './CardMarket.js';
 
 export const ARENA_TILES_COORDS = {
   '1x1': { col: 1, row: 1, x: 358, y: 261, w: 132, h: 111 },
@@ -744,6 +745,7 @@ export class BossArena {
         this.selectCard(index);
       });
 
+      attach3DHoloTilt(cardEl, card.rarity || 'common', 15);
       container.appendChild(cardEl);
     });
 
@@ -1954,6 +1956,11 @@ export class BossArena {
       e.stopPropagation();
       this.closeCardInspect();
     });
+
+    const previewWrap = modal.querySelector('.inspect-card-preview-wrap');
+    if (previewWrap) {
+      attach3DHoloTilt(previewWrap, rarity, 18);
+    }
 
     const gameContainer = document.getElementById('game-container') || document.body;
     gameContainer.appendChild(modal);
