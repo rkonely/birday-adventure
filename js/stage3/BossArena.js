@@ -878,10 +878,18 @@ export class BossArena {
     this.player.selectedCardIndex = -1;
 
     const initialHp = (card.currentHp !== undefined) ? card.currentHp : card.hp;
+    let placedHp = initialHp;
+    let placedMaxHp = card.hp;
+    if (card.id === 'undertaker_marabou') {
+      const bonus = (this.player.discard ? this.player.discard.length : 0) * 6;
+      placedHp += bonus;
+      placedMaxHp += bonus;
+    }
+
     this.gridUnits[tileKey] = {
       ...card,
-      currentHp: initialHp,
-      maxHp: card.hp,
+      currentHp: placedHp,
+      maxHp: placedMaxHp,
       baseAtk: card.atk,
       currentAtk: card.atk,
       tileKey: tileKey,
@@ -929,6 +937,9 @@ export class BossArena {
     const units = Object.values(this.gridUnits);
     const starlingCount = units.filter(u => u.id === 'starling_musician').length;
     const hasKing = units.some(u => u.id === 'feathered_king');
+    const hasRocker = units.some(u => u.id === 'rocker_capercaillie');
+    const restingCount = this.player.hand.filter(c => c.restRounds && c.restRounds > 0).length;
+    const discardCount = this.player.discard ? this.player.discard.length : 0;
 
     for (const [key, unit] of Object.entries(this.gridUnits)) {
       if (unit.isDecoy) {
@@ -943,7 +954,11 @@ export class BossArena {
       if (unit.id === 'chef_chicken' && unit.currentHp <= unit.maxHp * 0.5) atk += 8;
       if (unit.id === 'vulture_hunter' && this.boss.hp <= this.boss.maxHp * 0.4) atk *= 2;
       if (hasKing && unit.id !== 'feathered_king') atk *= 2;
-      if (this.tileEffects[key]?.tarRounds > 0) atk = Math.max(1, Math.floor(atk * 0.5));
+      if (unit.id === 'nightjar_owl') atk += restingCount * 2;
+      if (unit.id === 'sniper_partridge' && key.endsWith('x3')) atk += 8;
+      if (unit.id === 'undertaker_marabou') atk += discardCount * 6;
+
+      if (this.tileEffects[key]?.tarRounds > 0 && !hasRocker) atk = Math.max(1, Math.floor(atk * 0.5));
 
       unit.currentAtk = atk;
     }
@@ -1065,6 +1080,103 @@ export class BossArena {
       this.boss.armor = 0;
       this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ffd166', 0.45);
       this.addFloatingText(this.arenaWidth / 2, 220, 'Стрижка под ноль: Броня Бобра срезана!', '#ffd166', 1.8);
+    } else if (card.id === 'plumber_bullfinch') {
+      this.tileEffects[tileKey].tarRounds = 0;
+      this.tileEffects[tileKey].burningRounds = 0;
+      if (this.gridUnits[tileKey]) {
+        this.gridUnits[tileKey].currentHp += 2;
+        this.gridUnits[tileKey].maxHp += 2;
+      }
+      this.spawnShockwave(cx, cy, 60, '#38bdf8', 0.4, 3);
+      this.addFloatingText(cx, tile.y, 'Сантехника: Клетка очищена, +2 HP!', '#38bdf8', 2.0);
+    } else if (card.id === 'intern_dove') {
+      const resting = this.player.hand.filter(c => c.restRounds && c.restRounds > 0);
+      if (resting.length > 0) {
+        const target = resting[Math.floor(Math.random() * resting.length)];
+        target.restRounds = Math.max(0, target.restRounds - 1);
+      }
+      this.player.hp = Math.min(this.player.maxHp || 30, this.player.hp + 5);
+      this.spawnShockwave(cx, cy, 65, '#2ecc71', 0.4, 3);
+      this.addFloatingText(cx, tile.y, 'Стажировка: -1 ход отдыха, +5 HP игроку!', '#2ecc71', 2.0);
+    } else if (card.id === 'hacker_cuckoo') {
+      const breachedKeys = Object.keys(this.tileEffects).filter(k => this.tileEffects[k].isTargeted);
+      if (breachedKeys.length > 0) {
+        const targetKey = breachedKeys[Math.floor(Math.random() * breachedKeys.length)];
+        this.tileEffects[targetKey].isTargeted = false;
+        this.tileEffects[targetKey].intentType = null;
+        this.tileEffects[targetKey].intentDamage = 0;
+        this.player.hp = Math.min(this.player.maxHp || 30, this.player.hp + 5);
+        const bk = ARENA_TILES_COORDS[targetKey];
+        if (bk) this.spawnShockwave(bk.x + bk.w / 2, bk.y + bk.h / 2, 70, '#00ffcc', 0.45, 4);
+        this.addFloatingText(this.arenaWidth / 2, 400, `Взлом: Клетка [${targetKey}] безопасна, +5 HP игроку!`, '#00ffcc', 2.2);
+      } else {
+        this.player.hp = Math.min(this.player.maxHp || 30, this.player.hp + 5);
+        this.addFloatingText(this.arenaWidth / 2, 400, 'Взлом: Защита взломана, +5 HP игроку!', '#00ffcc', 1.8);
+      }
+    } else if (card.id === 'bartender_toucan') {
+      const row = parseInt(tileKey.split('x')[1], 10);
+      if (row === 1) {
+        this.boss.poisonRounds = Math.max(this.boss.poisonRounds || 0, 3);
+        this.spawnParticles(BOSS_CENTER.x, BOSS_CENTER.y + 20, 25, { colors: ['#ff4d4d', '#ff7849'], speed: 160 });
+        this.addFloatingText(this.arenaWidth / 2, 220, 'Острый чили: Бобёр подожжён на 3 хода!', '#ff4d4d', 2.0);
+      } else {
+        this.getNeighborKeys(tileKey).forEach(nk => {
+          if (this.gridUnits[nk]) {
+            this.gridUnits[nk].currentHp = Math.min(this.gridUnits[nk].maxHp, this.gridUnits[nk].currentHp + 4);
+          }
+        });
+        this.spawnShockwave(cx, cy, 75, '#2ecc71', 0.4, 3);
+        this.addFloatingText(cx, tile.y, 'Коктейль бармена: +4 HP соседям!', '#2ecc71', 2.0);
+      }
+    } else if (card.id === 'astrologer_hoopoe') {
+      const [c, r] = tileKey.split('x').map(Number);
+      for (let col = c; col <= 5; col++) {
+        const k = `${col}x${r}`;
+        if (this.tileEffects[k]) {
+          this.tileEffects[k].isRune = true;
+          const t = ARENA_TILES_COORDS[k];
+          if (t) this.spawnShockwave(t.x + t.w / 2, t.y + t.h / 2, 60, '#93c5fd', 0.4, 3);
+        }
+      }
+      this.recalculateBoardAuras();
+      this.addFloatingText(this.arenaWidth / 2, 410, 'Парад планет: Рунные зоны справа (+4 ATK)!', '#93c5fd', 2.2);
+    } else if (card.id === 'overseer_owl') {
+      let maxDmg = -1;
+      let worstKey = null;
+      for (const [k, eff] of Object.entries(this.tileEffects)) {
+        if (eff.isTargeted && (eff.intentDamage || 0) > maxDmg) {
+          maxDmg = eff.intentDamage || 0;
+          worstKey = k;
+        }
+      }
+      if (worstKey) {
+        this.tileEffects[worstKey].isTargeted = false;
+        this.tileEffects[worstKey].intentType = null;
+        this.tileEffects[worstKey].intentDamage = 0;
+        const wk = ARENA_TILES_COORDS[worstKey];
+        if (wk) this.spawnShockwave(wk.x + wk.w / 2, wk.y + wk.h / 2, 80, '#38bdf8', 0.5, 5);
+        this.addFloatingText(this.arenaWidth / 2, 380, `Абсолютный ноль: Удар по [${worstKey}] заморожен!`, '#38bdf8', 2.2);
+      }
+      if (this.gridUnits[tileKey]) {
+        this.gridUnits[tileKey].currentHp = Math.min(this.gridUnits[tileKey].maxHp, this.gridUnits[tileKey].currentHp + 2);
+      }
+    } else if (card.id === 'hell_rooster') {
+      let hazardCount = 0;
+      for (const [k, eff] of Object.entries(this.tileEffects)) {
+        if (eff.burningRounds > 0 || eff.tarRounds > 0) {
+          hazardCount++;
+          eff.tarRounds = 0;
+          eff.burningRounds = 2;
+          const t = ARENA_TILES_COORDS[k];
+          if (t) this.spawnParticles(t.x + t.w / 2, t.y + t.h / 2, 20, { colors: ['#ff4d4d', '#ff9900'], speed: 170 });
+        }
+      }
+      this.tileEffects[tileKey].burningRounds = 2;
+      const roosterDmg = Math.max(12, hazardCount * 12 + 12);
+      this.boss.hp = Math.max(0, this.boss.hp - roosterDmg);
+      this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 20, 240, '#ff4d4d', 0.6, 6);
+      this.screenShake(16, 0.45);
+      this.addFloatingText(this.arenaWidth / 2, 220, `АДОВ ПОДРЫВ: -${roosterDmg} чистого урона Бобру!`, '#ff4d4d', 2.5);
     }
   }
 
@@ -1406,22 +1518,48 @@ export class BossArena {
           this.spawnShockwave(BOSS_CENTER.x, BOSS_CENTER.y + 30, 300, '#fbbf24', 0.5, 6);
         }
 
+        if (unit.id === 'scavenger_pelican') {
+          const trashItems = [
+            { name: 'Жестянка', dmg: 8 },
+            { name: 'Бутылка', dmg: 5 },
+            { name: 'Крышка', dmg: 3 }
+          ];
+          const chosen = trashItems[Math.floor(Math.random() * trashItems.length)];
+          unitDmg += chosen.dmg;
+          const ut = ARENA_TILES_COORDS[unit.tileKey];
+          if (ut) this.addFloatingText(ut.x + ut.w / 2, ut.y - 15, `Мусор (${chosen.name}): +${chosen.dmg} ур.!`, '#a7f3d0', 1.8);
+        }
+
+        const col = parseInt(unit.tileKey.split('x')[0], 10);
+        const hasAdmiralInCol = Object.values(this.gridUnits).some(
+          u => u.id === 'admiral_albatross' && parseInt(u.tileKey.split('x')[0], 10) === col && u.currentHp > 0
+        );
+        const strikeCount = (hasAdmiralInCol && unit.id !== 'admiral_albatross') ? 2 : 1;
+        if (strikeCount > 1) {
+          const ut = ARENA_TILES_COORDS[unit.tileKey];
+          if (ut) this.addFloatingText(ut.x + ut.w / 2, ut.y - 25, 'Приказ Адмирала: Двойной удар!', '#38bdf8', 1.8);
+        }
+
         unitDmg = Math.round(unitDmg * vulnMult);
 
-        if (unitDmg > 0) {
-          audio.playClick();
-          await this.animateUnitLunge(unit);
+        for (let strike = 0; strike < strikeCount; strike++) {
+          if (unitDmg > 0) {
+            audio.playClick();
+            await this.animateUnitLunge(unit);
 
-          if (unit.id === 'woodpecker_drill' && this.boss.armor > 0) {
-            this.boss.armor = 0;
-            this.addFloatingText(this.arenaWidth / 2, 180, 'Перфоратор Дятла разнёс щит Бобра!', '#ffd166', 1.6);
-          } else if (this.boss.armor > 0) {
-            const absorbed = Math.min(this.boss.armor, unitDmg);
-            this.boss.armor -= absorbed;
-            unitDmg -= absorbed;
+            let currentStrikeDmg = unitDmg;
+            if (unit.id === 'woodpecker_drill' && this.boss.armor > 0) {
+              this.boss.armor = 0;
+              this.addFloatingText(this.arenaWidth / 2, 180, 'Перфоратор Дятла разнёс щит Бобра!', '#ffd166', 1.6);
+            } else if (this.boss.armor > 0) {
+              const absorbed = Math.min(this.boss.armor, currentStrikeDmg);
+              this.boss.armor -= absorbed;
+              currentStrikeDmg -= absorbed;
+            }
+
+            totalBirdsDamage += currentStrikeDmg;
+            if (strikeCount > 1 && strike === 0) await this.sleep(180);
           }
-
-          totalBirdsDamage += unitDmg;
         }
       }
 
@@ -1458,12 +1596,13 @@ export class BossArena {
       this.screenShake(18, 0.45);
 
       let directPlayerDamage = 0;
+      let totalBirdDamageTaken = 0;
       const hasOdinRaven = Object.values(this.gridUnits).some(u => u.id === 'odin_raven' && u.currentHp > 0);
       const interceptorUnit = Object.values(this.gridUnits).find(
         u => (u.id === 'guard_goose' || u.id === 'streamer_owl') && u.currentHp > 0
       );
 
-      const applyDamageToUnit = (unit, rawDmg, tile) => {
+      const applyDamageToUnit = (unit, rawDmg, tile, currentIntent = null) => {
         if (!unit) return;
         const cx = tile.x + tile.w / 2;
         const cy = tile.y + tile.h / 2;
@@ -1489,11 +1628,36 @@ export class BossArena {
           this.addFloatingText(cx, tile.y - 10, 'Щит Вальхаллы! Контрудар -20 HP!', '#f39c12', 2.0);
           return;
         }
+        if (unit.id === 'secretary_bird' && currentIntent === 'BREACH') {
+          this.boss.hp = Math.max(0, this.boss.hp - rawDmg);
+          this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#2ecc71', 0.45);
+          this.addFloatingText(cx, tile.y - 12, `Отказ в приёме: -${rawDmg} в Бобра!`, '#2ecc71', 2.0);
+          return;
+        }
+
+        const unitRow = parseInt(unit.tileKey.split('x')[1], 10);
+        const hasTourist = Object.values(this.gridUnits).some(
+          u => u.id === 'tourist_sandpiper' && parseInt(u.tileKey.split('x')[1], 10) === unitRow && u.currentHp > 0
+        );
+        if (hasTourist) {
+          rawDmg = Math.max(1, Math.round(rawDmg * 0.6));
+        }
+
+        const hasClimber = Object.values(this.gridUnits).some(
+          u => u.id === 'climber_puffin' && parseInt(u.tileKey.split('x')[1], 10) === unitRow && u.currentHp > 0
+        );
+        if (hasClimber) {
+          const birdsInRow = Object.values(this.gridUnits).filter(
+            u => parseInt(u.tileKey.split('x')[1], 10) === unitRow && u.currentHp > 0
+          ).length;
+          rawDmg = Math.max(1, Math.round((rawDmg - birdsInRow * 4) / Math.max(1, birdsInRow)));
+        }
 
         let dmg = Math.max(1, Math.round(rawDmg * bossDamageMult));
         if (unit.id === 'brave_drake') dmg = Math.max(1, dmg - 6);
 
         unit.currentHp -= dmg;
+        totalBirdDamageTaken += dmg;
         unit.hitAnim = 0.5;
         this.spawnParticles(cx, cy, 14, { colors: ['#ff4d4d', '#ffd166', '#d97706'], speed: 150, shape: 'wood' });
 
@@ -1501,6 +1665,25 @@ export class BossArena {
           this.boss.hp = Math.max(0, this.boss.hp - 14);
           this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ffd166', 0.35);
           this.addFloatingText(cx, tile.y - 28, 'Копьё Афины: -14 HP Бобру!', '#ffd166', 1.7);
+        }
+
+        if (unit.id === 'imperial_penguin') {
+          let buffed = 0;
+          this.player.hand.forEach(c => {
+            if (c.restRounds && c.restRounds > 0) {
+              c.atk = (c.atk || 0) + 2;
+              buffed++;
+            }
+          });
+          if (buffed > 0) {
+            this.addFloatingText(cx, tile.y - 25, `Император: +2 ATK спящим в руке!`, '#fbbf24', 1.8);
+          }
+        }
+
+        const hasSirin = Object.values(this.gridUnits).some(u => u.id === 'sirin_bird' && u.currentHp > 0);
+        if (hasSirin && this.tileEffects[unit.tileKey]?.isRune) {
+          unit.currentHp = Math.min(unit.maxHp, unit.currentHp + 5);
+          this.addFloatingText(cx, tile.y - 25, 'Песнь Сирин: +5 HP на руне!', '#c084fc', 1.6);
         }
 
         if (unit.currentHp <= 0) {
@@ -1532,24 +1715,35 @@ export class BossArena {
         this.spawnParticles(cx, cy, 12, { colors: ['#d97706', '#fbbf24'], speed: 130, shape: 'wood' });
 
         if (effect.intentType === 'BREACH') {
+          const simurgh = Object.values(this.gridUnits).find(u => u.id === 'sand_simurgh' && u.currentHp > 0);
+          let breachDamage = rawDamage;
+          if (simurgh) {
+            breachDamage = Math.max(1, Math.round(rawDamage * 0.75));
+            const absorbed = rawDamage - breachDamage;
+            simurgh.currentHp += absorbed;
+            simurgh.maxHp += absorbed;
+            const st = ARENA_TILES_COORDS[simurgh.tileKey];
+            if (st) this.addFloatingText(st.x + st.w / 2, st.y - 20, `Симург поглотил ${absorbed} ур.!`, '#fbbf24', 1.8);
+          }
+
           const canBlockBreach = unit && unit.id !== 'kiwi_secret' && unit.id !== 'feathered_king';
           if (canBlockBreach) {
-            applyDamageToUnit(unit, rawDamage, tile);
+            applyDamageToUnit(unit, breachDamage, tile, 'BREACH');
           } else if (interceptorUnit && interceptorUnit.currentHp > 0) {
             const intTile = ARENA_TILES_COORDS[interceptorUnit.tileKey] || tile;
             this.addFloatingText(intTile.x + intTile.w / 2, intTile.y - 24, `${interceptorUnit.name} перехватил прорыв!`, '#ffd166', 1.7);
-            applyDamageToUnit(interceptorUnit, rawDamage, intTile);
+            applyDamageToUnit(interceptorUnit, breachDamage, intTile, 'BREACH');
           } else {
-            const heroDmg = Math.max(1, Math.round(rawDamage * bossDamageMult));
+            const heroDmg = Math.max(1, Math.round(breachDamage * bossDamageMult));
             directPlayerDamage += heroDmg;
             this.spawnShockwave(cx, cy, 70, '#ff2233', 0.4, 4);
             this.addFloatingText(cx, tile.y + 20, `ПРОРЫВ! -${heroDmg} HP`, '#ff3838', 2.0);
           }
         } else if (effect.intentType === 'SAW_AOE') {
-          if (unit) applyDamageToUnit(unit, rawDamage, tile);
+          if (unit) applyDamageToUnit(unit, rawDamage, tile, 'SAW_AOE');
         } else if (effect.intentType === 'HEAVY_AXE') {
           if (unit) {
-            applyDamageToUnit(unit, rawDamage, tile);
+            applyDamageToUnit(unit, rawDamage, tile, 'HEAVY_AXE');
             if (unit.currentHp > 0) {
               this.boss.vulnerable = true;
               this.spawnShockwave(cx, cy, 95, '#a335ee', 0.55, 5);
@@ -1557,6 +1751,14 @@ export class BossArena {
             }
           }
         }
+      }
+
+      const advocate = Object.values(this.gridUnits).find(u => u.id === 'advocate_pelican' && u.currentHp > 0);
+      if (advocate && totalBirdDamageTaken > 0) {
+        const counterDmg = Math.max(1, Math.floor(totalBirdDamageTaken * 0.5));
+        this.boss.hp = Math.max(0, this.boss.hp - counterDmg);
+        this.spawnSlashEffect(BOSS_CENTER.x, BOSS_CENTER.y + 20, '#ffd166', 0.45);
+        this.addFloatingText(this.arenaWidth / 2, 210, `Встречный иск Пеликана: -${counterDmg} HP Бобру!`, '#ffd166', 2.2);
       }
 
       if (this.player.round >= 3) {
@@ -1607,6 +1809,19 @@ export class BossArena {
         this.spawnShockwave(tile.x + tile.w / 2, tile.y + tile.h / 2, 110, '#2ecc71', 0.4, 3);
         this.addFloatingText(tile.x + tile.w / 2, tile.y, '+8 HP соседям (Компост)', '#2ecc71', 1.5);
       }
+      if (unit.id === 'bartender_toucan') {
+        const r = parseInt(key.split('x')[1], 10);
+        if (r > 1) {
+          this.getNeighborKeys(key).forEach(nk => {
+            const neighbor = this.gridUnits[nk];
+            if (neighbor && neighbor.currentHp > 0 && !neighbor.isDecoy) {
+              neighbor.currentHp = Math.min(neighbor.maxHp, neighbor.currentHp + 4);
+            }
+          });
+          const tile = ARENA_TILES_COORDS[key];
+          this.addFloatingText(tile.x + tile.w / 2, tile.y, '+4 HP соседям (Бармен)', '#2ecc71', 1.5);
+        }
+      }
       if (this.tileEffects[key]?.elixirRounds > 0) {
         unit.currentHp = Math.min(unit.maxHp, unit.currentHp + 4);
       }
@@ -1628,13 +1843,16 @@ export class BossArena {
       if (unit.isDecoy) continue;
 
       if (unit.currentHp > 0) {
-        if (this.tileEffects[key]?.tarRounds > 0) {
+        const hasRocker = Object.values(this.gridUnits).some(u => u.id === 'rocker_capercaillie');
+        if (this.tileEffects[key]?.tarRounds > 0 && !hasRocker) {
           unit.hasResurrectedThisRound = false;
           nextGridUnits[key] = unit;
           const tile = ARENA_TILES_COORDS[key];
           this.addFloatingText(tile.x + tile.w / 2, tile.y, 'Увяз в смоле!', '#f97316', 1.6);
         } else {
-          const restTurns = unit.id === 'bodybuilder_sparrow' ? 2 : 1;
+          let restTurns = 1;
+          if (unit.id === 'plantain_cuckoo') restTurns = 0;
+          else if (unit.id === 'bodybuilder_sparrow') restTurns = 2;
           this.player.hand.push({
             id: unit.id,
             name: unit.name,

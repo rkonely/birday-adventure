@@ -119,6 +119,71 @@ export const CARDS_DATABASE = [
     abilityName: 'Удар за семечку',
     abilityDesc: 'Наносит мощный сокрушительный удар на 22 урона по боссу, но затем делает паузу на перекус.'
   },
+  {
+    id: 'plumber_bullfinch',
+    name: 'Снегирь-Сантехник',
+    subname: 'Мастер разводного ключа',
+    role: 'Танк / Очистка',
+    rarity: 'common',
+    cost: 2,
+    atk: 5,
+    hp: 18,
+    image: 'assets/Market/Card/Plumber.png',
+    abilityName: 'Продувка труб',
+    abilityDesc: 'Очищает свою клетку от любой ловушки босса (смолы, льда, песка, лавы) и получает за это +2 к щиту.'
+  },
+  {
+    id: 'tourist_sandpiper',
+    name: 'Кулик-Турист',
+    subname: 'В панамке и с фотоаппаратом',
+    role: 'Поддержка / Ослепление',
+    rarity: 'common',
+    cost: 2,
+    atk: 7,
+    hp: 13,
+    image: 'assets/Market/Card/Tourist.png',
+    abilityName: 'Фото со вспышкой',
+    abilityDesc: 'При нажатии «Атака» фотографирует босса со вспышкой — снижает урон от зон AOE в своём ряду на 40%.'
+  },
+  {
+    id: 'nightjar_owl',
+    name: 'Козодой-Полуночник',
+    subname: 'Охотник за ночным перекусом',
+    role: 'Урон / Синергия отдыха',
+    rarity: 'common',
+    cost: 1,
+    atk: 4,
+    hp: 12,
+    image: 'assets/Market/Card/Night Owl.png',
+    abilityName: 'Ночной дожор',
+    abilityDesc: 'Получает +2 ATK за каждую птицу, которая сейчас отдыхает в руке (restRounds > 0).'
+  },
+  {
+    id: 'intern_dove',
+    name: 'Голубка-Стажёр',
+    subname: 'Работает за опыт и зёрнышки',
+    role: 'Снятие усталости',
+    rarity: 'common',
+    cost: 1,
+    atk: 4,
+    hp: 15,
+    image: 'assets/Market/Card/Intern.png',
+    abilityName: 'Пора РАБОТАТЬ!',
+    abilityDesc: 'При атаке снимает 1 ход отдыха (restRounds) у случайной уставшей птицы в твоей руке и лечит Игрока на +5 HP.'
+  },
+  {
+    id: 'scavenger_pelican',
+    name: 'Пеликан-Мусорщик',
+    subname: 'Эколог-утилизатор чащи',
+    role: 'Урон',
+    rarity: 'common',
+    cost: 1,
+    atk: 2,
+    hp: 10,
+    image: 'assets/Market/Card/Scavenger.png',
+    abilityName: 'Раздельный сбор мусора',
+    abilityDesc: 'В начале своего хода бросает в босса случайный найденный предмет: банка наносит 8 урона, бутылка — 5 урона, а крышка наносит 3 урона.'
+  },
 
   // ==========================================
   // НЕОБЫЧНЫЕ КАРТЫ
@@ -201,6 +266,58 @@ export const CARDS_DATABASE = [
     abilityName: 'Зеркальный дубль',
     abilityDesc: 'При выставлении создаёт две зеркальные копии по бокам, принимающие удар босса на себя.'
   },
+  {
+    id: 'sniper_partridge',
+    name: 'Белая Куропатка-Снайпер',
+    subname: 'Один выстрел — один сучок',
+    role: 'Урон',
+    rarity: 'uncommon',
+    cost: 2,
+    atk: 9,
+    hp: 14,
+    image: 'assets/Market/Card/Partridge.png',
+    abilityName: 'Поправка на ветер',
+    abilityDesc: 'Если стоит в дальнем (3-м) ряду, наносит +8 урона.'
+  },
+  {
+    id: 'secretary_bird',
+    name: 'Птица-Секретарь',
+    subname: 'Деловая хищница на шпильках',
+    role: 'Поддержка',
+    rarity: 'uncommon',
+    cost: 3,
+    atk: 8,
+    hp: 17,
+    image: 'assets/Market/Card/Secretary.png',
+    abilityName: 'Возврат долгов',
+    abilityDesc: 'Если стоит на красной клетке прорыва (BREACH), ударом ноги отфутболивает снаряд босса обратно, но получает тоже урон!'
+  },
+  {
+    id: 'hacker_cuckoo',
+    name: 'Кукушка-Хакер',
+    subname: 'Взлом плотины по Wi-Fi',
+    role: 'Поддержка',
+    rarity: 'uncommon',
+    cost: 2,
+    atk: 4,
+    hp: 15,
+    image: 'assets/Market/Card/Hacker.png',
+    abilityName: 'Взлом системы',
+    abilityDesc: 'Взламывает 1 красную клетку прорыва (BREACH) на поле — в этом раунде атака босса по ней не наносит урона, а лечит Игрока на +5 HP.'
+  },
+  {
+    id: 'bartender_toucan',
+    name: 'Тукан-Бармен',
+    subname: 'Миксолог лесных напитков',
+    role: 'Поддержка',
+    rarity: 'uncommon',
+    cost: 2,
+    atk: 7,
+    hp: 10,
+    image: 'assets/Market/Card/Bartender.png',
+    abilityName: 'Коктейльная карта',
+    abilityDesc: 'В 1-м ряду кидает в босса «Пылающий чили» (поджигает клетку на 3 хода), во 2–3 ряду раздаёт соседям «Ледяной Мохито» (+4 HP).'
+  },
 
   // ==========================================
   // РЕДКИЕ КАРТЫ
@@ -270,6 +387,58 @@ export const CARDS_DATABASE = [
     abilityName: 'АНТИДЕПРЕССАНТЫ!',
     abilityDesc: 'Выбранная птица на 1 раунд перестаёт чувствовать боль (получает ровно 0 урона с улыбкой).'
   },
+  {
+    id: 'climber_puffin',
+    name: 'Тупик-Альпинист',
+    subname: 'Покоритель лесных вершин',
+    role: 'Поддержка',
+    rarity: 'rare',
+    cost: 3,
+    atk: 9,
+    hp: 22,
+    image: 'assets/Market/Card/Climber.png',
+    abilityName: 'Страховочный трос',
+    abilityDesc: 'Связывает тросом всех птиц в своём ряду. Весь входящий урон по ряду делится поровну и снижается на 4 ед. за каждую птицу в связке!'
+  },
+  {
+    id: 'plantain_cuckoo',
+    name: 'Кукушка-Подорожник',
+    subname: 'Сверхзвуковой курьер',
+    role: 'Урон',
+    rarity: 'rare',
+    cost: 3,
+    atk: 12,
+    hp: 16,
+    image: 'assets/Market/Card/Plantain.png',
+    abilityName: 'Реактивный Двигатель',
+    abilityDesc: 'Настолько быстрый, что не получает усталости (restRounds = 0) при возврате в руку, получает -2 ATK.'
+  },
+  {
+    id: 'astrologer_hoopoe',
+    name: 'Удод-Астролог',
+    subname: 'Звёзды не врут, Бобёр',
+    role: 'Поддержка',
+    rarity: 'rare',
+    cost: 3,
+    atk: 8,
+    hp: 19,
+    image: 'assets/Market/Card/Astrologer.png',
+    abilityName: 'Ретроградный Меркурий',
+    abilityDesc: 'Временно делает свою клетку и клетки справа Руническими (+4 ATK) до конца боя!'
+  },
+  {
+    id: 'advocate_pelican',
+    name: 'Пеликан-Адвокат',
+    subname: 'Ваш адвокат по лесным спорам',
+    role: 'Поддержка',
+    rarity: 'rare',
+    cost: 3,
+    atk: 7,
+    hp: 20,
+    image: 'assets/Market/Card/Advocate.png',
+    abilityName: 'Встречный иск',
+    abilityDesc: 'Фиксирует все повреждения отряда: в конце раунда предъявляет боссу счёт и наносит ему 50% от суммарного урона, который получили все твои птицы в этом ходу!'
+  },
 
   // ==========================================
   // ЭПИЧЕСКИЕ КАРТЫ
@@ -325,6 +494,84 @@ export const CARDS_DATABASE = [
     image: 'assets/Market/Card/Guard Goose.png',
     abilityName: 'Фейсконтроль',
     abilityDesc: 'Принимает на себя весь урон от вражеской линии атак; с шансом 50% полностью игнорирует урон.'
+  },
+  {
+    id: 'overseer_owl',
+    name: 'Полярная Сова-Надзиратель',
+    subname: 'Строгий страж вечной мерзлоты',
+    role: 'Поддержка',
+    rarity: 'epic',
+    cost: 4,
+    atk: 13,
+    hp: 27,
+    image: 'assets/Market/Card/Overseer.png',
+    abilityName: 'Абсолютный ноль',
+    abilityDesc: 'Замораживает самую сильную зону атаки босса на поле (полностью отменяет удар по 1 клетке с наибольшим уроном) и даёт +2 HP себе.'
+  },
+  {
+    id: 'undertaker_marabou',
+    name: 'Марабу-Гробовщик',
+    subname: 'Похоронное бюро «Перо и Прах»',
+    role: 'Урон',
+    rarity: 'epic',
+    cost: 4,
+    atk: 12,
+    hp: 14,
+    image: 'assets/Market/Card/Undertaker.png',
+    abilityName: 'Некромант',
+    abilityDesc: 'Получает +6 ATK и +6 HP за каждую карту в твоём Сбросе (discard).'
+  },
+  {
+    id: 'rocker_capercaillie',
+    name: 'Глухарь-Рокер',
+    subname: 'Легенда лесного хэви-метала',
+    role: 'Поддержка',
+    rarity: 'epic',
+    cost: 4,
+    atk: 15,
+    hp: 25,
+    image: 'assets/Market/Card/Rocker.png',
+    abilityName: 'Соло на глушняк',
+    abilityDesc: 'Пока на поле, оглушительный рок снимает со всех союзников штрафы ловушек.'
+  },
+  {
+    id: 'admiral_albatross',
+    name: 'Альбатрос-Адмирал',
+    subname: 'Командующий пернатым флотом',
+    role: 'Урон',
+    rarity: 'epic',
+    cost: 4,
+    atk: 15,
+    hp: 25,
+    image: 'assets/Market/Card/Admiral.png',
+    abilityName: 'Отдать приказ!',
+    abilityDesc: 'Отдаёт приказ птице, стоящей в одной вертикальной колонке с ним — эта птица совершает повторную атаку (Double Strike) по боссу в этом раунде!'
+  },
+  {
+    id: 'imperial_penguin',
+    name: 'Императорский Пингвин-Могул',
+    subname: 'Властелин ледяного престола',
+    role: 'Сверх-танк',
+    rarity: 'epic',
+    cost: 4,
+    atk: 8,
+    hp: 48,
+    image: 'assets/Market/Card/Imperial.png',
+    abilityName: 'Указ о защите короны',
+    abilityDesc: 'Получая урон за ход, даёт всем отдыхающим картам +2 ATK.'
+  },
+  {
+    id: 'sirin_bird',
+    name: 'Птица-Сирин',
+    subname: 'Райская дева с птичьим телом',
+    role: 'Поддержка',
+    rarity: 'epic',
+    cost: 4,
+    atk: 16,
+    hp: 29,
+    image: 'assets/Market/Card/Sirin.png',
+    abilityName: 'Песнь Забвения',
+    abilityDesc: 'Все птицы, которые стоят на клетке с рунами, получают +5 HP, если они получали урон ранее.'
   },
 
   // ==========================================
@@ -394,6 +641,32 @@ export const CARDS_DATABASE = [
     image: 'assets/Market/Card/Celestial Knight.png',
     abilityName: 'Небесный стыд',
     abilityDesc: 'Сокрушительный удар на 28 урона. Комичный вид в труселях смущает бобра, снижая его меткость на 50%.'
+  },
+  {
+    id: 'sand_simurgh',
+    name: 'Песчаный Симург',
+    subname: 'Древний хранитель пустынных бурь',
+    role: 'Танк',
+    rarity: 'legendary',
+    cost: 5,
+    atk: 5,
+    hp: 35,
+    image: 'assets/Market/Card/Simurgh.png',
+    abilityName: 'Песчинка в глазу',
+    abilityDesc: 'Уменьшает весь урон от Прорыва на -25%, и разницу в уроне получает Симург.'
+  },
+  {
+    id: 'hell_rooster',
+    name: 'Адский Петух',
+    subname: 'Огненный вестник рассвета',
+    role: 'Урон',
+    rarity: 'legendary',
+    cost: 5,
+    atk: 25,
+    hp: 25,
+    image: 'assets/Market/Card/Rooster.png',
+    abilityName: 'Петушиный Крик',
+    abilityDesc: 'Взрывает все горящие клетки и ловушки на поле! За каждую активную ловушку или огонёк на арене наносит боссу +12 чистого огненного урона и оставляет за собой пламя на 2 хода.'
   }
 ];
 
