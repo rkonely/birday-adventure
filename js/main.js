@@ -104,8 +104,8 @@ class BirDayApp {
       this.startStage1Editor();
     });
 
-    events.on('stage:switch_to_stage2_board', () => {
-      this.startStage2Board();
+    events.on('stage:switch_to_stage2_board', (options = {}) => {
+      this.startStage2Board(null, options);
     });
 
     events.on('stage:switch_to_stage2_editor', () => {
@@ -765,7 +765,11 @@ class BirDayApp {
     if (btnDev) btnDev.classList.remove('active');
   }
 
-  startStage2Board(initialEggs = null) {
+  startStage2Board(initialEggs = null, options = {}) {
+    if (typeof initialEggs === 'object' && initialEggs !== null) {
+      options = initialEggs;
+      initialEggs = null;
+    }
     // Останавливаем все другие сцены
     if (this.stage1Flight) this.stage1Flight.stop();
     if (this.stage1Level) this.stage1Level.stop();
@@ -779,7 +783,7 @@ class BirDayApp {
       if (initialEggs !== null && initialEggs !== undefined) {
         this.stage2Board.setInitialEggs(initialEggs);
       }
-      this.stage2Board.start();
+      this.stage2Board.start(options);
     }
     audio.playMusic('BOARD_LEVEL2');
 

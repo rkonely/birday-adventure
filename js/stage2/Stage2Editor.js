@@ -247,8 +247,8 @@ export class Stage2Editor {
             <span>📤 ИМПОРТ</span>
             <input type="file" id="input-s2ed-import" accept=".json" class="sr-only">
           </label>
-          <button id="btn-s2ed-play" class="s2-ed-btn s2-ed-btn-play" title="Проверить карту в игре">
-            <span>▶️ ИГРАТЬ</span>
+          <button id="btn-s2ed-play" class="s2-ed-btn s2-ed-btn-play" title="Запустить тест-игру и проверять любые клетки">
+            <span>🎮 ТЕСТ-ИГРА</span>
           </button>
           <button id="btn-s2ed-exit" class="s2-ed-btn s2-ed-btn-exit" title="Выйти в меню">
             <span>✕ МЕНЮ</span>
@@ -422,6 +422,7 @@ export class Stage2Editor {
           </div>
 
           <div class="s2-insp-actions">
+            <button id="btn-s2-insp-test" class="s2-insp-btn btn-test-cell" title="Запустить тест и сразу сыграть это событие">🚀 СЫГРАТЬ ЭТО СОБЫТИЕ</button>
             <button id="btn-s2-insp-duplicate" class="s2-insp-btn btn-duplicate">📋 Дублировать</button>
             <button id="btn-s2-insp-delete" class="s2-insp-btn btn-delete">🗑️ Удалить</button>
           </div>
@@ -430,7 +431,7 @@ export class Stage2Editor {
 
       <!-- Подсказка по горячим клавишам снизу -->
       <div class="s2-ed-hint-bar">
-        <span>Клик: выбор | Центр: перетащить клетку | 4 Уголка (P0..P3): свободное искажение ромба | [Del]: удалить | [Ctrl+D]: копия | [Ctrl+S]: сохранить</span>
+        <span>Клик: выбор | 2x-клик: ТЕСТ КЛЕТКИ | Центр: перетащить | 4 Уголка: искажение | [Del]: удалить | [Ctrl+D]: копия | [Ctrl+S]: сохранить</span>
       </div>
     `;
 
@@ -549,7 +550,12 @@ export class Stage2Editor {
       btnPlay.addEventListener('click', () => {
         audio.playClick();
         this.applyChangesToBoard();
-        events.emit('stage:switch_to_stage2_board');
+        const targetIndex = this.selectedCell ? this.cells.indexOf(this.selectedCell) : 0;
+        events.emit('stage:switch_to_stage2_board', {
+          isTestMode: true,
+          keepCells: true,
+          targetCellIndex: targetIndex >= 0 ? targetIndex : 0
+        });
       });
     }
 
@@ -717,6 +723,21 @@ export class Stage2Editor {
       });
     }
 
+    const btnTest = document.getElementById('btn-s2-insp-test');
+    if (btnTest) {
+      btnTest.addEventListener('click', () => {
+        if (!this.selectedCell) return;
+        audio.playClick();
+        this.applyChangesToBoard();
+        const targetIndex = this.cells.indexOf(this.selectedCell);
+        events.emit('stage:switch_to_stage2_board', {
+          isTestMode: true,
+          keepCells: true,
+          targetCellIndex: targetIndex >= 0 ? targetIndex : 0
+        });
+      });
+    }
+
     const btnClose = document.getElementById('btn-s2-insp-close');
     if (btnClose) {
       btnClose.addEventListener('click', () => this.hideInspector());
@@ -772,6 +793,24 @@ export class Stage2Editor {
     this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
     this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
     window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+
+    // Двойной клик по клетке на холсте сразу запускает тест этой клетки и её события
+    this.canvas.addEventListener('dblclick', (e) => {
+      if (!this.isActive) return;
+      const pos = this.getCanvasCoords(e);
+      const clicked = this.findCellAt(pos.x, pos.y);
+      if (clicked) {
+        audio.playClick();
+        this.selectedCell = clicked;
+        this.applyChangesToBoard();
+        const targetIndex = this.cells.indexOf(clicked);
+        events.emit('stage:switch_to_stage2_board', {
+          isTestMode: true,
+          keepCells: true,
+          targetCellIndex: targetIndex >= 0 ? targetIndex : 0
+        });
+      }
+    });
   }
 
   getCanvasCoords(e) {

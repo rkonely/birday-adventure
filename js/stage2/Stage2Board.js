@@ -104,6 +104,9 @@ export class Stage2Board {
     this.tileAnchorBottom = 78;  // отступ в px от низа картинки до центра ромба (для 260px высоты)
     this.preloadTileSprites();
 
+    // Режим тестирования карты и мини-игр
+    this.isTestMode = false;
+
     // DOM UI элементы настолки
     this.uiContainer = null;
 
@@ -338,17 +341,35 @@ export class Stage2Board {
       if (clicked) {
         audio.playClick();
         this.selectedCell = clicked;
+        const cellIdx = this.cells.indexOf(clicked);
+
+        // В режиме тест-игры (или с зажатым Shift) клик по клетке МГНОВЕННО переносит игрока и запускает мини-игру/событие!
+        if (this.isTestMode || e.shiftKey) {
+          if (cellIdx !== -1) {
+            this.teleportToCell(cellIdx, true);
+            return;
+          }
+        }
+
         this.showCellInfoCard(clicked);
       }
     });
 
-    // Управление клавишей Пробел (Space): Бросок кубика -> Походить
+    // Управление клавишами
     window.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
       if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
         return;
       }
 
+      // Горячая клавиша [T]: скрыть / показать панель тест-режима
+      if (e.code === 'KeyT' || e.key === 't' || e.key === 'T' || e.key === 'е' || e.key === 'Е') {
+        e.preventDefault();
+        this.toggleTestMode();
+        return;
+      }
+
+      // Управление клавишей Пробел (Space): Бросок кубика -> Походить
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
 
@@ -421,9 +442,14 @@ export class Stage2Board {
   /* ==========================================================================
      Запуск и Остановка уровня
      ========================================================================== */
-  start() {
-    console.log('🎲 [Stage2Board] Запуск настольной игры...');
+  start(options = {}) {
+    console.log('🎲 [Stage2Board] Запуск настольной игры...', options);
     this.isActive = true;
+
+    const isTestMode = Boolean(options && (options.isTestMode || options.testMode));
+    this.isTestMode = isTestMode;
+    const keepCells = Boolean(options && options.keepCells);
+    const targetCellIndex = (options && typeof options.targetCellIndex === 'number') ? options.targetCellIndex : null;
 
     // 1. Устанавливаем статус
     gameState.setStage('STAGE_2_BOARD');
@@ -434,8 +460,8 @@ export class Stage2Board {
     // Всегда включаем отображение тайлов в настольном режиме
     this.showTileSprites = true;
 
-    // Всегда случайно генерируем клетки при входе в настольный режим
-    if (this.cells && this.cells.length > 0) {
+    // Случайно генерируем клетки только в обычной игре (не в редакторе и не при keepCells/testMode)
+    if (this.cells && this.cells.length > 0 && !keepCells && !isTestMode) {
       this.generateRandomBoard(true);
     }
 
@@ -449,6 +475,20 @@ export class Stage2Board {
       this.canvas.style.display = 'block';
       this.canvas.width = this.boardWidth;
       this.canvas.height = this.boardHeight;
+    }
+
+    // Режим тестирования: выдаем стартовые ресурсы для комфортного тестирования всех мини-игр и покупок
+    if (isTestMode) {
+      if (!this.eventManager.stats.eggs || this.eventManager.stats.eggs < 30) {
+        this.eventManager.stats.eggs = 30;
+      }
+      if (!this.eventManager.stats.rerollDice || this.eventManager.stats.rerollDice < 5) {
+        this.eventManager.stats.rerollDice = 5;
+      }
+      if (!this.eventManager.stats.boosterPacks || this.eventManager.stats.boosterPacks < 2) {
+        this.eventManager.stats.boosterPacks = 2;
+      }
+      this.eventManager.saveStats();
     }
 
     // Режим тестирования всех эффектов (?test_statuses)
@@ -471,6 +511,13 @@ export class Stage2Board {
 
     // Музыка для всей настольной игры (Gameboard Level2.mp3)
     audio.playMusic('BOARD_LEVEL2');
+
+    // Если был указан целевой индекс клетки — телепортируем и запускаем событие
+    if (targetCellIndex !== null && targetCellIndex >= 0 && targetCellIndex < this.cells.length) {
+      setTimeout(() => {
+        this.teleportToCell(targetCellIndex, true);
+      }, 120);
+    }
   }
 
   setInitialEggs(eggs) {
@@ -527,6 +574,29 @@ export class Stage2Board {
     this.uiContainer.className = 'stage2-board-ui';
 
     this.uiContainer.innerHTML = `
+      <!-- Верхняя панель тестирования клеток и мини-игр -->
+      <div id="s2-test-mode-bar" class="s2-test-mode-bar ${this.isTestMode ? '' : 'hidden'}">
+        <div class="s2-test-header-line">
+          <div class="s2-test-badge">🧪 ТЕСТ-РЕЖИМ</div>
+          <div class="s2-test-tip">💡 Клик по ЛЮБОЙ клетке поля сразу переносит туда и запускает мини-игру!</div>
+          <button id="btn-s2-test-toggle" class="s2-test-btn s2-test-btn-close" title="Свернуть панель (горячая клавиша: T)">✕</button>
+        </div>
+        <div class="s2-test-controls">
+          <div class="s2-test-cell-pick">
+            <label class="s2-test-label" for="s2-test-cell-select">Клетка:</label>
+            <select id="s2-test-cell-select" class="s2-test-select"></select>
+          </div>
+          <button id="btn-s2-test-jump" class="s2-test-btn s2-test-btn-jump" title="Переместиться на выбранную клетку и активировать событие">🚀 ПЕРЕЙТИ</button>
+          <div class="s2-test-btn-group">
+            <button id="btn-s2-test-prev" class="s2-test-btn s2-test-btn-nav" title="Предыдущая клетка (Шаг назад)">◀</button>
+            <button id="btn-s2-test-next" class="s2-test-btn s2-test-btn-nav" title="Следующая клетка (Шаг вперед)">▶</button>
+          </div>
+          <button id="btn-s2-test-res" class="s2-test-btn s2-test-btn-res" title="+30 яиц, +5 кубиков, +3 бустера">+🥚/🎲 Ресурсы</button>
+          <button id="btn-s2-test-to-editor" class="s2-test-btn s2-test-btn-editor" title="Вернуться в редактор карт">🛠️ В РЕДАКТОР</button>
+        </div>
+      </div>
+      <button id="btn-s2-test-open" class="s2-test-float-btn ${this.isTestMode ? 'hidden' : 'hidden'}" title="Развернуть панель тестирования (T)">🧪 ТЕСТ КЛЕТОК</button>
+
       <!-- Левый верхний угол: Активные статусы (Баффы и Дебаффы) и Компактные уведомления -->
       <div class="s2-top-left-rack">
         <div id="s2-status-effects" class="s2-status-effects"></div>
@@ -705,6 +775,144 @@ export class Stage2Board {
 
     // Инициализируем отрисовку активных баффов и дебаффов в левом верхнем углу
     this.renderStatusEffects();
+
+    // Инициализация панели тест-режима
+    this.populateTestCellSelect();
+    this.bindTestBarEvents();
+  }
+
+  populateTestCellSelect() {
+    const select = document.getElementById('s2-test-cell-select');
+    if (!select || !this.cells || this.cells.length === 0) return;
+
+    select.innerHTML = '';
+    this.cells.forEach((cell, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      const icon = cell.icon || '📍';
+      const cellNum = cell.index || (idx + 1);
+      const title = cell.title || cell.id || `Клетка #${cellNum}`;
+      opt.textContent = `#${cellNum} ${icon} ${title}`;
+      if (idx === this.currentCellIndex) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
+
+  bindTestBarEvents() {
+    const testBar = document.getElementById('s2-test-mode-bar');
+    const floatBtn = document.getElementById('btn-s2-test-open');
+    const select = document.getElementById('s2-test-cell-select');
+    const btnJump = document.getElementById('btn-s2-test-jump');
+    const btnPrev = document.getElementById('btn-s2-test-prev');
+    const btnNext = document.getElementById('btn-s2-test-next');
+    const btnRes = document.getElementById('btn-s2-test-res');
+    const btnToEditor = document.getElementById('btn-s2-test-to-editor');
+    const btnToggle = document.getElementById('btn-s2-test-toggle');
+
+    if (btnJump) {
+      btnJump.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!select) return;
+        const targetIdx = parseInt(select.value, 10);
+        if (!isNaN(targetIdx)) {
+          audio.playClick();
+          this.teleportToCell(targetIdx, true);
+        }
+      });
+    }
+
+    if (select) {
+      select.addEventListener('change', () => {
+        const targetIdx = parseInt(select.value, 10);
+        if (!isNaN(targetIdx)) {
+          audio.playClick();
+          this.teleportToCell(targetIdx, true);
+        }
+      });
+    }
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.playClick();
+        const prevIdx = (this.currentCellIndex - 1 + this.cells.length) % this.cells.length;
+        this.teleportToCell(prevIdx, true);
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.playClick();
+        const nextIdx = (this.currentCellIndex + 1) % this.cells.length;
+        this.teleportToCell(nextIdx, true);
+      });
+    }
+
+    if (btnRes) {
+      btnRes.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.playSuccess();
+        this.eventManager.stats.eggs = (this.eventManager.stats.eggs || 0) + 30;
+        this.eventManager.stats.rerollDice = (this.eventManager.stats.rerollDice || 0) + 5;
+        this.eventManager.stats.boosterPacks = (this.eventManager.stats.boosterPacks || 0) + 3;
+        this.eventManager.saveStats();
+        this.eventManager.updateHUD();
+        this.showToastNotification('🎁 Выдано: +30 яиц, +5 кубиков, +3 бустера!');
+      });
+    }
+
+    if (btnToEditor) {
+      btnToEditor.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.playClick();
+        events.emit('stage:switch_to_stage2_editor');
+      });
+    }
+
+    const toggleBar = (show) => {
+      if (testBar && floatBtn) {
+        if (show) {
+          testBar.classList.remove('hidden');
+          floatBtn.classList.add('hidden');
+        } else {
+          testBar.classList.add('hidden');
+          floatBtn.classList.remove('hidden');
+        }
+      }
+    };
+
+    if (btnToggle) {
+      btnToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleBar(false);
+      });
+    }
+
+    if (floatBtn) {
+      floatBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleBar(true);
+      });
+    }
+  }
+
+  toggleTestMode(forcedState = null) {
+    this.isTestMode = forcedState !== null ? forcedState : !this.isTestMode;
+    const testBar = document.getElementById('s2-test-mode-bar');
+    const floatBtn = document.getElementById('btn-s2-test-open');
+    if (this.isTestMode) {
+      if (testBar) testBar.classList.remove('hidden');
+      if (floatBtn) floatBtn.classList.add('hidden');
+      this.populateTestCellSelect();
+      this.showToastNotification('🧪 Тест-режим ВКЛЮЧЕН! Клик по клеткам переносит персонажа.');
+    } else {
+      if (testBar) testBar.classList.add('hidden');
+      if (floatBtn) floatBtn.classList.add('hidden');
+      this.showToastNotification('Режим обычной игры.');
+    }
   }
 
   removeUI() {
@@ -1283,15 +1491,31 @@ export class Stage2Board {
   teleportToCell(index, triggerEvent = true) {
     if (!this.cells || this.cells.length === 0) return;
     this.currentCellIndex = Math.max(0, Math.min(this.cells.length - 1, index));
+    this.isMoving = false;
+    this.movePath = [];
+    this.isRollingDice = false;
+    this.isDiceSettled = false;
+    this.resetDiceButtonToRoll();
+
     const cell = this.cells[this.currentCellIndex];
     if (cell) {
       const center = this.getCellCenter(cell);
-      this.playerVisualPos = { x: center.x, y: center.y };
-      this.targetVisualPos = { x: center.x, y: center.y };
-      this.savePlayerPosition();
+      this.playerVisualPos = { x: center.x, y: center.y - 25 };
+      this.targetVisualPos = { x: center.x, y: center.y - 25 };
+      this.updateDirection();
+
       const elStep = document.getElementById('s2-current-step');
       if (elStep) elStep.textContent = `${this.currentCellIndex + 1} / ${this.cells.length}`;
+
+      const selectEl = document.getElementById('s2-test-cell-select');
+      if (selectEl) {
+        selectEl.value = String(this.currentCellIndex);
+      }
+
       if (triggerEvent) {
+        if (this.eventManager && this.eventManager.modal) {
+          this.eventManager.modal.close();
+        }
         this.triggerCellEvent(cell);
       }
     }

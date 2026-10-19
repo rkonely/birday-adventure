@@ -6873,3 +6873,235 @@ body {
   min-width: 170px;
   padding: 10px 18px;
 }
+
+/* ==========================================================================
+   ПАНЕЛЬ ТЕСТ-РЕЖИМА НАСТОЛКИ (Stage 2 Test Navigation Bar)
+   ========================================================================== */
+.s2-test-mode-bar {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(860px, 92vw);
+  background: linear-gradient(135deg, rgba(22, 28, 38, 0.95), rgba(12, 16, 24, 0.98));
+  border: 2px solid #38bdf8;
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.35);
+  backdrop-filter: blur(8px);
+  z-index: 60;
+  pointer-events: auto;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: s2SlideDown 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes s2SlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.s2-test-header-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.s2-test-badge {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #f0f9ff;
+  font-family: '8bitoperator', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.s2-test-tip {
+  color: #bae6fd;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.s2-test-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.s2-test-cell-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.s2-test-label {
+  color: #7dd3fc;
+  font-family: '8bitoperator', monospace;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.s2-test-select {
+  flex: 1;
+  background: #0f172a;
+  border: 1.5px solid #38bdf8;
+  border-radius: 8px;
+  color: #f8fafc;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+  max-width: 280px;
+}
+
+.s2-test-select:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.s2-test-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: '8bitoperator', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.s2-test-btn:hover {
+  transform: translateY(-2px);
+}
+
+.s2-test-btn:active {
+  transform: translateY(1px);
+}
+
+.s2-test-btn-jump {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #ecfdf5;
+  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.4);
+}
+
+.s2-test-btn-jump:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+}
+
+.s2-test-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.s2-test-btn-nav {
+  background: #334155;
+  color: #f1f5f9;
+  padding: 7px 10px;
+}
+
+.s2-test-btn-nav:hover {
+  background: #475569;
+}
+
+.s2-test-btn-res {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #fffbeb;
+  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35);
+}
+
+.s2-test-btn-res:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+.s2-test-btn-editor {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #eef2ff;
+  box-shadow: 0 3px 8px rgba(99, 102, 241, 0.35);
+}
+
+.s2-test-btn-editor:hover {
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.5);
+}
+
+.s2-test-btn-close {
+  background: transparent;
+  color: #94a3b8;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+.s2-test-btn-close:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Плавающая кнопка разворачивания панели теста */
+.s2-test-float-btn {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border: 2px solid #38bdf8;
+  color: #fff;
+  font-family: '8bitoperator', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(56, 189, 248, 0.4);
+  cursor: pointer;
+  z-index: 60;
+  pointer-events: auto;
+  transition: all 0.15s ease-out;
+}
+
+.s2-test-float-btn:hover {
+  transform: translate(-50%, -2px);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.55);
+}
+
+/* Кнопка "СЫГРАТЬ ЭТО СОБЫТИЕ" в инспекторе клеток редактора */
+.btn-test-cell {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4);
+  grid-column: span 2;
+  border: 1.5px solid #34d399 !important;
+}
+
+.btn-test-cell:hover {
+  background: linear-gradient(135deg, #34d399, #10b981) !important;
+  box-shadow: 0 4px 14px rgba(52, 211, 153, 0.6) !important;
+  transform: translateY(-1px);
+}
