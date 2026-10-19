@@ -3,6 +3,7 @@ import { events } from '../core/EventManager.js';
 import { gameState } from '../core/GameState.js';
 import { BoardEventManager } from './BoardEventManager.js';
 import { BoardGenerator } from './BoardGenerator.js';
+import { EVENT_TEMPLATES } from './boardEventsData.js';
 
 /**
  * Stage2Board — Игровой уровень Настольной Игры (Этап 2).
@@ -1227,6 +1228,14 @@ export class Stage2Board {
   advancePlayer(steps) {
     if (this.cells.length === 0) return;
 
+    // Учитываем бафф ускорения хода (Попутный ветер)
+    const bonusSpeed = this.eventManager.stats.speedBoost || 0;
+    if (bonusSpeed > 0) {
+      steps += bonusSpeed;
+      this.eventManager.stats.speedBoost = 0;
+      this.eventManager.saveStats();
+    }
+
     // Проверяем реверс хода (сбитый ориентир в тумане Cell 10)
     const isReverse = this.eventManager.stats.reverseNextMove;
     let targetIndex;
@@ -1258,6 +1267,34 @@ export class Stage2Board {
     }
     this.isMoving = true;
     this.processNextMoveStep();
+  }
+
+  stepForward(count = 1) {
+    if (this.cells.length === 0) return;
+    const targetIndex = Math.min(this.cells.length - 1, this.currentCellIndex + count);
+    this.movePath = [];
+    for (let i = this.currentCellIndex + 1; i <= targetIndex; i++) {
+      this.movePath.push(i);
+    }
+    this.isMoving = true;
+    this.processNextMoveStep();
+  }
+
+  teleportToCell(index, triggerEvent = true) {
+    if (!this.cells || this.cells.length === 0) return;
+    this.currentCellIndex = Math.max(0, Math.min(this.cells.length - 1, index));
+    const cell = this.cells[this.currentCellIndex];
+    if (cell) {
+      const center = this.getCellCenter(cell);
+      this.playerVisualPos = { x: center.x, y: center.y };
+      this.targetVisualPos = { x: center.x, y: center.y };
+      this.savePlayerPosition();
+      const elStep = document.getElementById('s2-current-step');
+      if (elStep) elStep.textContent = `${this.currentCellIndex + 1} / ${this.cells.length}`;
+      if (triggerEvent) {
+        this.triggerCellEvent(cell);
+      }
+    }
   }
 
   processNextMoveStep() {
@@ -1472,7 +1509,16 @@ export class Stage2Board {
     if (!spriteName) return null;
     if (!this.tileImages[spriteName]) {
       const img = new Image();
-      img.src = `assets/Second Level/Event - Title/${spriteName}`;
+      let src = spriteName;
+      if (!src.startsWith('assets/')) {
+        src = `assets/Second Level/Event - Title/Forest/${spriteName}`;
+      }
+      img.src = src;
+      img.onerror = () => {
+        if (src.includes('/Forest/')) {
+          img.src = `assets/Second Level/Event - Title/${spriteName}`;
+        }
+      };
       this.tileImages[spriteName] = img;
     }
     return this.tileImages[spriteName];
@@ -1481,12 +1527,21 @@ export class Stage2Board {
   preloadTileSprites() {
     const keySprites = [
       'Empty-Tile1.png', 'Empty-Tile2.png', 'Empty-Tile3.png', 'Empty-Tile4.png',
-      'Regular Chest.png', 'Legendary Chest.png', 'campfire.png', 'clover.png',
-      'Sharp spikes.png', 'poisonous egg.png', 'Wheel of Fortune.png', 'bingo machine.png',
-      'force gauge.png', 'Hourglass.png', 'Random-box.png', 'Cunning Fox.png',
-      'Boss Room.png', 'portal to the abyss.png', 'Gift Box.png', 'God Bless.png',
-      'Bless-Elixire.png', 'bottle of water.png', 'crystal ball.png', 'bag of eggs.png',
-      'Magnet.png', 'Landmark.png', 'Toy Vending Machine.png', 'basement hatch.png'
+      'Boss Room.png', 'closed tile.png', 'Regular Chest.png', 'Legendary Chest.png',
+      'bag of eggs.png', 'clover.png', 'Magnet.png', 'Gift Box.png', 'Golden Compas.png',
+      'crystal ball.png', 'campfire.png', 'Library.png', 'Landmark.png', 'basement hatch.png',
+      'bottle of water.png', 'map bag.png', 'God Bless.png', 'Bless-Elixire.png',
+      'Monument.png', 'Small Monument.png', 'poisonous egg.png', 'prickly bush.png',
+      'Cunning Fox.png', 'Wooden Totem.png', 'Devil-Dmg.png', 'Wheel of Fortune.png',
+      'Random-box.png', 'force gauge.png', 'Hourglass.png', 'bingo machine.png',
+      'Toy Vending Machine.png', 'stairway to cellar.png', 'empty bowl.png', 'Bee comb.png',
+      'Bell.png', 'Darts.png', 'Duck Fishing Game.png', 'Flying Dice.png', 'Golden Key.png',
+      'Golden Pen.png', 'The Cursed Monument.png', 'Spring Platform.png', 'cage with a spiderweb.png',
+      'portal to the abyss.png', 'mushroom house.png', 'Sharp spikes.png', 'ring toss.png',
+      'scratch-off ticket.png', 'water fountain.png', 'Anvil.png', 'Blue-Crystal.png',
+      'burning resin.png', 'Helping animal caught in trap.png', 'hidden beast in bushes-cat.png',
+      'hollow stump.png', 'Iron Trap.png', 'mill.png', 'peace-wood.png', 'Pearl-in-Nest.png',
+      'rowan.png', 'Rune-Stone.png', 'scales with pans.png', 'telescope.png', 'Toolbox.png'
     ];
     keySprites.forEach(name => this.getTileImage(name));
   }
@@ -1604,27 +1659,51 @@ export class Stage2Board {
       });
     }
 
-    // 8. Золотые Крылья (Buff) — GoldenWings-Buff-Icon.png
+    // 8. Золотые Крылья / Попутный Ветер (Buff)
     if (stats.hasGoldenWings || stats.speedBoost) {
       effects.push({
         id: 'wings',
         type: 'buff',
         icon: 'assets/UI/GoldenWings-Buff-Icon.png',
-        title: 'Золотые Крылья',
-        count: '✈',
-        desc: 'Порыв попутного ветра: дарует птичью легкость и дополнительную скорость.'
+        title: stats.speedBoost ? `Попутный Ветер (+${stats.speedBoost})` : 'Золотые Крылья',
+        count: stats.speedBoost ? `+${stats.speedBoost}` : '✈',
+        desc: stats.speedBoost ? `Порыв ветра: к следующему броску кубика автоматически добавится +${stats.speedBoost} шага!` : 'Птичья легкость в пути.'
       });
     }
 
-    // 9. Золотой Ключ (Buff) — GoldenKey-Buff-Icon.png
+    // 9. Золотой Ключ (Buff)
     if (stats.hasGoldenKey) {
       effects.push({
         id: 'key',
         type: 'buff',
         icon: 'assets/UI/GoldenKey-Buff-Icon.png',
-        title: 'Золотой Ключ',
+        title: 'Золотой Ключ Врат',
         count: '🔑',
-        desc: 'Древний ключ: открывает потайные лесные лари и врата цитадели.'
+        desc: 'Древний артефакт: отпирает цепи на 54-й клетке и позволяет пройти на 2-й круг перед битвой с Боссом!'
+      });
+    }
+
+    // 10. Компас Туриста (Buff)
+    if (stats.hasCompass) {
+      effects.push({
+        id: 'compass',
+        type: 'buff',
+        icon: 'assets/Second Level/Event - Title/Forest/Golden Compas.png',
+        title: 'Компас Туриста',
+        count: '🧭',
+        desc: 'Точная навигация: защищает от искривления пространства и потери ориентира в тумане.'
+      });
+    }
+
+    // 11. Бафф Клевера (Buff)
+    if (stats.hasCloverBuff) {
+      effects.push({
+        id: 'clover_buff',
+        type: 'buff',
+        icon: 'assets/Second Level/Event - Title/Forest/clover.png',
+        title: 'Удача Четырёхлистника',
+        count: '🍀',
+        desc: 'Подсказка леса: уберёт 2 неверных варианта в следующем испытании или викторине!'
       });
     }
 
@@ -1708,15 +1787,21 @@ export class Stage2Board {
   }
 
   renderSingleTileSprite(cell, index) {
-    const spriteName = cell.tileSprite || this.getDefaultTileSprite(cell.type);
-    if (!spriteName) return;
-
-    // Временно исключаем пустые клетки Empty-Tile1, Empty-Tile2, Empty-Tile3 из прорисовки
-    if (spriteName === 'Empty-Tile1.png' || spriteName === 'Empty-Tile2.png' || spriteName === 'Empty-Tile3.png') {
-      return;
+    const tpl = cell.eventId && EVENT_TEMPLATES[cell.eventId];
+    // Приоритет: спрайт из шаблона EVENT_TEMPLATES -> спрайт клетки -> дефолтный по типу
+    let spriteName = (tpl && tpl.tileSprite) || cell.tileSprite || this.getDefaultTileSprite(cell.type);
+    if (!spriteName) {
+      spriteName = this.getDefaultTileSprite(cell.type) || 'campfire.png';
     }
 
-    const img = this.getTileImage(spriteName);
+    let img = this.getTileImage(spriteName);
+    // Если картинка не найдена или не загрузилась — пробуем дефолтный спрайт типа клетки
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      const fallback = this.getDefaultTileSprite(cell.type) || 'campfire.png';
+      if (fallback !== spriteName) {
+        img = this.getTileImage(fallback);
+      }
+    }
     if (!img || !img.complete || img.naturalWidth === 0) return;
 
     const center = this.getCellCenter(cell);
@@ -1772,11 +1857,12 @@ export class Stage2Board {
       case 'GOOD': return 'Regular Chest.png';
       case 'BAD': return 'Sharp spikes.png';
       case 'BOSS': return 'Boss Room.png';
-      case 'FINISH': return 'portal to the abyss.png';
+      case 'FINISH': return 'closed tile.png';
+      case 'BARRIER': return 'closed tile.png';
       case 'MINIGAME': return 'Wheel of Fortune.png';
       case 'DICE_BONUS': return 'clover.png';
       case 'NORMAL':
-      default: return null;
+      default: return 'campfire.png';
     }
   }
 

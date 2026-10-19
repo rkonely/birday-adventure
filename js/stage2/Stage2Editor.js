@@ -286,45 +286,81 @@ export class Stage2Editor {
             <select id="insp-cell-event-template">
               <option value="">-- Без шаблона (по номеру шага) --</option>
               <optgroup label="🎁 Награды и Клады">
-                <option value="chest_regular">📦 Обычный Сундук (+6 яиц)</option>
-                <option value="beaver_legendary_chest">👑 Легендарный Сундук Бобра (+3 бустера)</option>
-                <option value="lucky_clover">🍀 Клевер Удачи (+3 кубика)</option>
-                <option value="egg_pouch">🥚 Мешочек Яиц (+5 яиц)</option>
-                <option value="egg_magnet">🧲 Яичный Магнит (x2)</option>
-                <option value="holiday_gift">🎁 Праздничный Подарок (+1 бустер)</option>
-                <option value="magic_oracle">🔮 Магическое Предсказание</option>
+                <option value="chest_regular">📦 Окованный Ларец (+6 яиц)</option>
+                <option value="beaver_legendary_chest">👑 Кованый Ларь Архитектора (+3 бустера)</option>
+                <option value="egg_pouch">🥚 Походный Саквояж (+5 яиц)</option>
+                <option value="merchant_stash">🧭 Золотой Компас (пропуск ловушек)</option>
+                <option value="egg_magnet">🧲 Магнитный Оберег (x2)</option>
+                <option value="holiday_gift">🎁 Именной Свёрток (+1 бустер)</option>
+                <option value="magic_oracle">🔮 Видение Оракула</option>
+                <option value="four_leaf_clover">🍀 Четырёхлистный Клевер (+1 переброс)</option>
+                <option value="speed_boost">💨 Попутный Ветер (удвоение хода)</option>
+                <option value="treasure_trove">🏝️ Тайный Остров Сокровищ (+15 яиц / карта)</option>
+                <option value="magic_seed">🌱 Волшебный Росток</option>
+                <option value="ancient_chest">🗿 Древний Каменный Сундук</option>
+                <option value="horn_of_plenty">📯 Рог Изобилия (+10 яиц)</option>
+                <option value="golden_horseshoe">🧲 Золотая Подкова</option>
+                <option value="golden_key">🔑 Золотой Ключ от Плотины (Клетка 33)</option>
               </optgroup>
               <optgroup label="🎲 Мини-игры и Азарт">
-                <option value="mystery_boxes">🎁 Коробка с Сюрпризом (4 кубика)</option>
-                <option value="wheel_fortune">🎡 Колесо Лесной Фортуны!</option>
-                <option value="strongman_game">🔨 Проверка Силача! (Силомер)</option>
-                <option value="timestop_game">⏱️ Остановка Времени (Секундомер)</option>
-                <option value="bingo_game">🎱 Птичье Бинго (Лотерея)</option>
-                <option value="toy_claw_machine">🕹️ Автомат с Игрушками (Кран)</option>
+                <option value="wheel_fortune">🎡 Колесо Лесной Фортуны</option>
+                <option value="lucky_clover">🍀 Четырёхлистник Судьбы</option>
+                <option value="strongman_game">🔨 Наковальня Лесоруба (Силомер)</option>
+                <option value="timestop_game">⏱️ Хронометр Часовщика</option>
+                <option value="bingo_game">🎱 Лесной Розыгрыш (Бинго)</option>
+                <option value="toy_claw_machine">🕹️ Механический Захват</option>
+                <option value="mystery_boxes">📦 Ларцы Иллюзиониста</option>
+                <option value="abandoned_cellar">🗝️ Запертый Погреб (Штифты)</option>
+                <option value="forest_thimbles">🌰 Игра в Скорлупки</option>
+                <option value="darts_target">🎯 Дартс по Мишеням (Мини-игра)</option>
+                <option value="duck_fishing">🎣 Рыбалка с Уточками (Мини-игра)</option>
+                <option value="ring_toss">⭕ Кольцеброс (Мини-игра)</option>
+                <option value="scratch_ticket">🎫 Лотерейный Билет (Мини-игра)</option>
               </optgroup>
-              <optgroup label="🏕️ Квесты и Развилки">
-                <option value="quiz_campfire">🏕️ Отдых у костра (Викторина)</option>
-                <option value="foggy_crossroad">🌫️ Развилка в тумане</option>
-                <option value="mysterious_basement">🚪 Таинственный Подвал</option>
-                <option value="abandoned_cellar">🗝️ Заброшенный Подвал</option>
-                <option value="spring_flask">🧪 Колба с Родниковой Водой</option>
+              <optgroup label="🏕️ Квесты и Лесные Встречи">
+                <option value="quiz_campfire">🏕️ Привал у Лесного Костра (Викторина)</option>
+                <option value="forest_riddle_owl">🦉 Дозор Старого Филина (Загадка)</option>
+                <option value="owl_archive">📚 Библиотека Древних Птиц (Архив)</option>
+                <option value="foggy_crossroad">🌫️ Развилка в Тумане</option>
+                <option value="smuggler_deal">🛍️ Сделка с Сорокой</option>
+                <option value="spring_flask">🧪 Сосуд с Живой Росой</option>
+                <option value="beaver_patrol_gate">🌊 Мельница Бобров</option>
+                <option value="ferryman_crossing">🛶 Переправа Паромщика</option>
+                <option value="abandoned_wagon">🛒 Сломанная Повозка</option>
+                <option value="bee_apiary">🐝 Дикая Пасека</option>
+                <option value="mushroom_glade">🍄 Грибная Поляна</option>
+                <option value="ancient_altar">🪨 Древнее Каменное Святилище</option>
+                <option value="beaver_patrol_checkpoint">⛩️ Деревянный КПП Бобров</option>
+                <option value="magic_well">⛲ Колодец Желаний</option>
+                <option value="scales_balance">⚖️ Чаши Весов Судьбы</option>
+                <option value="alchemist_tent">🎪 Шатёр Алхимика</option>
               </optgroup>
               <optgroup label="⚠️ Опасности и Ловушки">
-                <option value="spoiled_egg">☣️ Тухлое Яйцо! (Яд 5 ходов)</option>
-                <option value="poison_thorns">🥀 Ядовитые Шипы! (Яд 4 хода)</option>
-                <option value="fox_ambush">🦊 Нападение Хитрой Лисы (-3 яйца)</option>
-                <option value="thunder_strike">⚡ Кара Небесная! (-5 HP)</option>
-                <option value="magic_barrier">🛑 ТЫ НЕ ПРОЙДЕШЬ! (-1 клетка)</option>
+                <option value="poison_thorns">🥀 Заросли Чёрного Терновника (Яд 4 хода)</option>
+                <option value="spoiled_egg">☣️ Болотная Испарина (Яд 5 ходов)</option>
+                <option value="fox_ambush">🦊 Лисья Засада (-3 яйца)</option>
+                <option value="beaver_patrol_tax">🦫 Застава Дровосеков (Пошлина)</option>
+                <option value="mysterious_basement">🚪 Подземелье под Корнями</option>
+                <option value="thunder_strike">⚡ Грозовой Разряд (-5 HP)</option>
+                <option value="spider_web">🕸️ Липкая Паутина</option>
+                <option value="cursed_tomb">⚰️ Проклятый Курган</option>
+                <option value="greedy_mole">🦡 Крот-Скряга</option>
+                <option value="swamp_quagmire">🌾 Трясина Глухолесья</option>
+                <option value="predatory_plant">🌿 Плотоядный Плющ</option>
+                <option value="crow_thief">🦅 Вороватая Ворона</option>
+                <option value="bandit_ambush">🦹 Засада Разбойников</option>
+                <option value="cursed_mirror">🪞 Зеркало Искажения</option>
               </optgroup>
               <optgroup label="💖 Исцеление и Алтари">
-                <option value="divine_healing">💧 Божественное Исцеление</option>
-                <option value="immunity_elixir">🛡️ Эликсир Иммунитета (Щит)</option>
-                <option value="sacrifice_monument">🗿 Монумент Самопожертвования</option>
-                <option value="charity_monument">🤲 Монумент Милосердия</option>
+                <option value="divine_healing">💧 Чистый Источник</option>
+                <option value="immunity_elixir">🛡️ Янтарный Эликсир (Иммунитет)</option>
+                <option value="sacrifice_monument">🗿 Алтарь Стража</option>
+                <option value="charity_monument">🤲 Чаша Возмездия и Щедрости</option>
               </optgroup>
               <optgroup label="🦫 Сюжетные врата">
                 <option value="start_gate">🚪 Врата Черепа (Старт)</option>
-                <option value="boss_gate">🦫 Логово Бобра (Босс-файт)</option>
+                <option value="boss_gate">🦫 Цитадель Плотины (Босс)</option>
+                <option value="magic_barrier">🛑 Зачарованный Завал (Клетка 54 / Барьер 2-го круга)</option>
               </optgroup>
             </select>
           </div>
@@ -554,6 +590,7 @@ export class Stage2Editor {
           this.selectedCell.title = tmpl.title;
           this.selectedCell.description = tmpl.text;
           this.selectedCell.icon = tmpl.icon || '🌲';
+          if (tmpl.tileSprite) this.selectedCell.tileSprite = tmpl.tileSprite;
 
           if (tmpl.type === 'boss_door') this.selectedCell.type = 'BOSS';
           else if (tmpl.type === 'info') this.selectedCell.type = 'START';

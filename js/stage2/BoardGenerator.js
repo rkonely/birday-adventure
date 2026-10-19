@@ -13,7 +13,7 @@ export const TILE_SPRITES = {
   BAD: 'Sharp spikes.png',
   MINIGAME: 'Wheel of Fortune.png',
   BOSS: 'Boss Room.png',
-  BARRIER: 'portal to the abyss.png'
+  BARRIER: 'closed tile.png'
 };
 
 export const EVENT_POOLS = {
@@ -27,8 +27,8 @@ export const EVENT_POOLS = {
       maxPerBoard: 3
     },
     {
-      eventId: 'forest_riddle_owl',
-      title: 'Дозор Старого Филина',
+      eventId: 'owl_library',
+      title: 'Лесной Архив Филина',
       description: 'Мудрый страж ветвей приготовил вопрос для внимательного путника.',
       tileSprite: 'Library.png',
       weight: 9,
@@ -51,13 +51,13 @@ export const EVENT_POOLS = {
       maxPerBoard: 3
     },
     {
-      eventId: 'smuggler_deal',
-      title: 'Сделка с Сорокой',
+      eventId: 'mail_bag',
+      title: 'Почтовая Сумка с Картами',
       description: 'Лесная торговка предлагает обменять припасы на редкий набор карт.',
       tileSprite: 'map bag.png',
       weight: 8,
       maxPerBoard: 2,
-      minStep: 8
+      minStep: 6
     },
     {
       eventId: 'magic_oracle',
@@ -65,6 +65,118 @@ export const EVENT_POOLS = {
       description: 'В глубине хрустальной сферы мелькают знаки будущих побед.',
       tileSprite: 'crystal ball.png',
       weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'mysterious_basement',
+      title: 'Подземелье под Корнями',
+      description: 'Тёмный люк под корнями: внутри ждёт либо награда, либо испытание.',
+      tileSprite: 'basement hatch.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'wild_beehive',
+      title: 'Дикие Соты',
+      description: 'Лесной улей полон целебного дикого мёда.',
+      tileSprite: 'Bee comb.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'forest_bell',
+      title: 'Лесной Колокол',
+      description: 'Бронзовый колокол на развилке лесных троп.',
+      tileSprite: 'Bell.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'golden_pen',
+      title: 'Золотое Перо',
+      description: 'Канцелярия лесного секретаря и учёт припасов.',
+      tileSprite: 'Golden Pen.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'mushroom_teremok',
+      title: 'Грибной Теремок',
+      description: 'Уютный домик под шляпкой лесного боровика.',
+      tileSprite: 'mushroom house.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'autumn_fountain',
+      title: 'Чаша Осеннего Фонтана',
+      description: 'Каменный фонтан с чистейшей родниковой водой.',
+      tileSprite: 'water fountain.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'blacksmith_anvil',
+      title: 'Кузнечная Наковальня',
+      description: 'Походная кузница дятла-бронника для укрепления снаряжения.',
+      tileSprite: 'Anvil.png',
+      weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'blue_crystal',
+      title: 'Синий Кристалл Эфира',
+      description: 'Магический минерал пульсирует чистой энергией птичьей магии.',
+      tileSprite: 'Blue-Crystal.png',
+      weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'glowing_stump',
+      title: 'Сияющий Пень',
+      description: 'Древний замшелый пень, светящийся изнутри спорами магии.',
+      tileSprite: 'hollow stump.png',
+      weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'wind_mill',
+      title: 'Старая Ветряная Мельница',
+      description: 'Деревянные крылья со скрипом вращаются над верхушками елей.',
+      tileSprite: 'mill.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'ancient_rune_stone',
+      title: 'Рунный Камень Древних',
+      description: 'Монолит с рунами древних птичьих хранителей.',
+      tileSprite: 'Rune-Stone.png',
+      weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'brass_telescope',
+      title: 'Латунный Телескоп',
+      description: 'Дозорная вышка с подзорной трубой для разведки пути.',
+      tileSprite: 'telescope.png',
+      weight: 7,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'master_toolbox',
+      title: 'Красный Ящик Мастера',
+      description: 'Набор инструментов лесного инженера для починки снаряжения.',
+      tileSprite: 'Toolbox.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'beaver_bridge_outpost',
+      title: 'Бобровая Застава на Мосту',
+      description: 'Опорный пункт дровосеков на переходе через лесной канал.',
+      tileSprite: 'peace-wood.png',
+      weight: 8,
       maxPerBoard: 2
     }
   ],
@@ -82,7 +194,7 @@ export const EVENT_POOLS = {
       title: 'Кованый Ларь Архитектора',
       description: 'Элитный резерв плотины с наборами карт для финальной битвы.',
       tileSprite: 'Legendary Chest.png',
-      weight: 4,
+      weight: 5,
       maxPerBoard: 2,
       minStep: 14
     },
@@ -91,32 +203,32 @@ export const EVENT_POOLS = {
       title: 'Походный Саквояж',
       description: 'Кожаная сумка с отборными яйцами, оставленная на ветвях.',
       tileSprite: 'bag of eggs.png',
-      weight: 18
+      weight: 14
     },
     {
-      eventId: 'merchant_stash',
-      title: 'Привал Контрабандиста',
-      description: 'Повозка с припасами и запасным кубиком переброса.',
+      eventId: 'lost_compass',
+      title: 'Золотой Компас',
+      description: 'Зачарованный компас указывает безопасный путь мимо ловушек.',
       tileSprite: 'Golden Compas.png',
-      weight: 10,
-      maxPerBoard: 3
+      weight: 9,
+      maxPerBoard: 2
     },
     {
       eventId: 'egg_magnet',
       title: 'Магнитный Оберег',
-      description: 'Реликвия кузницы, удваивающая следующую находку яиц.',
+      description: 'Реликвия кузницы, притягивающая яйца из лесных тайников.',
       tileSprite: 'Magnet.png',
       weight: 9,
-      maxPerBoard: 3
+      maxPerBoard: 2
     },
     {
       eventId: 'divine_healing',
       title: 'Чистый Источник',
       description: 'Ключевая вода снимает отравление и возвращает утраченные припасы.',
       tileSprite: 'God Bless.png',
-      weight: 6,
+      weight: 8,
       maxPerBoard: 2,
-      minStep: 10
+      minStep: 8
     },
     {
       eventId: 'holiday_gift',
@@ -124,15 +236,15 @@ export const EVENT_POOLS = {
       description: 'Праздничная коробка с боевым бустером карт внутри.',
       tileSprite: 'Gift Box.png',
       weight: 8,
-      maxPerBoard: 3
+      maxPerBoard: 2
     },
     {
       eventId: 'immunity_elixir',
       title: 'Янтарный Эликсир',
       description: 'Защитный настой, оберегающий от одной ловушки или яда.',
       tileSprite: 'Bless-Elixire.png',
-      weight: 10,
-      maxPerBoard: 3
+      weight: 8,
+      maxPerBoard: 2
     },
     {
       eventId: 'sacrifice_monument',
@@ -146,86 +258,163 @@ export const EVENT_POOLS = {
       eventId: 'charity_monument',
       title: 'Чаша Возмездия и Щедрости',
       description: 'Тотем, способный многократно возместить потерянные в пути яйца.',
-      tileSprite: 'The Cursed Monument.png',
-      weight: 5,
+      tileSprite: 'Small Monument.png',
+      weight: 6,
       maxPerBoard: 2,
-      minStep: 16
+      minStep: 12
+    },
+    {
+      eventId: 'lucky_clover',
+      title: 'Четырёхлистный Клевер',
+      description: 'Легендарный цветок удачи удваивает награды на следующих клетках.',
+      tileSprite: 'clover.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'flying_dice',
+      title: 'Крылатый Кубик',
+      description: 'Лёгкий лесной бриз наполняет крылья: следующий бросок удваивается.',
+      tileSprite: 'Flying Dice.png',
+      weight: 9,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'pearl_in_nest',
+      title: 'Жемчужина в Гнезде',
+      description: 'Редчайшая сияющая жемчужина, спрятанная в ивовом гнезде.',
+      tileSprite: 'Pearl-in-Nest.png',
+      weight: 7,
+      maxPerBoard: 2,
+      minStep: 10
+    },
+    {
+      eventId: 'ripe_rowan',
+      title: 'Гроздь Спелой Рябины',
+      description: 'Свежие лесные ягоды восстанавливают силы и приманивают птиц.',
+      tileSprite: 'rowan.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'trapped_animal',
+      title: 'Птица в Сети',
+      description: 'Освободите попавшего в ловушку сородича и обретите верного друга.',
+      tileSprite: 'Helping animal caught in trap.png',
+      weight: 7,
+      maxPerBoard: 2
     }
   ],
 
   BAD: [
     {
-      eventId: 'poison_thorns',
-      title: 'Заросли Чёрного Терновника',
-      description: 'Колючие плети отравляют путника токсином на 4 хода.',
+      eventId: 'sharp_spikes',
+      title: 'Острые Колья',
+      description: 'Опасные колья лесных браконьеров ранят зазевавшегося путника.',
       tileSprite: 'Sharp spikes.png',
-      weight: 12
+      weight: 10
+    },
+    {
+      eventId: 'poison_thorns',
+      title: 'Заросли Колючего Терновника',
+      description: 'Колючие плети отравляют путника токсином на 4 хода.',
+      tileSprite: 'prickly bush.png',
+      weight: 9
     },
     {
       eventId: 'spoiled_egg',
       title: 'Болотная Испарина',
       description: 'Ядовитые споры ослабляют здоровье в течение 5 ходов.',
       tileSprite: 'poisonous egg.png',
-      weight: 10
+      weight: 9
     },
     {
       eventId: 'fox_ambush',
       title: 'Лисья Засада',
       description: 'Рыжая плутовка охотится за содержимым вашего походного мешка.',
       tileSprite: 'Cunning Fox.png',
-      weight: 11,
+      weight: 9,
       minStep: 5
     },
     {
-      eventId: 'beaver_patrol_tax',
-      title: 'Застава Дровосеков',
+      eventId: 'wooden_totem',
+      title: 'Тотем Лесных Духов',
       description: 'Механический часовой плотины взимает пошлину за проход.',
       tileSprite: 'Wooden Totem.png',
-      weight: 10,
+      weight: 9,
       minStep: 6
     },
     {
-      eventId: 'mysterious_basement',
-      title: 'Подземелье под Корнями',
-      description: 'Тёмный люк под корнями: внутри ждёт либо награда, либо засада.',
-      tileSprite: 'basement hatch.png',
-      weight: 9,
-      maxPerBoard: 3
-    },
-    {
-      eventId: 'thunder_strike',
-      title: 'Грозовой Разряд',
+      eventId: 'infernal_slab',
+      title: 'Плита Преисподней',
       description: 'Штормовая молния, ослабляющая запас сил перед боем с Боссом.',
       tileSprite: 'Devil-Dmg.png',
       weight: 6,
       maxPerBoard: 2,
-      minStep: 18
+      minStep: 16
+    },
+    {
+      eventId: 'bear_trap',
+      title: 'Медвежий Капкан',
+      description: 'Стальные челюсти капкана захлопываются под лапами!',
+      tileSprite: 'Iron Trap.png',
+      weight: 8
+    },
+    {
+      eventId: 'cat_ambush',
+      title: 'Засада в Кустах: Чёрный Кот',
+      description: 'Опасный хищник поджидает птиц в густых зарослях.',
+      tileSprite: 'hidden beast in bushes-cat.png',
+      weight: 8,
+      minStep: 7
+    },
+    {
+      eventId: 'spider_cage',
+      title: 'Клетка с Паутиной',
+      description: 'Липкая паутина гигантского лесного паука опутывает крылья.',
+      tileSprite: 'cage with a spiderweb.png',
+      weight: 8
+    },
+    {
+      eventId: 'burning_resin',
+      title: 'Горящая Смола',
+      description: 'Раскалённая древесная смола преграждает тропу.',
+      tileSprite: 'burning resin.png',
+      weight: 7
+    },
+    {
+      eventId: 'cursed_obelisk',
+      title: 'Проклятый Обелиск',
+      description: 'Тёмный монолит излучает тревожную гибельную ауру.',
+      tileSprite: 'The Cursed Monument.png',
+      weight: 6,
+      maxPerBoard: 2,
+      minStep: 12
+    },
+    {
+      eventId: 'spring_platform',
+      title: 'Прыгающая Платформа',
+      description: 'Неуправляемая пружина с силой отбрасывает путника назад.',
+      tileSprite: 'Spring Platform.png',
+      weight: 7
     }
   ],
 
   MINIGAME: [
     {
-      eventId: 'lucky_clover',
-      title: 'Четырёхлистник Судьбы',
-      description: 'Редкий росток, дарующий дополнительные кубики для переброса.',
-      tileSprite: 'clover.png',
-      weight: 10,
-      maxPerBoard: 3
-    },
-    {
       eventId: 'wheel_fortune',
       title: 'Колесо Лесной Фортуны',
       description: 'Раскрутите ярмарочное колесо и заберите приз выпавшего сектора.',
       tileSprite: 'Wheel of Fortune.png',
-      weight: 14,
-      maxPerBoard: 3
+      weight: 12,
+      maxPerBoard: 2
     },
     {
-      eventId: 'bingo_game',
-      title: 'Лесной Розыгрыш',
-      description: 'Выберите билет и испытайте удачу у лотерейного барабана.',
-      tileSprite: 'bingo machine.png',
-      weight: 9,
+      eventId: 'mystery_boxes',
+      title: 'Ларцы Иллюзиониста',
+      description: 'Четыре запечатанные шкатулки с наградами и ловушкой.',
+      tileSprite: 'Random-box.png',
+      weight: 10,
       maxPerBoard: 2
     },
     {
@@ -233,39 +422,39 @@ export const EVENT_POOLS = {
       title: 'Наковальня Лесоруба',
       description: 'Остановите бегунок на пике мощности и ударьте молотом.',
       tileSprite: 'force gauge.png',
-      weight: 12,
-      maxPerBoard: 3
+      weight: 10,
+      maxPerBoard: 2
     },
     {
       eventId: 'timestop_game',
       title: 'Хронометр Часовщика',
       description: 'Остановите отсчёт времени точно на заданной секунде.',
       tileSprite: 'Hourglass.png',
-      weight: 12,
-      maxPerBoard: 3
+      weight: 10,
+      maxPerBoard: 2
     },
     {
-      eventId: 'mystery_boxes',
-      title: 'Ларцы Иллюзиониста',
-      description: 'Четыре запечатанные шкатулки с наградами и ловушкой.',
-      tileSprite: 'Random-box.png',
-      weight: 11,
-      maxPerBoard: 3
+      eventId: 'bingo_game',
+      title: 'Лесной Розыгрыш',
+      description: 'Выберите билет и испытайте удачу у лотерейного барабана.',
+      tileSprite: 'bingo machine.png',
+      weight: 8,
+      maxPerBoard: 2
     },
     {
       eventId: 'toy_claw_machine',
       title: 'Механический Захват',
       description: 'Опустите клешню в нужный момент, чтобы вытащить капсулу с призом.',
       tileSprite: 'Toy Vending Machine.png',
-      weight: 11,
-      maxPerBoard: 3
+      weight: 9,
+      maxPerBoard: 2
     },
     {
       eventId: 'abandoned_cellar',
       title: 'Запертый Погреб',
       description: 'Взломайте три штифта замка, чтобы добраться до тайника.',
       tileSprite: 'stairway to cellar.png',
-      weight: 10,
+      weight: 8,
       maxPerBoard: 2
     },
     {
@@ -273,8 +462,48 @@ export const EVENT_POOLS = {
       title: 'Игра в Скорлупки',
       description: 'Уследите за перемещением ореховых скорлупок и найдите золотое яйцо.',
       tileSprite: 'empty bowl.png',
-      weight: 11,
-      maxPerBoard: 3
+      weight: 9,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'darts_target',
+      title: 'Дартс по Мишеням',
+      description: 'Лесной тир с дротиками и яблочком по центру.',
+      tileSprite: 'Darts.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'duck_fishing',
+      title: 'Рыбалка с Уточками',
+      description: 'Поймайте призовую уточку удочкой с крючком.',
+      tileSprite: 'Duck Fishing Game.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'ring_toss',
+      title: 'Кольцеброс',
+      description: 'Набросьте кольца на призовые столбики.',
+      tileSprite: 'ring toss.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'scratch_ticket',
+      title: 'Лотерейный Билет',
+      description: 'Сотрите защитный слой билета и узнайте свой выигрыш.',
+      tileSprite: 'scratch-off ticket.png',
+      weight: 8,
+      maxPerBoard: 2
+    },
+    {
+      eventId: 'scales_balance',
+      title: 'Чаши Весов Судьбы',
+      description: 'Уравновесьте весы лесным грузом.',
+      tileSprite: 'scales with pans.png',
+      weight: 7,
+      maxPerBoard: 2
     }
   ]
 };
@@ -349,6 +578,21 @@ export class BoardGenerator {
         continue;
       }
 
+      // 3.5 Клетка 33: Золотой Ключ от Плотины (для открытия барьера на второй круг)
+      if (stepIndex === 33 && totalCells >= 36) {
+        newCells.push({
+          ...base,
+          index: 33,
+          type: 'GOOD',
+          eventId: 'golden_key',
+          title: 'Золотой Ключ от Плотины',
+          description: 'Древний ключ, открывающий зачарованный завал позади плотины для выхода на второй круг.',
+          icon: '🔑',
+          tileSprite: 'Golden Key.png'
+        });
+        continue;
+      }
+
       // 4. Промежуточные клетки (2 .. totalCells - 2)
       let chosenCat = this.pickWeightedCategory(categoryWeights);
 
@@ -383,7 +627,7 @@ export class BoardGenerator {
         title: selectedEvent.title || template?.title || `Клетка #${stepIndex}`,
         description: selectedEvent.description || template?.text || '',
         icon: '',
-        tileSprite: selectedEvent.tileSprite || TILE_SPRITES[chosenCat] || TILE_SPRITES.NORMAL
+        tileSprite: selectedEvent.tileSprite || template?.tileSprite || TILE_SPRITES[chosenCat] || TILE_SPRITES.NORMAL
       });
     }
 

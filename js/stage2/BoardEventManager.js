@@ -23,12 +23,18 @@ export class BoardEventManager {
       isImmune: false,       // Щит иммунитета (Elixir-Icon)
       eggMultiplier: 1,      // Множитель яиц / Магнит (Lucky-Buff-Icon)
       reverseNextMove: false,// Обратный ход кубиком (Cursed-DeBuff-icon)
-      bossHpPenalty: 0,      // Штраф к HP босса / Ожог (Burn-Debuff-Icon)
+      bossHpPenalty: 0,      // Штраф к HP игрока в битве с боссом
+      bossWeaknessHp: 0,     // Ослабление здоровья босса (от телескопа -50 HP)
+      bonusMaxHp: 0,         // Бонус к здоровью игрока на боссе (+HP)
+      speedBoost: 0,         // Попутный ветер / бонус к шагам следующего хода
       burnTurns: 0,          // Длительность ожога
-      mysteriousBuff: null,  // Особый бафф (GodBless-Buff-Icon)
+      mysteriousBuff: null,  // Особый бафф
       isBlessed: false,      // Благословение Леса
-      hasGoldenWings: false, // Золотые крылья (GoldenWings-Buff-Icon)
-      hasGoldenKey: false    // Золотой ключ (GoldenKey-Buff-Icon)
+      hasGoldenWings: false, // Золотые крылья
+      hasGoldenKey: false,   // Золотой ключ (отпирает 2-й круг на 54 клетке)
+      hasCompass: false,     // Компас туриста (защита от тумана)
+      hasCloverBuff: false,  // Бафф клевера (убирает 2 неверных ответа в викторине)
+      lapsCompleted: 0       // Количество завершённых кругов
     };
 
     this.modal = new BoardQuestModal(this);
@@ -58,11 +64,17 @@ export class BoardEventManager {
       eggMultiplier: 1,
       reverseNextMove: false,
       bossHpPenalty: 0,
+      bossWeaknessHp: 0,
+      bonusMaxHp: 0,
+      speedBoost: 0,
       burnTurns: 0,
       mysteriousBuff: null,
       isBlessed: false,
       hasGoldenWings: false,
-      hasGoldenKey: false
+      hasGoldenKey: false,
+      hasCompass: false,
+      hasCloverBuff: false,
+      lapsCompleted: 0
     };
     this.saveStats();
   }
@@ -116,8 +128,22 @@ export class BoardEventManager {
     this.saveStats();
   }
 
+  cleansePoison(turns = 999) {
+    if (turns >= 999) {
+      this.stats.poisonTurns = 0;
+    } else {
+      this.stats.poisonTurns = Math.max(0, this.stats.poisonTurns - turns);
+    }
+    this.saveStats();
+  }
+
   addRerollDice(count) {
     this.stats.rerollDice += count;
+    this.saveStats();
+  }
+
+  useRerollDice(count = 1) {
+    this.stats.rerollDice = Math.max(0, this.stats.rerollDice - count);
     this.saveStats();
   }
 
@@ -142,7 +168,37 @@ export class BoardEventManager {
   }
 
   setBossHpPenalty(val) {
-    this.stats.bossHpPenalty = val;
+    this.stats.bossHpPenalty = (this.stats.bossHpPenalty || 0) + val;
+    this.saveStats();
+  }
+
+  setBossWeaknessHp(val) {
+    this.stats.bossWeaknessHp = (this.stats.bossWeaknessHp || 0) + val;
+    this.saveStats();
+  }
+
+  addBonusMaxHp(val) {
+    this.stats.bonusMaxHp = (this.stats.bonusMaxHp || 0) + val;
+    this.saveStats();
+  }
+
+  setSpeedBoost(val) {
+    this.stats.speedBoost = (this.stats.speedBoost || 0) + val;
+    this.saveStats();
+  }
+
+  setGoldenKey(val = true) {
+    this.stats.hasGoldenKey = val;
+    this.saveStats();
+  }
+
+  setCompass(val = true) {
+    this.stats.hasCompass = val;
+    this.saveStats();
+  }
+
+  setCloverBuff(val = true) {
+    this.stats.hasCloverBuff = val;
     this.saveStats();
   }
 
@@ -167,11 +223,6 @@ export class BoardEventManager {
     this.saveStats();
   }
 
-  setGoldenKey(val = true) {
-    this.stats.hasGoldenKey = val;
-    this.saveStats();
-  }
-
   setBlessed(val = true) {
     this.stats.isBlessed = val;
     this.saveStats();
@@ -188,6 +239,41 @@ export class BoardEventManager {
   }
 
   /**
+   * Добавить карту в колоду игрока (сохраняется в birday_player_cards)
+   */
+  addCard(cardId) {
+    if (!cardId) return null;
+    const targetId = typeof cardId === 'object' ? cardId.id : cardId;
+    try {
+      const saved = localStorage.getItem('birday_player_cards');
+      let cards = [];
+      if (saved) {
+        cards = JSON.parse(saved);
+      }
+      if (!cards.includes(targetId)) {
+        cards.push(targetId);
+        localStorage.setItem('birday_player_cards', JSON.stringify(cards));
+      }
+      return targetId;
+    } catch (e) {
+      console.warn('Ошибка при сохранении карты:', e);
+      return targetId;
+    }
+  }
+
+  hasCard(cardId) {
+    if (!cardId) return false;
+    try {
+      const saved = localStorage.getItem('birday_player_cards');
+      if (!saved) return false;
+      const cards = JSON.parse(saved);
+      return cards.includes(cardId);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Снятие яда и возврат потерянных яиц
    */
   cleanseAndRestore() {
@@ -199,6 +285,16 @@ export class BoardEventManager {
     this.stats.lostEggsCount = 0;
     this.saveStats();
     return restored;
+  }
+
+  /**
+   * Бонус за прохождение круга (при втором круге с ключом): +10 яиц и +1 бустер
+   */
+  awardLapBonus() {
+    this.stats.lapsCompleted = (this.stats.lapsCompleted || 0) + 1;
+    this.addEggs(10, 'Бонус за круг');
+    this.addBoosterPacks(1);
+    this.saveStats();
   }
 
   /**
@@ -226,8 +322,20 @@ export class BoardEventManager {
   }
 
   stepBack(count = 1) {
-    if (this.boardGame) {
+    if (this.boardGame && typeof this.boardGame.stepBackward === 'function') {
       this.boardGame.stepBackward(count);
+    }
+  }
+
+  stepForward(count = 1) {
+    if (this.boardGame && typeof this.boardGame.stepForward === 'function') {
+      this.boardGame.stepForward(count);
+    }
+  }
+
+  teleportToCell(index, triggerEvent = true) {
+    if (this.boardGame && typeof this.boardGame.teleportToCell === 'function') {
+      this.boardGame.teleportToCell(index, triggerEvent);
     }
   }
 
@@ -265,6 +373,7 @@ export class BoardEventManager {
         index: cellNum,
         title: `Лесная просека #${cellNum}`,
         type: 'info',
+        tileSprite: 'Empty-Tile1.png',
         speaker: 'Спокойная тропа',
         text: 'Мягкий мох и тихий шелест сосновых крон. На этом участке пути нет ни ловушек, ни преград.',
         actions: [{ text: 'ДВИГАТЬСЯ ДАЛЬШЕ', result: null }]
