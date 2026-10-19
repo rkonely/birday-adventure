@@ -273,23 +273,30 @@ export class CardMarket {
 
       .hs-booster-top-bar {
         margin-top: 18px;
-        padding: 8px 26px;
-        background: rgba(15, 12, 10, 0.82);
-        border: 2px solid rgba(255, 183, 3, 0.45);
+        padding: 6px 26px;
+        background: rgba(10, 8, 14, 0.82);
+        border: 2px solid rgba(255, 183, 3, 0.55);
         border-radius: 999px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.75);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.85);
         text-align: center;
         z-index: 25;
         pointer-events: none;
         backdrop-filter: blur(4px);
       }
       .hs-booster-top-title {
-        font-family: "8bitoperator", monospace, sans-serif;
-        font-size: 16px;
+        font-family: var(--font-pixel), "8bitoperator", monospace, sans-serif;
+        font-size: 19px;
         font-weight: bold;
-        color: #fde68a;
-        letter-spacing: 1px;
-        text-shadow: 0 2px 4px #000;
+        color: #ffb703;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        text-shadow:
+          2px 0 0 #000,
+          -2px 0 0 #000,
+          0 2px 0 #000,
+          0 -2px 0 #000,
+          2px 2px 0 #000,
+          -2px -2px 0 #000;
       }
 
       .hs-booster-stage {
@@ -341,8 +348,9 @@ export class CardMarket {
       .hs-card-slot:not(.is-flipped):hover .hs-card-inner {
         box-shadow: 0 0 16px var(--aura-color), 0 0 32px var(--aura-secondary);
       }
+      .hs-card-slot.is-flipped .hs-card-inner,
       .hs-card-slot.is-flipped:hover .hs-card-inner {
-        box-shadow: 0 0 18px var(--aura-color), 0 0 36px var(--aura-secondary);
+        box-shadow: none !important;
       }
       .hs-card-slot.is-flipped .hs-card-inner {
         transform: rotateY(180deg);
@@ -366,9 +374,8 @@ export class CardMarket {
         animation: hsAuraPulse 1.1s infinite alternate ease-in-out;
       }
       .hs-card-slot.is-flipped .hs-rarity-aura {
-        opacity: 0.55;
-        inset: 0px;
-        transform: scale(1.01);
+        display: none !important;
+        opacity: 0 !important;
       }
 
       @keyframes hsAuraPulse {
@@ -1134,7 +1141,7 @@ export class CardMarket {
       btnCollect.classList.add('disabled');
     }
     if (subtitleEl) {
-      subtitleEl.textContent = 'Наведите на рубашку, чтобы увидеть 3D-ауру редкости, и нажмите! (0 / 4)';
+      subtitleEl.textContent = 'Открыто карт: 0 из 4';
     }
 
     dropped.forEach((card, i) => {
@@ -1174,7 +1181,6 @@ export class CardMarket {
             <img src="${card.image}" alt="${card.name}" draggable="false" />
             <div class="holo-foil-layer"></div>
             <div class="holo-glare-layer"></div>
-            <div class="hs-card-rarity-banner">${aura.name}: ${card.name}</div>
           </div>
         </div>
       `;
@@ -1248,13 +1254,13 @@ export class CardMarket {
         }
 
         if (subtitleEl) {
-          subtitleEl.textContent = `Открыто карт: ${openedCount} / 4 — поводите курсором по карте для 3D-голографии!`;
+          subtitleEl.textContent = `Открыто карт: ${openedCount} из 4`;
         }
 
         if (openedCount >= 4) {
           this.savePlayerCards();
           if (subtitleEl) {
-            subtitleEl.textContent = 'Все 4 карты открыты! Нажмите «ЗАБРАТЬ В КОЛОДУ» внизу экрана';
+            subtitleEl.textContent = 'Открыто карт: 4 из 4';
           }
           if (btnCollect) {
             btnCollect.disabled = false;
