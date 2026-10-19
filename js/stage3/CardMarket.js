@@ -107,6 +107,9 @@ export class CardMarket {
     this.ownedCardIds = new Set();
     this.initPlayerCards();
 
+    this.isInspectOpen = false;
+    this.inspectModalEl = null;
+
     this.injectBoosterAndHoloStyles();
 
     this.container = document.getElementById('screen-market');
@@ -745,6 +748,13 @@ export class CardMarket {
       });
     }
 
+    window.addEventListener('keydown', (e) => {
+      if (this.isActive && e.code === 'Escape' && this.isInspectOpen) {
+        e.preventDefault();
+        this.closeCardInspect();
+      }
+    });
+
     const btnTitle = document.getElementById('btn-market-title-final');
     if (btnTitle) {
       btnTitle.addEventListener('click', () => {
@@ -773,6 +783,7 @@ export class CardMarket {
       this.container.classList.add('hidden');
     }
     this.hideCardTooltip();
+    this.closeCardInspect();
     const modal = document.getElementById('market-booster-modal');
     if (modal) modal.classList.add('hidden');
   }
@@ -878,8 +889,56 @@ export class CardMarket {
 
       const cardItem = slotEl.querySelector('.market-card-item');
       if (cardItem) {
+        let holdTimer = null;
+        let isHeld = false;
+
+        const startHold = (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          if (e.target.closest('.market-buy-btn')) return;
+
+          isHeld = false;
+          cardItem.classList.add('is-pressing');
+          clearTimeout(holdTimer);
+          holdTimer = setTimeout(() => {
+            isHeld = true;
+            cardItem.classList.remove('is-pressing');
+            this.hideCardTooltip();
+            this.openCardInspect(card);
+          }, 320);
+        };
+
+        const cancelHold = () => {
+          cardItem.classList.remove('is-pressing');
+          clearTimeout(holdTimer);
+        };
+
         cardItem.addEventListener('mouseenter', (e) => this.showCardTooltip(card, e));
-        cardItem.addEventListener('mouseleave', () => this.hideCardTooltip());
+        cardItem.addEventListener('mouseleave', () => {
+          this.hideCardTooltip();
+          cancelHold();
+        });
+
+        cardItem.addEventListener('mousedown', startHold);
+        cardItem.addEventListener('touchstart', startHold, { passive: true });
+        cardItem.addEventListener('mouseup', cancelHold);
+        cardItem.addEventListener('touchend', cancelHold);
+        cardItem.addEventListener('touchcancel', cancelHold);
+
+        cardItem.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          cancelHold();
+          this.hideCardTooltip();
+          this.openCardInspect(card);
+        });
+
+        cardItem.addEventListener('click', (e) => {
+          if (e.target.closest('.market-buy-btn')) return;
+          if (isHeld) {
+            isHeld = false;
+            e.stopPropagation();
+          }
+        });
       }
 
       const buyBtn = slotEl.querySelector('.market-buy-btn');
@@ -1112,6 +1171,29 @@ export class CardMarket {
       // Подключаем 3D-наклон и голографические координаты (--rx, --ry, --mx, --my) к слоту бустера!
       attach3DHoloTilt(slotEl, card.rarity, 16);
 
+      let boosterHoldTimer = null;
+      let boosterIsHeld = false;
+
+      const startBoosterHold = (e) => {
+        if (!slotEl.classList.contains('is-flipped')) return;
+        if (e.button !== undefined && e.button !== 0) return;
+
+        boosterIsHeld = false;
+        slotEl.classList.add('is-pressing');
+        clearTimeout(boosterHoldTimer);
+        boosterHoldTimer = setTimeout(() => {
+          boosterIsHeld = true;
+          slotEl.classList.remove('is-pressing');
+          this.hideCardTooltip();
+          this.openCardInspect(card);
+        }, 320);
+      };
+
+      const cancelBoosterHold = () => {
+        slotEl.classList.remove('is-pressing');
+        clearTimeout(boosterHoldTimer);
+      };
+
       slotEl.addEventListener('mouseenter', (e) => {
         if (slotEl.classList.contains('is-flipped')) {
           this.showCardTooltip(card, e);
@@ -1120,6 +1202,22 @@ export class CardMarket {
 
       slotEl.addEventListener('mouseleave', () => {
         this.hideCardTooltip();
+        cancelBoosterHold();
+      });
+
+      slotEl.addEventListener('mousedown', startBoosterHold);
+      slotEl.addEventListener('touchstart', startBoosterHold, { passive: true });
+      slotEl.addEventListener('mouseup', cancelBoosterHold);
+      slotEl.addEventListener('touchend', cancelBoosterHold);
+      slotEl.addEventListener('touchcancel', cancelBoosterHold);
+
+      slotEl.addEventListener('contextmenu', (e) => {
+        if (!slotEl.classList.contains('is-flipped')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        cancelBoosterHold();
+        this.hideCardTooltip();
+        this.openCardInspect(card);
       });
 
       slotEl.addEventListener('click', (e) => {
@@ -1217,6 +1315,121 @@ export class CardMarket {
     const tip = document.getElementById('market-card-tooltip');
     if (tip) tip.classList.add('hidden');
   }
+  openCardInspect(card) {
+    if (!card) return;
+    this.closeCardInspect();
+    this.isInspectOpen = true;
+
+    if (typeof audio.playClick === 'function') audio.playClick();
+
+    const isOwned = this.ownedCardIds.has(card.id);
+    const price = card.price || 10;
+    const rarity = card.rarity || 'common';
+    const rarityTitles = {
+      common: 'Обычная карта',
+      uncommon: 'Необычная карта',
+      rare: 'Редкая карта',
+      epic: 'Эпическая карта',
+      legendary: 'Легендарная карта'
+    };
+    const rarityText = rarityTitles[rarity] || 'Карта существа';
+
+    let statusText = isOwned ? 'В вашей колоде' : `В продаже (${price} яиц)`;
+    let statusColor = isOwned ? '#4ede80' : '#ffd166';
+
+    const modal = document.createElement('div');
+    modal.id = 'market-card-inspect-modal';
+    modal.className = 'boss-card-inspect-modal';
+
+    modal.innerHTML = `
+      <div class="boss-card-inspect-dialog">
+        <button class="inspect-dialog-close-x" id="btn-inspect-close-x" aria-label="Закрыть" title="Закрыть [ESC]"></button>
+
+        <div class="inspect-card-preview-wrap ${rarity}">
+          <img src="${card.image}" alt="${card.name}" class="inspect-card-img" draggable="false" />
+        </div>
+
+        <div class="inspect-info-panel">
+          <div class="inspect-header">
+            <div class="inspect-name-row">
+              <h2 class="inspect-card-name">${card.name}</h2>
+              <span class="inspect-rarity-badge ${rarity}">${rarityText}</span>
+            </div>
+            ${card.subname ? `<div class="inspect-card-subname">«${card.subname}»</div>` : ''}
+          </div>
+
+          <div class="inspect-stats-grid">
+            <div class="inspect-stat-tile stat-metal">
+              <span class="inspect-stat-label">АТАКА</span>
+              <span class="inspect-stat-val val-atk">${card.atk} ATK</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-metal">
+              <span class="inspect-stat-label">ЗДОРОВЬЕ</span>
+              <span class="inspect-stat-val val-hp">${card.hp} HP</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-wood">
+              <span class="inspect-stat-label">РОЛЬ В БОЮ</span>
+              <span class="inspect-stat-val val-role">${card.role || 'Боец'}</span>
+            </div>
+
+            <div class="inspect-stat-tile stat-wood">
+              <span class="inspect-stat-label">СТАТУС</span>
+              <span class="inspect-stat-val val-status" style="color: ${statusColor};">
+                ${statusText}
+              </span>
+            </div>
+          </div>
+
+          <div class="inspect-ability-box">
+            <div class="inspect-ability-title">СПОСОБНОСТЬ: ${card.abilityName || 'Боевой навык'}</div>
+            <div class="inspect-ability-desc">
+              ${card.abilityDesc || 'Базовое пернатое существо. Атакует босса в фазе боя и блокирует входящий урон на занятой клетке.'}
+            </div>
+          </div>
+
+          <div class="inspect-footer">
+            <span class="inspect-hint">Нажмите [ESC] или в любом месте, чтобы закрыть</span>
+            <button class="inspect-close-btn" id="btn-inspect-close">ВЕРНУТЬСЯ В МАГАЗИН ▶</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) this.closeCardInspect();
+    });
+
+    modal.querySelector('#btn-inspect-close')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeCardInspect();
+    });
+
+    modal.querySelector('#btn-inspect-close-x')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeCardInspect();
+    });
+
+    const previewWrap = modal.querySelector('.inspect-card-preview-wrap');
+    if (previewWrap) {
+      attach3DHoloTilt(previewWrap, rarity, 18);
+    }
+
+    const gameContainer = document.getElementById('game-container') || document.body;
+    gameContainer.appendChild(modal);
+    this.inspectModalEl = modal;
+  }
+
+  closeCardInspect() {
+    if (this.inspectModalEl) {
+      if (typeof audio.playClick === 'function') audio.playClick();
+      this.inspectModalEl.remove();
+      this.inspectModalEl = null;
+    }
+    this.isInspectOpen = false;
+  }
+
 
   shakeNest() {
     const nest = document.getElementById('market-nest-section');
