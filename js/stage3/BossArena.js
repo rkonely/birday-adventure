@@ -2672,29 +2672,19 @@ export class BossArena {
       const bob = Math.sin(this.animTime * 4 + coords.col) * 3;
       const spawnScale = (unit.spawnAnim > 0 ? (1.3 - unit.spawnAnim * 0.3) : 1.0) * lungeScale;
 
-      // Размер квадратного Full Art жетона пернатого героя
-      const tokenSize = 78 * spawnScale;
+      // Увеличенный размер квадратного Full Art жетона пернатого героя
+      const tokenSize = 96 * spawnScale;
       const tokenX = cx - tokenSize / 2;
-      const tokenY = cy - tokenSize / 2 - 6 + bob;
-      const cornerRadius = 12 * spawnScale;
+      const tokenY = cy - tokenSize / 2 - 4 + bob;
+      const cornerRadius = 10 * spawnScale;
 
-      // Тень под жетоном на клетку арены
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+      // Естественная тень под жетоном на клетку арены
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
       this.ctx.beginPath();
-      this.ctx.ellipse(cx, cy + tokenSize / 2 - 2, tokenSize * 0.44, 11, 0, 0, Math.PI * 2);
+      this.ctx.ellipse(cx, cy + tokenSize / 2 - 1, tokenSize * 0.44, 12, 0, 0, Math.PI * 2);
       this.ctx.fill();
 
-      // Стиль рамки и свечения по редкости карты
-      const rarityColors = {
-        common:    { border: '#b0b8c1', glow: 'rgba(176, 184, 193, 0.4)' },
-        uncommon:  { border: '#2ecc71', glow: 'rgba(46, 204, 113, 0.65)' },
-        rare:      { border: '#38bdf8', glow: 'rgba(56, 189, 248, 0.75)' },
-        epic:      { border: '#a855f7', glow: 'rgba(168, 85, 247, 0.85)' },
-        legendary: { border: '#fbbf24', glow: 'rgba(251, 191, 36, 0.95)' }
-      };
-      const rarityStyle = rarityColors[unit.rarity] || rarityColors.common;
-
-      // Загрузка Full Art изображения (квадратный чистый арт без рамки)
+      // Загрузка Full Art изображения (чистый арт без рамки)
       const fullArtSrc = unit.fullArtImage || getFullArtPath(unit.image);
       let img = this.getCardImage(fullArtSrc);
       if (!img || !img.complete || img.naturalWidth === 0) {
@@ -2709,18 +2699,18 @@ export class BossArena {
         this.ctx.globalAlpha = 0.8;
       }
 
-      // Мягкая внешняя тень и свечение редкости
-      this.ctx.shadowColor = rarityStyle.glow;
-      this.ctx.shadowBlur = 10;
+      // Мягкая естественная тень самого арта (без цветного свечения и без рамки)
+      this.ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      this.ctx.shadowBlur = 6;
       this.ctx.shadowOffsetY = 3;
 
-      // Подложка и скругленная маска
+      // Скругленная маска под арт
       this.ctx.beginPath();
       this.drawRoundedRectPath(this.ctx, tokenX, tokenY, tokenSize, tokenSize, cornerRadius);
       this.ctx.fillStyle = '#1e1b18';
       this.ctx.fill();
 
-      // Отрисовка квадратного Full Art персонажа
+      // Отрисовка чистого квадратного Full Art персонажа
       this.ctx.save();
       this.ctx.clip();
 
@@ -2738,64 +2728,56 @@ export class BossArena {
       }
       this.ctx.restore();
 
-      // Элегантная рамка жетона с цветом редкости
-      this.ctx.beginPath();
-      this.drawRoundedRectPath(this.ctx, tokenX, tokenY, tokenSize, tokenSize, cornerRadius);
-      this.ctx.strokeStyle = rarityStyle.border;
-      this.ctx.lineWidth = 2.5;
-      this.ctx.stroke();
-
-      // Тонкий внутренний блик для объема
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-      this.ctx.lineWidth = 1;
-      this.ctx.stroke();
-
       this.ctx.restore();
 
-      // Бейдж ATK (слева внизу)
+      // Увеличенный бейдж ATK (слева внизу)
       if (unit.currentAtk > 0) {
-        const atkX = cx - tokenSize / 2 + 10;
+        const atkX = cx - tokenSize / 2 + 13;
         const atkY = cy + tokenSize / 2 - 2 + bob;
+        const badgeR = 17 * spawnScale;
+
         this.ctx.save();
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        this.ctx.shadowBlur = 6;
         this.ctx.shadowOffsetY = 2;
 
-        this.ctx.fillStyle = unit.currentAtk > unit.atk ? '#16a34a' : '#b7094c';
+        this.ctx.fillStyle = unit.currentAtk > unit.atk ? '#16a34a' : '#dc2626';
         this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 2.2;
+        this.ctx.lineWidth = 2.8;
         this.ctx.beginPath();
-        this.ctx.arc(atkX, atkY, 13.5, 0, Math.PI * 2);
+        this.ctx.arc(atkX, atkY, badgeR, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 13px "8bitoperator", monospace';
+        this.ctx.font = 'bold 18px "8bitoperator", Arial, sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(`${unit.currentAtk}`, atkX, atkY + 1);
         this.ctx.restore();
       }
 
-      // Бейдж HP (справа внизу)
+      // Увеличенный бейдж HP (справа внизу)
       const isDamaged = unit.currentHp < unit.maxHp;
-      const hpX = cx + tokenSize / 2 - 10;
+      const hpX = cx + tokenSize / 2 - 13;
       const hpY = cy + tokenSize / 2 - 2 + bob;
+      const badgeR = 17 * spawnScale;
+
       this.ctx.save();
-      this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-      this.ctx.shadowBlur = 5;
+      this.ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      this.ctx.shadowBlur = 6;
       this.ctx.shadowOffsetY = 2;
 
-      this.ctx.fillStyle = unit.painImmune ? '#ec4899' : (isDamaged ? '#d90429' : '#0077b6');
+      this.ctx.fillStyle = unit.painImmune ? '#ec4899' : (isDamaged ? '#e11d48' : '#0284c7');
       this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 2.2;
+      this.ctx.lineWidth = 2.8;
       this.ctx.beginPath();
-      this.ctx.arc(hpX, hpY, 13.5, 0, Math.PI * 2);
+      this.ctx.arc(hpX, hpY, badgeR, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 13px "8bitoperator", monospace';
+      this.ctx.font = 'bold 18px "8bitoperator", Arial, sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(`${unit.currentHp}`, hpX, hpY + 1);
