@@ -17,31 +17,31 @@ const RARITY_AURA_CONFIG = {
     name: 'Обычная',
     color: '#f8fafc',
     secondary: '#cbd5e1',
-    shadow: '0 0 26px rgba(255, 255, 255, 0.9), 0 0 55px rgba(226, 232, 240, 0.65)'
+    shadow: '0 0 16px rgba(248, 250, 252, 0.9), 0 0 30px rgba(203, 213, 225, 0.6)'
   },
   uncommon: {
     name: 'Необычная',
     color: '#2ecc71',
     secondary: '#10b981',
-    shadow: '0 0 28px rgba(46, 204, 113, 0.95), 0 0 65px rgba(16, 185, 129, 0.75)'
+    shadow: '0 0 18px rgba(46, 204, 113, 0.95), 0 0 34px rgba(16, 185, 129, 0.7)'
   },
   rare: {
     name: 'Редкая',
     color: '#00a8ff',
     secondary: '#0284c7',
-    shadow: '0 0 30px rgba(0, 168, 255, 0.98), 0 0 75px rgba(2, 132, 199, 0.85)'
+    shadow: '0 0 20px rgba(0, 168, 255, 0.95), 0 0 38px rgba(2, 132, 199, 0.75)'
   },
   epic: {
     name: 'Эпическая',
     color: '#a855f7',
     secondary: '#7e22ce',
-    shadow: '0 0 34px rgba(168, 85, 247, 1), 0 0 85px rgba(147, 51, 234, 0.9), 0 0 120px rgba(126, 34, 206, 0.6)'
+    shadow: '0 0 22px rgba(168, 85, 247, 0.95), 0 0 42px rgba(126, 34, 206, 0.75)'
   },
   legendary: {
     name: 'Легендарная!',
     color: '#ffb703',
     secondary: '#fb5607',
-    shadow: '0 0 32px rgba(255, 183, 3, 0.85), 0 0 75px rgba(251, 86, 7, 0.70), 0 0 110px rgba(255, 215, 0, 0.55)'
+    shadow: '0 0 24px rgba(255, 183, 3, 0.95), 0 0 46px rgba(251, 86, 7, 0.75)'
   }
 };
 
@@ -259,10 +259,7 @@ export class CardMarket {
         width: 100%;
         height: 100%;
         z-index: 180;
-        background: radial-gradient(circle at 50% 50%, rgba(12, 10, 18, 0.65), rgba(5, 5, 8, 0.94));
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+        background: url('assets/Market/Market/Booster Without Backcard.png') no-repeat center / 100% 100%;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -307,7 +304,7 @@ export class CardMarket {
       .hs-card-slot {
         position: absolute;
         width: 19.6%;
-        aspect-ratio: 0.705;
+        aspect-ratio: 0.7077;
         transform: translate(-50%, -50%) rotate(var(--slot-rot, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1);
         transform-style: preserve-3d;
         transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), z-index 0s;
@@ -338,8 +335,14 @@ export class CardMarket {
         height: 100%;
         position: relative;
         transform-style: preserve-3d;
-        transition: transform 0.68s cubic-bezier(0.34, 1.56, 0.64, 1);
-        border-radius: 14px;
+        transition: transform 0.68s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease;
+        border-radius: 12px;
+      }
+      .hs-card-slot:not(.is-flipped):hover .hs-card-inner {
+        box-shadow: 0 0 16px var(--aura-color), 0 0 32px var(--aura-secondary);
+      }
+      .hs-card-slot.is-flipped:hover .hs-card-inner {
+        box-shadow: 0 0 18px var(--aura-color), 0 0 36px var(--aura-secondary);
       }
       .hs-card-slot.is-flipped .hs-card-inner {
         transform: rotateY(180deg);
@@ -347,29 +350,30 @@ export class CardMarket {
 
       .hs-rarity-aura {
         position: absolute;
-        inset: -8px;
-        border-radius: 18px;
+        inset: 0px;
+        border-radius: 12px;
         opacity: 0;
         transition: opacity 0.28s ease, transform 0.28s ease;
         pointer-events: none;
         box-shadow: var(--aura-shadow);
-        background: radial-gradient(circle, var(--aura-color) 0%, transparent 72%);
+        background: radial-gradient(ellipse at 50% 50%, var(--aura-color) 0%, transparent 68%);
         filter: blur(4px);
         z-index: -1;
       }
       .hs-card-slot:not(.is-flipped):hover .hs-rarity-aura {
-        opacity: 1;
-        transform: scale(1.06);
+        opacity: 0.95;
+        transform: scale(1.02);
         animation: hsAuraPulse 1.1s infinite alternate ease-in-out;
       }
       .hs-card-slot.is-flipped .hs-rarity-aura {
-        opacity: 0.65;
-        inset: -4px;
+        opacity: 0.55;
+        inset: 0px;
+        transform: scale(1.01);
       }
 
       @keyframes hsAuraPulse {
-        0%   { filter: blur(4px) brightness(1); transform: scale(1.03); }
-        100% { filter: blur(8px) brightness(1.35); transform: scale(1.11); }
+        0%   { filter: blur(4px) brightness(1); transform: scale(1.01); }
+        100% { filter: blur(6px) brightness(1.3); transform: scale(1.03); }
       }
 
       .hs-card-face {
@@ -387,18 +391,25 @@ export class CardMarket {
         justify-content: center;
       }
 
-      .hs-card-front-shirt img,
+      .hs-card-front-shirt img {
+        width: 107.2%;
+        height: 101.4%;
+        max-width: none;
+        max-height: none;
+        object-fit: fill;
+        border-radius: 12px;
+        display: block;
+        transform: translate(-0.4%, -0.6%);
+        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+      }
+
       .hs-card-back-art img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: fill;
         border-radius: 12px;
         display: block;
-        filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.75));
-      }
-
-      .hs-card-slot:not(.is-flipped):hover .hs-card-front-shirt img {
-        filter: drop-shadow(0 0 12px var(--aura-color)) drop-shadow(0 0 24px var(--aura-secondary));
+        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
       }
 
       .hs-card-back-art {
@@ -1063,7 +1074,7 @@ export class CardMarket {
       if (isDone) return;
       isDone = true;
 
-      const lastFrameDataUrl = this.captureVideoLastFrame(videoWrapper);
+      const lastFrameDataUrl = null;
 
       if (btnSkip) {
         btnSkip.classList.add('hidden');
@@ -1094,11 +1105,11 @@ export class CardMarket {
     const btnCollect = document.getElementById('btn-market-close-booster');
     if (!modal || !cardsRow) return;
 
-    if (lastFrameDataUrl) {
-      modal.style.backgroundImage = `url('${lastFrameDataUrl}')`;
-    } else {
-      modal.style.backgroundImage = '';
-    }
+    const boosterStaticBg = 'assets/Market/Market/Booster Without Backcard.png';
+    modal.style.backgroundImage = `url('${boosterStaticBg}')`;
+    modal.style.backgroundSize = '100% 100%';
+    modal.style.backgroundPosition = 'center';
+    modal.style.backgroundRepeat = 'no-repeat';
 
     const unowned = CARDS_DATABASE.filter(c => !this.ownedCardIds.has(c.id));
     let dropped = [];
