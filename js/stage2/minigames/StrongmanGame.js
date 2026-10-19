@@ -14,9 +14,9 @@ export class StrongmanGame {
     wrap.className = 'strongman-game-wrap';
     wrap.innerHTML = `
       <div class="strongman-gauge-track">
-        <div class="zone zone-green">Слабо (0)</div>
-        <div class="zone zone-yellow">Точно (+4)</div>
-        <div class="zone zone-red">ПИК СИЛЫ (+10)</div>
+        <div class="zone zone-green">Слабо</div>
+        <div class="zone zone-yellow">Хорошо</div>
+        <div class="zone zone-red">ПИК СИЛЫ</div>
         <div id="strongman-pointer" class="strongman-pointer"></div>
       </div>
       <button id="btn-strongman-hit" class="btn-leaf-green">
