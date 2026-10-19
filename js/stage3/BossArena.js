@@ -2730,59 +2730,41 @@ export class BossArena {
 
       this.ctx.restore();
 
-      // Увеличенный бейдж ATK (слева внизу)
-      if (unit.currentAtk > 0) {
-        const atkX = cx - tokenSize / 2 + 13;
-        const atkY = cy + tokenSize / 2 - 2 + bob;
-        const badgeR = 17 * spawnScale;
-
-        this.ctx.save();
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-        this.ctx.shadowBlur = 6;
-        this.ctx.shadowOffsetY = 2;
-
-        this.ctx.fillStyle = unit.currentAtk > unit.atk ? '#16a34a' : '#dc2626';
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 2.8;
-        this.ctx.beginPath();
-        this.ctx.arc(atkX, atkY, badgeR, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 18px "8bitoperator", Arial, sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(`${unit.currentAtk}`, atkX, atkY + 1);
-        this.ctx.restore();
-      }
-
-      // Увеличенный бейдж HP (справа внизу)
-      const isDamaged = unit.currentHp < unit.maxHp;
-      const hpX = cx + tokenSize / 2 - 13;
-      const hpY = cy + tokenSize / 2 - 2 + bob;
-      const badgeR = 17 * spawnScale;
-
+      // Текст характеристик без кружков: Атака (Красный) слева внизу, ХП (Зеленый) справа внизу
       this.ctx.save();
+      this.ctx.font = 'bold 22px "8bitoperator", Arial, sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.lineWidth = 4;
+      this.ctx.lineJoin = 'round';
+      this.ctx.miterLimit = 2;
       this.ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
       this.ctx.shadowBlur = 6;
       this.ctx.shadowOffsetY = 2;
 
-      this.ctx.fillStyle = unit.painImmune ? '#ec4899' : (isDamaged ? '#e11d48' : '#0284c7');
-      this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 2.8;
-      this.ctx.beginPath();
-      this.ctx.arc(hpX, hpY, badgeR, 0, Math.PI * 2);
-      this.ctx.fill();
-      this.ctx.stroke();
+      // Текст ATK (Красный)
+      if (unit.currentAtk > 0) {
+        const atkX = cx - tokenSize / 2 + 16;
+        const atkY = cy + tokenSize / 2 - 12 + bob;
+        const atkVal = `${unit.currentAtk}`;
 
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 18px "8bitoperator", Arial, sans-serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(`${unit.currentHp}`, hpX, hpY + 1);
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.strokeText(atkVal, atkX, atkY);
+        this.ctx.fillStyle = '#ff3344';
+        this.ctx.fillText(atkVal, atkX, atkY);
+      }
+
+      // Текст HP (Зеленый)
+      const hpX = cx + tokenSize / 2 - 16;
+      const hpY = cy + tokenSize / 2 - 12 + bob;
+      const hpVal = `${unit.currentHp}`;
+
+      this.ctx.strokeStyle = '#000000';
+      this.ctx.strokeText(hpVal, hpX, hpY);
+      this.ctx.fillStyle = '#22c55e';
+      this.ctx.fillText(hpVal, hpX, hpY);
+
       this.ctx.restore();
-
       this.ctx.restore();
     }
   }
