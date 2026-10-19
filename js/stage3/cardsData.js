@@ -678,10 +678,25 @@ export const RARITY_PRICES = {
   legendary: 30
 };
 
-// Проставляем цену яйцами для каждой карты
+export function getFullArtPath(cardOrImagePath) {
+  if (!cardOrImagePath) return '';
+  const imgPath = typeof cardOrImagePath === 'string'
+    ? cardOrImagePath
+    : (cardOrImagePath.fullArtImage || cardOrImagePath.image || '');
+  if (!imgPath) return '';
+  if (imgPath.includes('assets/Market/Card/Full Art/')) return imgPath;
+  return imgPath
+    .replace('assets/Market/Card/', 'assets/Market/Card/Full Art/')
+    .replace(/\.png$/i, '.jpg');
+}
+
+// Проставляем цену яйцами и путь к квадратному Full Art для каждой карты
 CARDS_DATABASE.forEach(card => {
   if (!card.price) {
     card.price = RARITY_PRICES[card.rarity] || 10;
+  }
+  if (!card.fullArtImage) {
+    card.fullArtImage = getFullArtPath(card.image);
   }
 });
 

@@ -1,4 +1,4 @@
-import { CARDS_DATABASE, getRandomStarterDeck } from './cardsData.js';
+import { CARDS_DATABASE, getRandomStarterDeck, getFullArtPath } from './cardsData.js';
 import { audio } from '../core/AudioManager.js';
 import { events } from '../core/EventManager.js';
 import { attach3DHoloTilt } from './CardMarket.js';
@@ -449,6 +449,14 @@ export class BossArena {
     this.player.discard = [];
     this.player.selectedCardIndex = -1;
 
+    // Предзагрузка Full Art артов для всех карт колоды (для мгновенного появления на поле)
+    if (this.player.deck) {
+      this.player.deck.forEach(card => {
+        const fullArt = card.fullArtImage || getFullArtPath(card.image);
+        if (fullArt) this.getCardImage(fullArt);
+      });
+    }
+
     this.gridUnits = {};
     for (const key of Object.keys(this.tileEffects)) {
       this.tileEffects[key].burningRounds = 0;
@@ -840,6 +848,7 @@ export class BossArena {
       role: unit.role,
       rarity: unit.rarity,
       image: unit.image,
+      fullArtImage: unit.fullArtImage || getFullArtPath(unit.image),
       atk: unit.atk,
       hp: unit.hp,
       currentHp: unit.currentHp,
@@ -886,8 +895,10 @@ export class BossArena {
       placedMaxHp += bonus;
     }
 
+    const fullArtSrc = card.fullArtImage || getFullArtPath(card.image);
     this.gridUnits[tileKey] = {
       ...card,
+      fullArtImage: fullArtSrc,
       currentHp: placedHp,
       maxHp: placedMaxHp,
       baseAtk: card.atk,
@@ -997,6 +1008,7 @@ export class BossArena {
             role: 'Приманка',
             rarity: 'uncommon',
             image: card.image,
+            fullArtImage: card.fullArtImage || getFullArtPath(card.image),
             atk: 0,
             baseAtk: 0,
             hp: 12,
@@ -1860,6 +1872,7 @@ export class BossArena {
             role: unit.role,
             rarity: unit.rarity,
             image: unit.image,
+            fullArtImage: unit.fullArtImage || getFullArtPath(unit.image),
             atk: unit.atk,
             hp: unit.hp,
             currentHp: Math.min(unit.hp, unit.currentHp),
@@ -1877,6 +1890,7 @@ export class BossArena {
           role: unit.role,
           rarity: unit.rarity,
           image: unit.image,
+          fullArtImage: unit.fullArtImage || getFullArtPath(unit.image),
           atk: unit.atk,
           hp: unit.hp,
           currentHp: 0,
@@ -2619,6 +2633,20 @@ export class BossArena {
     }
   }
 
+  drawRoundedRectPath(ctx, x, y, w, h, r) {
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, w, h, r);
+      return;
+    }
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
   renderPlacedUnits() {
     for (const [key, unit] of Object.entries(this.gridUnits)) {
       const coords = ARENA_TILES_COORDS[key];
@@ -2644,78 +2672,130 @@ export class BossArena {
       const bob = Math.sin(this.animTime * 4 + coords.col) * 3;
       const spawnScale = (unit.spawnAnim > 0 ? (1.3 - unit.spawnAnim * 0.3) : 1.0) * lungeScale;
 
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      // Размер квадратного Full Art жетона пернатого героя
+      const tokenSize = 78 * spawnScale;
+      const tokenX = cx - tokenSize / 2;
+      const tokenY = cy - tokenSize / 2 - 6 + bob;
+      const cornerRadius = 12 * spawnScale;
+
+      // Тень под жетоном на клетку арены
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
       this.ctx.beginPath();
-      this.ctx.ellipse(cx, cy + 32, 34, 14, 0, 0, Math.PI * 2);
+      this.ctx.ellipse(cx, cy + tokenSize / 2 - 2, tokenSize * 0.44, 11, 0, 0, Math.PI * 2);
       this.ctx.fill();
 
-      const img = this.getCardImage(unit.image);
-      const cardW = 60 * spawnScale;
-      const cardH = 85 * spawnScale;
-      const cardX = cx - cardW / 2;
-      const cardY = cy - cardH / 2 - 8 + bob;
+      // Стиль рамки и свечения по редкости карты
+      const rarityColors = {
+        common:    { border: '#b0b8c1', glow: 'rgba(176, 184, 193, 0.4)' },
+        uncommon:  { border: '#2ecc71', glow: 'rgba(46, 204, 113, 0.65)' },
+        rare:      { border: '#38bdf8', glow: 'rgba(56, 189, 248, 0.75)' },
+        epic:      { border: '#a855f7', glow: 'rgba(168, 85, 247, 0.85)' },
+        legendary: { border: '#fbbf24', glow: 'rgba(251, 191, 36, 0.95)' }
+      };
+      const rarityStyle = rarityColors[unit.rarity] || rarityColors.common;
 
-      if (img && img.complete && img.naturalWidth > 0) {
-        this.ctx.save();
-        if (unit.hitAnim > 0) {
-          this.ctx.filter = 'brightness(2.2) saturate(0.2)';
-        }
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
-        this.ctx.shadowBlur = 8;
-        this.ctx.shadowOffsetY = 4;
-        this.ctx.drawImage(img, cardX, cardY, cardW, cardH);
-        this.ctx.restore();
-      } else {
-        this.ctx.fillStyle = '#ffb703';
-        this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 8 + bob, 26, 0, Math.PI * 2);
-        this.ctx.fill();
+      // Загрузка Full Art изображения (квадратный чистый арт без рамки)
+      const fullArtSrc = unit.fullArtImage || getFullArtPath(unit.image);
+      let img = this.getCardImage(fullArtSrc);
+      if (!img || !img.complete || img.naturalWidth === 0) {
+        img = this.getCardImage(unit.image);
       }
 
-      // Бейдж ATK
+      this.ctx.save();
+      if (unit.hitAnim > 0) {
+        this.ctx.filter = 'brightness(2.2) saturate(0.2)';
+      }
+      if (unit.isDecoy) {
+        this.ctx.globalAlpha = 0.8;
+      }
+
+      // Мягкая внешняя тень и свечение редкости
+      this.ctx.shadowColor = rarityStyle.glow;
+      this.ctx.shadowBlur = 10;
+      this.ctx.shadowOffsetY = 3;
+
+      // Подложка и скругленная маска
+      this.ctx.beginPath();
+      this.drawRoundedRectPath(this.ctx, tokenX, tokenY, tokenSize, tokenSize, cornerRadius);
+      this.ctx.fillStyle = '#1e1b18';
+      this.ctx.fill();
+
+      // Отрисовка квадратного Full Art персонажа
+      this.ctx.save();
+      this.ctx.clip();
+
+      if (img && img.complete && img.naturalWidth > 0) {
+        this.ctx.drawImage(img, tokenX, tokenY, tokenSize, tokenSize);
+      } else {
+        this.ctx.fillStyle = '#ffb703';
+        this.ctx.fillRect(tokenX, tokenY, tokenSize, tokenSize);
+      }
+
+      // Мистический фиолетовый оттенок для иллюзии Павлина
+      if (unit.isDecoy) {
+        this.ctx.fillStyle = 'rgba(163, 53, 238, 0.32)';
+        this.ctx.fillRect(tokenX, tokenY, tokenSize, tokenSize);
+      }
+      this.ctx.restore();
+
+      // Элегантная рамка жетона с цветом редкости
+      this.ctx.beginPath();
+      this.drawRoundedRectPath(this.ctx, tokenX, tokenY, tokenSize, tokenSize, cornerRadius);
+      this.ctx.strokeStyle = rarityStyle.border;
+      this.ctx.lineWidth = 2.5;
+      this.ctx.stroke();
+
+      // Тонкий внутренний блик для объема
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke();
+
+      this.ctx.restore();
+
+      // Бейдж ATK (слева внизу)
       if (unit.currentAtk > 0) {
-        const atkX = cx - 24;
-        const atkY = cy + 28;
+        const atkX = cx - tokenSize / 2 + 10;
+        const atkY = cy + tokenSize / 2 - 2 + bob;
         this.ctx.save();
         this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-        this.ctx.shadowBlur = 4;
+        this.ctx.shadowBlur = 5;
         this.ctx.shadowOffsetY = 2;
 
         this.ctx.fillStyle = unit.currentAtk > unit.atk ? '#16a34a' : '#b7094c';
         this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 2.5;
+        this.ctx.lineWidth = 2.2;
         this.ctx.beginPath();
-        this.ctx.arc(atkX, atkY, 14, 0, Math.PI * 2);
+        this.ctx.arc(atkX, atkY, 13.5, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 14px "8bitoperator", monospace';
+        this.ctx.font = 'bold 13px "8bitoperator", monospace';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(`${unit.currentAtk}`, atkX, atkY + 1);
         this.ctx.restore();
       }
 
-      // Бейдж HP
+      // Бейдж HP (справа внизу)
       const isDamaged = unit.currentHp < unit.maxHp;
-      const hpX = cx + 24;
-      const hpY = cy + 28;
+      const hpX = cx + tokenSize / 2 - 10;
+      const hpY = cy + tokenSize / 2 - 2 + bob;
       this.ctx.save();
       this.ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-      this.ctx.shadowBlur = 4;
+      this.ctx.shadowBlur = 5;
       this.ctx.shadowOffsetY = 2;
 
       this.ctx.fillStyle = unit.painImmune ? '#ec4899' : (isDamaged ? '#d90429' : '#0077b6');
       this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 2.5;
+      this.ctx.lineWidth = 2.2;
       this.ctx.beginPath();
-      this.ctx.arc(hpX, hpY, 14, 0, Math.PI * 2);
+      this.ctx.arc(hpX, hpY, 13.5, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 14px "8bitoperator", monospace';
+      this.ctx.font = 'bold 13px "8bitoperator", monospace';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(`${unit.currentHp}`, hpX, hpY + 1);
