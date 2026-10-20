@@ -784,6 +784,7 @@ export class CardMarket {
 
   start() {
     this.isActive = true;
+    this.initPlayerCards();
     this.totalPages = Math.ceil(CARDS_DATABASE.length / this.cardsPerPage);
     if (this.container) {
       this.container.classList.remove('hidden');

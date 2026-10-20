@@ -9,6 +9,7 @@
 
 import { audio } from '../core/AudioManager.js';
 import { ANIMAL_QUIZ_QUESTIONS, OWL_ARCHIVE_QUESTIONS, BOARD_ASSET_ICONS } from './boardEventsData.js';
+import { getCardById } from '../stage3/cardsData.js';
 import {
   WheelGame,
   ClawGame,
@@ -2315,12 +2316,15 @@ export class BoardQuestModal {
     if (res.cardId || res.card) {
       audio.playSuccess();
       const card = res.cardId || res.card;
-      this.eventManager.addCard(card);
+      const targetId = typeof card === 'object' ? card.id : card;
+      this.eventManager.addCard(targetId);
+      const cardInfo = getCardById(targetId);
+      const cardName = cardInfo ? `«${cardInfo.name}»` : targetId;
       this.showOutcomeWithBanner({
         isGood: true,
         icon: BOARD_ASSET_ICONS.BOOSTER,
         label: 'Карта в колоду',
-        effectTitle: `Получена карта: ${card}`,
+        effectTitle: `Получена карта: ${cardName}`,
         narrative: 'Боевая карта добавлена в вашу коллекцию и готова к битве с Бобром.'
       });
       return;
@@ -2492,5 +2496,24 @@ export class BoardQuestModal {
     if (this.modalEl) {
       this.modalEl.classList.add('hidden');
     }
+  }
+
+  /**
+   * Награждение картой (вызывается из мини-игр FairAttractionsGame, CharityGame и др.)
+   */
+  rewardCard(cardId, narrative = '') {
+    if (!cardId) return;
+    audio.playSuccess();
+    const targetId = typeof cardId === 'object' ? cardId.id : cardId;
+    this.eventManager.addCard(targetId);
+    const cardInfo = getCardById(targetId);
+    const cardName = cardInfo ? `«${cardInfo.name}»` : targetId;
+    this.showOutcomeWithBanner({
+      isGood: true,
+      icon: BOARD_ASSET_ICONS.BOOSTER,
+      label: 'Карта в колоду',
+      effectTitle: `Получена карта: ${cardName}`,
+      narrative: narrative || 'Боевая карта добавлена в вашу коллекцию и готова к битве с Бобром.'
+    });
   }
 }
